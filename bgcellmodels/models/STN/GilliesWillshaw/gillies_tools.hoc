@@ -1,0 +1,246 @@
+// *** some simple tools 
+
+// globals
+
+objref rect, recv, recapt, recapv, recsp1t, recsp1v, recsp2t, recsp2v, recrbt, recrbv
+objref recsrt, recsrv, recmrt, recmrv, recfrt, recfrv, cdf
+strdef fnm, cmd
+
+rect    = new Vector(32766)
+recv    = new Vector(32766)
+recsp1t = new Vector(32766)
+recsp1v = new Vector(32766)
+recsp2t = new Vector(32766)
+recsp2v = new Vector(32766)
+recrbt  = new Vector(32766)
+recrbv  = new Vector(32766)
+recsrt  = new Vector(32766)
+recsrv  = new Vector(32766)
+recmrt  = new Vector(32766)
+recmrv  = new Vector(32766)
+recfrt  = new Vector(32766)
+recfrv  = new Vector(32766)
+recapt = new Vector(1024)
+recapv = new Vector(1024)   
+
+// apply TTX: at present we only target Na and NaL 
+//            also, only const in soma/dend...
+
+proc applyTTX() {local Namodif,NaLmodif
+  // $1 is a percentage of how much TTX influence to apply.
+  
+  Namodif  = 1.0     // TTX influences this channel 100%
+  NaLmodif = 1.0     // TTX also influences NaL
+  
+  forall(gna_Na=(100.0-($1*Namodif))*default_gNa_dend/100.0)
+  SThcells[0].soma.gna_Na = (100.0-($1*Namodif))*default_gNa_soma/100.0
+  
+  forall(gna_NaL=(100.0-($1*NaLmodif))*default_gNaL_dend/100.0)
+  SThcells[0].soma.gna_NaL = (100.0-($1*NaLmodif))*default_gNaL_soma/100.0
+  
+  printf(" [applying TTX]\n")
+}
+
+// wash TTX: return to original values (or near)
+
+proc washTTX() {local washmodif
+  // $1 is a percentage of how much TTX gets washed out
+  washmodif = ($1/100.0)
+  
+  forall(gna_Na=washmodif*default_gNa_dend)
+  SThcells[0].soma.gna_Na = washmodif*default_gNa_soma
+  
+  forall(gna_NaL=washmodif*default_gNaL_dend)
+  SThcells[0].soma.gna_NaL = washmodif*default_gNaL_soma
+  
+  printf(" [washing out TTX]\n")
+}
+
+
+// apply Apamin: sKCa antagonist
+// NOTE: in paper they say reduce by 90 percent but in sth-data file 
+//       they set everything to 0 except in soma where they divide by factor 10
+proc applyApamin() {local sKCamodif,new_gsKCa_soma,new_gsKCa_dl,new_gsKCa_db
+  printf(" [applying Apamin]\n")
+  
+  cset(0,"gk_sKCa","-apamin0.9")
+}
+
+
+// wash Apamin: return to original values
+// NOTE: restores sKCa conductances to original
+proc washApamin() {local washmodif,new_gsKCa_soma,new_gsKCa_dl,new_gsKCa_db
+  printf(" [washing out Apamin]\n")
+  
+  cset(0,"gk_sKCa","")
+}
+
+
+/**
+ * Set global  initial ion concentrations based on artificial
+ * cerebrospinal fluid compositions published in literature.
+ */
+proc set_aCSF() {local req
+  // $1 is the requested environment:
+  //   =0 NEURON defaults
+  //   =3 Beurrier et al (1999)
+  //   =4 Bevan & Wilson (1999)
+  
+  req=$1
+  
+  // WARNING: if changing cai0_ca_ion, must hand edit Cacum.mod!
+  
+  // Beurrier et al (1999)
+  //  Calculated aCSF
+  if (req==3) {
+    printf("Setting in vitro parameters based on Beurrier et al (1999)\n")
+    
+    nai0_na_ion = 15
+    nao0_na_ion = 150
+    
+    ki0_k_ion = 140
+    ko0_k_ion = 3.6
+    
+    cai0_ca_ion = 1e-04
+    cao0_ca_ion = 2.4
+    
+    cli0_cl_ion = 4
+    clo0_cl_ion = 135
+  }    
+  
+  // Bevan & Wilson (1999)
+  //  Calculated aCSF (same as Bevan et al. 2002, Hallworth et al. 2003)
+  if (req==4) {
+    printf("Setting in vitro parameters based on Bevan & Wilson (1999)\n")
+    
+    nai0_na_ion = 15
+    nao0_na_ion = 128.5
+    
+    ki0_k_ion = 140
+    ko0_k_ion = 2.5
+    
+    cai0_ca_ion = 1e-04
+    cao0_ca_ion = 2.0
+    
+    cli0_cl_ion = 4
+    clo0_cl_ion = 132.5
+  }
+
+  // NEURON's defaults
+  if (req==0) {
+    printf("WARNING: Using NEURON defaults for in vitro parameters\n")
+   
+    nai0_na_ion = 10
+    nao0_na_ion = 140
+    
+    ki0_k_ion = 54
+    ko0_k_ion = 2.5
+    
+    cai0_ca_ion = 5e-05
+    cao0_ca_ion = 2
+    
+    cli0_cl_ion = 0
+    clo0_cl_ion = 0
+  }  
+}
+
+/**
+ * Load maximum conductances from file and set based on cell index in
+ * global array.
+ *
+ * @param     $1 : int
+ *            Index of cell in global array SThcells[]
+ *
+ * @param     $s2 : string
+ *            Name of conductance
+ *
+ * @param     $s3 : string (optional)
+ *            Extra extension of file with saved conductances
+ */
+proc cset() { local tree, sec, ws, val, tst
+  // $1 is the cell
+  // $s2 is the string name of the conductance to set
+  // $s3 is the string file modifier
+  
+  if (name_declared($s2)>0) {
+    
+    sprint(fnm,"%ssth-data/cell-%s%s", gillies_root, $s2, $s3)
+    cdf = new File()
+    cdf.ropen(fnm)
+ 
+    while (!cdf.eof()) {
+      tree = cdf.scanvar()
+      sec = cdf.scanvar()
+      ws = cdf.scanvar()
+      val = cdf.scanvar()
+      
+      if (tree==-1) {
+	     sprint(cmd,"SThcells[%d].soma.%s = %.9f",$1,$s2,val)
+      }
+      if (tree==0) {
+	     sprint(cmd,"SThcells[%d].dend0[%d].%s(%.2f) = %.9f",$1,sec,$s2,ws,val)
+      }       
+      if (tree==1) {
+	     sprint(cmd,"SThcells[%d].dend1[%d].%s(%.2f) = %.9f",$1,sec,$s2,ws,val)
+      }     
+      execute(cmd)
+    }
+    cdf.close()
+  }   
+}
+
+
+/**
+ * Load maximum conductances from file and set based on cell index in
+ * global array.
+ *
+ * @param     $o1 : int
+ *            Objref: reference to cell to modify conductances for
+ *
+ * @param     $s2 : string
+ *            Name of conductance
+ *
+ * @param     $s3 : string (optional)
+ *            Extra extension of file with saved conductances
+ */
+proc set_conductance_from_file() { local tree, sec, ws, val, tst localobj cell_ref
+
+  cell_ref = $o1
+  
+  if (name_declared($s2)>0) {
+    
+    sprint(fnm,"%ssth-data/cell-%s%s", gillies_root, $s2, $s3)
+    cdf = new File()
+    cdf.ropen(fnm)
+ 
+    while (!cdf.eof()) {
+      tree = cdf.scanvar()
+      sec = cdf.scanvar()
+      ws = cdf.scanvar()
+      val = cdf.scanvar()
+      
+      if (tree==-1) {
+        // access cell_ref.soma
+        cell_ref.soma {
+          sprint(cmd,"%s = %.9f", $s2, val)
+          execute(cmd)
+        }
+      }
+      if (tree==0) {
+        // access cell_ref.dend0[sec]
+        cell_ref.dend0[sec] {
+          sprint(cmd,"%s(%.2f) = %.9f", $s2, ws, val)
+          execute(cmd)
+        }
+      }       
+      if (tree==1) {
+        // access cell_ref.dend1[sec]
+        cell_ref.dend1[sec] {
+          sprint(cmd,"%s(%.2f) = %.9f", $s2, ws, val)
+          execute(cmd)
+        }
+      }     
+    }
+    cdf.close()
+  }   
+}

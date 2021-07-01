@@ -1,0 +1,65 @@
+
+
+objref xx, yy, zz, pt_locs
+
+
+/**
+ * Interpolate 3D sample points of section using normalized length along
+ * its axis.
+ *
+ * @param   
+ *
+ *
+ * HOC EXAMPLE
+ * ------------
+ *
+ * >>> create sec
+ * >>> xvec = new Vector(2)
+ * >>> xvec.x[0] = 0
+ * >>> xvec.x[1] = 1
+ * >>> xx = new Vector(2)
+ * >>> yy = new Vector(2)
+ * >>> zz = new Vector(2)
+ * >>> 
+ * >>> interp3d(sec, xvec, &xx, &yy, &zz)
+
+ */
+proc interp3d() { \
+    local ii, num_samples \
+    localobj sec, xvec
+
+    // parse arguments
+    sec = $o1
+    xvec = $o2
+
+    xint = $&3
+    yint = $&4
+    zint = $&5
+    
+    sec {
+        // get the data for the section
+        num_samples = n3d()
+        xx = new Vector(num_samples)
+        yy = new Vector(num_samples)
+        zz = new Vector(num_samples)
+        pt_locs = new Vector(num_samples)
+
+        for ii = 0,num_samples-1 {
+            xx.x[ii] = x3d(ii)
+            yy.x[ii] = y3d(ii)
+            zz.x[ii] = z3d(ii)
+            pt_locs.x[ii] = arc3d(ii)
+        }
+
+        // to use Vector class's .interpolate() 
+        // must first scale the independent variable
+        // i.e. normalize pt_locs along centroid
+        pt_locs.div(pt_locs.x[num_samples-1])
+
+
+        xint.interpolate(xvec, pt_locs, xx)
+        yint.interpolate(xvec, pt_locs, yy)
+        zint.interpolate(xvec, pt_locs, zz)
+
+    }
+}

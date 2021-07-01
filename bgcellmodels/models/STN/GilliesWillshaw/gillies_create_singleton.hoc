@@ -1,0 +1,164 @@
+/**
+ * Create STN cell, the cell is accessible as SThcells[0]
+ *
+ */
+
+load_file("stdgui.hoc")
+
+tstop      = 8000   
+
+// *** Load the cell prototypes
+
+hide = xopen("scripts_article/SThprotocell.hoc")   
+
+// *** Turn on CVode mode
+
+objref cvode
+
+cvode = new CVode(0)
+cvode.active(1)
+
+// *** Create the STh cells
+
+objref SThtype,SThcells[1]
+
+printf("Creating STh Neurons\n\n")
+
+SThtype = new SThproto()
+
+SThcells[0] = new SThcell(0,SThtype)
+
+// *** Setup the maximum conductances over the morphology
+
+// general support functions
+// NOTE: recording vectors also declared here
+// NOTE: every time newgraph() is called, Vectors rect and recv are copied to the given vectors
+hide = xopen("scripts_article/tools.hoc")
+
+proc set_gbar_stn() {
+
+	// uniform conductances...
+	// extra var definitions (e.g.  default_*) are used in the set/unset TTX functions.
+	   
+	// Na   
+	default_gNa_soma = 1.483419823e-02 
+	default_gNa_dend = 1.0e-7
+	SThcells[0].soma.gna_Na = default_gNa_soma
+	// NaL (can interchange with the Do & Bean model)
+	default_gNaL_soma = 1.108670852e-05
+	default_gNaL_dend = 0.81e-5
+	SThcells[0].soma.gna_NaL = 1.108670852e-05
+
+	// linear conductances (loaded from files)...
+	printf("loading linear+uniform conductances\n")
+
+	// NOTE: for distribution look at column [ntree nbranch-1] in `cell_g<xyz>` files
+
+	// ## KDR ##
+	// Tree 1
+	// branch1 L40 (top): 0.0@0.25-0.0@0.75
+	// branch5/8 L289: 0.0001@0.04-0.0002@0.96
+	cset(0,"gk_KDR","")
+
+	// ## Kv3.1 ## 
+	// Tree 1
+	// branch1 L40 (top): 0.0065@0.25-0.0048@0.75
+	// branch2 L40 : 0.0031@0.25-0.0014@0.75
+	// branch5/8 L289: 0.0009@0.04-0.0009@0.96 (uniform)
+	cset(0,"gk_Kv31","")
+
+	// ## Ih ##
+	// Tree 1
+	// branch1 L40 (top): 0.0@0.25-0.0@0.75
+	// branch2 L40 : 0.0@0.25-0.0@0.75
+	// branch5/8 L289: 0.000@0.04-0.0001@0.29-0.0017@0.96
+	cset(0,"gk_Ih","")
+
+	// ## sKCa ##
+	// Tree 1
+	// branch1 L40 (top): 0.0@0.25-0.0@0.75
+	// branch2 L40 : 0.0@0.25-0.0@0.75
+	// branch5/8 L289: 0.000@0.04-0.0001@0.62-0.0002@0.96
+	cset(0,"gk_sKCa","")
+
+	// ## CaT ## 
+	// Tree1
+	// branch1 L40 (top): 0.0012@0.25-0.0014@0.75
+	// branch2 L40 : 0.0016@0.25-0.0018@0.75
+	// branch5/8 L289: 0.0020@0.04-0.0046@0.62-0.0002@0.96
+	cset(0,"gcaT_CaT","")
+
+	// CaN
+	// Tree1
+	// branch1 L40 (top): 0.0016@0.25-0.0014@0.75
+	// branch2 L40 : 0.0012@0.25-0.0011@0.75
+	// branch5/8 L289: 0.0009@0.04-0.0002@0.29-0.0@0.38-0.0@0.96
+	cset(0,"gcaN_HVA","")
+
+	// CaL
+	// Tree1
+	// branch1 L40 (top): 0.0001@0.25-0.0001@0.75 (uniform)
+	// branch2 L40 : 0.0001@0.25-0.0001@0.75 (uniform)
+	// branch5/8 L289: 0.0001@0.04-0.0001@0.46-0.0014@0.54-0.0950@0.96
+	cset(0,"gcaL_HVA","")
+
+}
+
+// set maximum conductances
+set_gbar_stn()
+
+proc set_ion_styles_stn() {
+	// set the ion styles  
+
+	// NOTE: for Na/K: 
+	//		[Na]/[K] concentrations are PARAMETER (not assigned/state/unused), 
+	//		Erev is assigned, 
+	// 		Erev is initialized using Nernst equation and initial concenttrations
+	//		Erev is NOT re-computed using Nernst & concentrations in each step
+	//		[Na]/[K] initial concentration is set to global variable value
+	forall ion_style("na_ion",1,2,1,0,1)
+	forall ion_style("k_ion",1,2,1,0,1)
+	// NOTE: for Ca: 
+	//		Ca concentration is STATE (not assigned/parameter/unused), 
+	//		Erev is assigned, 
+	// 		Erev is initialized using Nernst equation and initial concenttrations
+	//		Erev is re-computed using Nernst & concentrations in each step
+	//		[Na]/[K] initial concentration is set to global variable value
+	forall ion_style("ca_ion",3,2,1,1,1)
+}
+
+set_ion_styles_stn()
+
+// References to stims
+objectvar stim1, stim2, stim3
+
+proc make_stims_stn() {
+	// *** Default section
+
+	access SThcells[0].soma
+
+	// *** Other objects (stimulators and AP counts etc)
+
+	SThcells[0].soma stim1 = new IClamp(0.5)
+	SThcells[0].soma stim2 = new IClamp(0.5)
+	SThcells[0].soma stim3 = new IClamp(0.5)
+
+	stim1.del = 0
+	stim1.dur = 0
+	stim1.amp = 0.0
+
+	stim2.del = 0
+	stim2.dur = 0
+	stim2.amp = 0.0
+
+	stim3.del = 0
+	stim3.dur = 0
+	stim3.amp = 0.0
+}
+
+make_stims_stn()
+
+// *** cvode tolerance scales...
+
+cvode.atol(0.0001)
+cvode.atolscale(&SThcells[0].soma.cai,1.0e-3)   

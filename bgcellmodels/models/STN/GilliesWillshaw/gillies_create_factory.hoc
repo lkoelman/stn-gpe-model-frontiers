@@ -1,0 +1,183 @@
+/**
+ * This is a modified version of "sample.hoc" that allows for creation
+ * of more than one STN cells for network simulations.
+ *
+ * @author      Lucas Koelman
+ * @date        15/03/2018
+ */
+
+load_file("stdlib.hoc")
+load_file("stdrun.hoc")
+
+// Define root directory for Gillies code
+strdef gillies_root
+gillies_root = getcwd()
+
+// *** Load the cell prototypes
+xopen("gillies_prototypes.hoc")
+
+// *** Turn on CVode mode
+
+objref cvode
+
+cvode = new CVode(0)
+cvode.active(1)
+
+
+// *** Create the STh cells
+
+MAX_NUM_STN_CELLS = 500
+num_stn_cells = 0
+
+// The global objref array must be created before functions referencing it are defined
+objref SThtype, SThcells[MAX_NUM_STN_CELLS]
+SThtype = new SThproto()
+
+
+// *** Load general supporting functions
+xopen("gillies_tools.hoc")
+// NOTE: recording vectors also declared here
+// NOTE: every time newgraph() is called, Vectors rect and recv are copied to the given vectors
+
+
+// *** Define functions to set parameters
+
+/**
+ * Setup the maximum conductances over the morphology
+ *
+ * @param   $1 : int
+ *          Index in the cell in the global secarray SThcells[]
+ */
+proc set_gbar_stn_global() { local cell_idx
+
+    // uniform conductances...
+    // extra var definitions (e.g.  default_*) are used in the set/unset TTX functions.
+    cell_idx = $1
+       
+    // Na   
+    default_gNa_soma = 1.483419823e-02 
+    default_gNa_dend = 1.0e-7
+    SThcells[cell_idx].soma.gna_Na = default_gNa_soma
+    
+    // NaL (can interchange with the Do & Bean model)
+    default_gNaL_soma = 1.108670852e-05
+    default_gNaL_dend = 0.81e-5
+    SThcells[cell_idx].soma.gna_NaL = 1.108670852e-05
+
+    // linear conductances (loaded from files)...
+    // printf("loading linear+uniform conductances\n")
+
+    // NOTE: for distribution look at column [ntree nbranch-1] in `cell_g<xyz>` files
+
+    // ## KDR ##
+    cset(cell_idx,"gk_KDR","")
+
+    // ## Kv3.1 ## 
+    cset(cell_idx,"gk_Kv31","")
+
+    // ## Ih ##
+    cset(cell_idx,"gk_Ih","")
+
+    // ## sKCa ##
+    cset(cell_idx,"gk_sKCa","")
+
+    // ## CaT ## 
+    cset(cell_idx,"gcaT_CaT","")
+
+    // CaN
+    cset(cell_idx,"gcaN_HVA","")
+
+    // CaL
+    cset(cell_idx,"gcaL_HVA","")
+
+}
+
+
+proc set_gbar_stn_ref() { localobj cell_ref
+
+    // uniform conductances...
+    // extra var definitions (e.g.  default_*) are used in the set/unset TTX functions.
+    cell_ref = $o1
+       
+    // Na   
+    default_gNa_soma = 1.483419823e-02 
+    default_gNa_dend = 1.0e-7
+    cell_ref.soma.gna_Na = default_gNa_soma
+    
+    // NaL (can interchange with the Do & Bean model)
+    default_gNaL_soma = 1.108670852e-05
+    default_gNaL_dend = 0.81e-5
+    cell_ref.soma.gna_NaL = 1.108670852e-05
+
+    // linear conductances (loaded from files)...
+    // printf("loading linear+uniform conductances\n")
+
+    // NOTE: for gbar distribution look at column [ntree nbranch-1] in file `cell_g<xyz>`
+
+    // ## KDR ##
+    set_conductance_from_file(cell_ref, "gk_KDR","")
+
+    // ## Kv3.1 ## 
+    set_conductance_from_file(cell_ref, "gk_Kv31","")
+
+    // ## Ih ##
+    set_conductance_from_file(cell_ref, "gk_Ih","")
+
+    // ## sKCa ##
+    set_conductance_from_file(cell_ref, "gk_sKCa","")
+
+    // ## CaT ## 
+    set_conductance_from_file(cell_ref, "gcaT_CaT","")
+
+    // CaN
+    set_conductance_from_file(cell_ref, "gcaN_HVA","")
+
+    // CaL
+    set_conductance_from_file(cell_ref, "gcaL_HVA","")
+
+}
+
+
+/**
+ * Make STN cell and store a reference in the global array SThcells[]
+ *
+ * @return      cell_index : int
+ *              Index of created cell in global secarray SThcells[]
+ */
+func make_stn_cell_global() { local cell_idx
+    
+    // Update the global cell index
+    cell_idx = num_stn_cells
+    num_stn_cells = num_stn_cells + 1
+    
+    SThcells[cell_idx] = new SThcell(cell_idx, SThtype)
+    
+
+    // Set cell parameters
+    set_gbar_stn_global(cell_idx)
+
+    // *** cvode tolerance scales...
+    cvode.atol(0.0001)
+    cvode.atolscale(&SThcells[cell_idx].soma.cai, 1.0e-3)
+
+    return cell_idx
+}
+
+/**
+ * Make STN cell without storing a global reference : you are responsible
+ * for keeping a reference to the returned objref.
+ */
+obfunc make_stn_cell_ref() { localobj cell_ref
+    cell_ref = new SThcell(0, SThtype)
+
+    // Set cell parameters
+    set_gbar_stn_ref(cell_ref)
+
+    // *** cvode tolerance scales...
+    cvode.atol(0.0001)
+    cvode.atolscale(&cell_ref.soma.cai, 1.0e-3)
+
+    return cell_ref
+}
+
+

@@ -1,0 +1,180 @@
+// $Id: interpxyz.hoc,v 1.2 2005/09/10 23:02:15 ted Exp $
+/* Computes xyz coords of nodes in a model cell 
+   whose topology & geometry are defined by pt3d data.
+   Expects sections to already exist, and that the xtra mechanism has been inserted
+ */
+
+
+// original data, irregularly spaced
+objref xx, yy, zz, pt_locs
+// interpolated data, spaced at regular intervals
+objref xint, yint, zint, node_locs
+
+
+/**
+ * Calculate segment center coordinates from the 3d sample points assigned
+ * to the neuron sections.
+ *
+ * @pre     All section in sectionlist have 3d sample points assigned, either
+ *          through Hoc.pt3dadd() or Hoc.define_shape()
+ *
+ * @param   $o1 : SectionList
+ *          SectionLists containing sections whose LFP contributions should
+ *          be summed.
+ *
+ */
+proc xtra_segment_coords_from3d() { \
+    local ii, num_samples, kk, xr \
+    localobj seclist
+
+    // parse arguments
+    seclist = $o1
+    
+    forsec seclist {
+
+        if (ismembrane("xtra")) {
+            // get the data for the section
+            num_samples = n3d()
+            xx = new Vector(num_samples)
+            yy = new Vector(num_samples)
+            zz = new Vector(num_samples)
+            pt_locs = new Vector(num_samples)
+
+            for ii = 0,num_samples-1 {
+                xx.x[ii] = x3d(ii)
+                yy.x[ii] = y3d(ii)
+                zz.x[ii] = z3d(ii)
+                pt_locs.x[ii] = arc3d(ii)
+            }
+
+            // to use Vector class's .interpolate() 
+            // must first scale the independent variable
+            // i.e. normalize pt_locs along centroid
+            pt_locs.div(pt_locs.x[num_samples-1])
+
+            // Locations of nodes (segment centers + 0-end + 1-end)
+            node_locs = new Vector(nseg+2)
+            node_locs.indgen(1/nseg)
+            node_locs.sub(1/(2*nseg))
+            node_locs.x[0]=0
+            node_locs.x[nseg+1]=1
+
+            // pt_locs contains the normalized distances of the pt3d points 
+            // along the centroid of the section.  These are spaced at 
+            // irregular intervals.
+
+            // node_locs contains the normalized distances of the nodes along the 
+            // centroid of the section.  These are spaced at regular intervals.
+            // Ready to interpolate.
+
+            xint = new Vector(nseg+2)
+            yint = new Vector(nseg+2)
+            zint = new Vector(nseg+2)
+            xint.interpolate(node_locs, pt_locs, xx)
+            yint.interpolate(node_locs, pt_locs, yy)
+            zint.interpolate(node_locs, pt_locs, zz)
+
+            // for each node, assign the xyz values to x_xtra, y_xtra, z_xtra
+            //      for ii = 0, nseg+1 {
+            // don't bother computing coords of the 0 and 1 ends
+            // also avoid writing coords of the 1 end into the last internal node's coords
+            for ii = 1, nseg {
+                xr = node_locs.x[ii]
+                x_xtra(xr) = xint.x[ii]
+                y_xtra(xr) = yint.x[ii]
+                z_xtra(xr) = zint.x[ii]
+            }
+        }
+    }
+}
+
+
+/**
+ * Points monitoring variables 'ex' and 'im' of mechanism 'xtra' to the
+ * extracellular voltage source and total transmembrane current variables 
+ * of the mechanism 'extracellular'
+ *
+ * @pre     either mechanism 'extracellular' is inserted in each Section or
+ *          cvode.use_fast_imem(1) was called so the variable 'i_membrane_'
+ *          is available on each segment.
+ *
+ * @param   $o1 : SectionList
+ *          SectionLists containing sections whose LFP contributions should
+ *          be summed.
+ *
+ */
+proc xtra_setpointers() { local im_extracellular
+    forsec $o1 {
+        im_extracellular = ismembrane("extracellular")
+        if (ismembrane("xtra")) {
+            for (x, 0) {
+                if (im_extracellular) {
+                    setpointer im_xtra(x), i_membrane(x)
+                    setpointer ex_xtra(x), e_extracellular(x)
+                } else {
+                    setpointer im_xtra(x), i_membrane_(x)
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * Points monitoring variables 'ex' and 'im' of mechanism 'xtra' to the
+ * extracellular voltage source and total transmembrane current variables 
+ * of the mechanism 'extracellular'
+ *
+ * @pre     mechanism 'extracellular' is inserted into each Section in
+ *          section list.
+ *
+ * @param   $o1 : SectionList
+ *          SectionLists containing sections whose LFP contributions should
+ *          be summed.
+ *
+ * @param   $2 : rho (Ohm * cm)
+ *          Resistivity of extracullular medium.
+ *          rho = 35.4 (ohm cm), squid axon cytoplasm
+ *          for squid axon extracellular space, change this to seawater's value
+ *          for mammalian cells, change to brain tissue or Ringer's value
+ *
+ * @param   $3 : x_electrode (um)
+ *          X-coordinate of electrode location
+ *
+ * @param   $4 : y_electrode (um)
+ *          Y-coordinate of electrode location
+ *
+ * @param   $6 : z_electrode (um)
+ *          Z-coordinate of electrode location
+ *
+ */
+proc xtra_set_impedances_pointsource() { \
+    local x_elec, y_elec, z_elec, r_min \
+    localobj seclist
+
+    // Parse arguments
+    seclist = $o1
+    rho = $2
+    x_elec = $3
+    y_elec = $4
+    z_elec = $5
+
+    forsec seclist {
+        if (ismembrane("xtra")) {
+            // avoid nodes at 0 and 1 ends, so as not to override values at internal nodes
+            for (x,0) {
+                r = sqrt((x_xtra(x) - x_elec)^2 + \
+                         (y_xtra(x) - y_elec)^2 + \
+                         (z_xtra(x) - z_elec)^2)
+
+                // 0.01 converts rho's cm to um and ohm to megohm
+                // if electrode is exactly at a node, r will be 0
+                // this would be meaningless since the location would be inside the cell
+                // so force r to be at least as big as local radius
+                r_min = diam(x) / 2
+                if (r < r_min) r = r_min
+                rx_xtra(x) = (rho / 4 / PI)*(1/r)*0.01
+            }
+        }
+    }
+}

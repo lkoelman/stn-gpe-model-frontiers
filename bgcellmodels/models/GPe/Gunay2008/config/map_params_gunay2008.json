@@ -1,0 +1,211 @@
+// Parameter mapping from original GENESIS parameters to
+// BluePyOpt.Ephys parameters.
+//
+// https://senselab.med.yale.edu/modeldb/ShowModel.cshtml?model=114639
+// Gunay, Edgerton, and Jaeger (2008). Channel Density Distributions Explain 
+// Spiking Variability in the Globus Pallidus: A Combined Physiology and 
+// Computer Simulation Database Approach.
+//
+// - main script in /runs/runsample/setup.g loads following scripts:
+//
+//   + /common/CIPfuncs.g
+//       + /common/simdefaults.g        -> sets param variables
+//
+//   + /runs/runsample/readGPparams.g
+//       + /common/GP<i>_default.g       -> sets param variables
+//       + /common/actpars.g             -> sets param variables
+//
+//   + /common/make_GP_libary.g          -> uses param variables
+//       + /common.GPchans.g             -> defines mechanisms using parameters
+//       + /common.GPcomps.g             -> defines compartments using parameters
+[
+// #############################################################################
+// # Parameters from GPchans.g
+// #############################################################################
+    {
+        "param_name": "ena",
+        "sectionlist": "all",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ENa}"
+    },
+    {
+        "param_name": "ek",
+        "sectionlist": "all",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{EK}"
+    },
+// #############################################################################
+// # Parameters from GPcomps.g
+// #############################################################################
+// see setfield statements in GPcomps.g
+// =============================================================================
+// SOMATIC parameters
+// -----------------------------------------------------------------------------
+// somatic passive parameters
+    {
+        "param_name": "Ra",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "Ohm*m",
+        "value": "{RA}"
+    },
+    {
+        "param_name": "g_pas",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "1.0/{RM_sd}"
+    },
+    {
+        "param_name": "cm",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "F/m^2",
+        "value": "{CM}" // CM_my not used in axonless model
+    },
+    {
+        "param_name": "e_pas",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ELEAK_sd}"
+    },
+    // ERROR WHEN GHK USED AND ASSIGNED BEFORE MECHANISM INSERTED
+    { // this param is from GPchans.g but must be set per section
+        "param_name": "eca",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ECa}"
+    },
+// -----------------------------------------------------------------------------
+// somatic Ca buffering
+// TODO
+// -----------------------------------------------------------------------------
+// somatic conductances
+// (see GPchans.g: "put channels in soma")
+// TODO: channel K_ahp,
+    {
+        "param_name": "gmax_SK",
+        "sectionlist": "somatic",
+        "mech": "SK",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_K_ahp_GP}*{G_mult_SK_dend}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_NaF",
+        "sectionlist": "somatic",
+        "mech": "NaF",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Na_fast_GP}*{G_mult_Na_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_NaP",
+        "sectionlist": "somatic",
+        "mech": "NaP",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Na_slow_GP}*{G_mult_Na_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_Kv2",
+        "sectionlist": "somatic",
+        "mech": "Kv2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Kv2_GP}*{G_mult_Kdr_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_Kv3",
+        "sectionlist": "somatic",
+        "mech": "Kv3",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Kv3_GP}*{G_mult_Kdr_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_Kv4f",
+        "sectionlist": "somatic",
+        "mech": "Kv4f",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Kv4_fast_GP}*{G_mult_KA_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_Kv4s",
+        "sectionlist": "somatic",
+        "mech": "Kv4s",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_Kv4_slow_GP}*{G_mult_KA_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_KCNQ",
+        "sectionlist": "somatic",
+        "mech": "KCNQ",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_KCNQ_GP}*{G_mult_KCNQ_soma}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "sectionlist": "somatic",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_HCN",
+        "sectionlist": "somatic",
+        "mech": "HCN",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_h_HCN_GP}*{G_mult}}"
+    },
+    {
+        "param_name": "gmax_HCN2",
+        "sectionlist": "somatic",
+        "mech": "HCN2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{{G_h_HCN2_GP}*{G_mult}}"
+    },
+// =============================================================================
+// TODO: axonal compartment (SectionList "axonal")
+// =============================================================================
+// TODO: dendritic compartments (SectionList "basal")
+]

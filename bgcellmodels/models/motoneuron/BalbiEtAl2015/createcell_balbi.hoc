@@ -1,0 +1,195 @@
+/**
+ * Create moto neuron cell.
+ */
+
+ // Code copied from 1_mosinit.hoc, with GUI-related sections removed
+load_file("stdlib.hoc")
+load_file("stdrun.hoc")
+// load_file("nrngui.hoc")
+
+/*******************************************************************************
+* LOAD MECHANISMS CODE
+*******************************************************************************/
+
+// Function to load DLL file
+strdef lib_path, test_cmd, tempstr
+
+iterator fullpath_unix() { local i
+    /*
+    * Iterator function to iterate over list of paths
+    *
+    * @param $s1    string variable for return value
+    * @param $s2    directory containing mod files and compiled shared library
+    * @param $si    subsequent strings are architecture prefixes
+    */
+    for i = 3, numarg() {
+            // construct path
+            sprint(tempstr, "%s/%s/%s/%s", $s2, $si, ".libs", "libnrnmech.so")
+            $s1 = tempstr
+            iterator_statement
+    }
+}
+
+proc load_mechanism() { local ret_load localobj arch_list
+    /*
+    * Function to load mechanisms DLL file (shared library)
+    *
+    * @param $s1    path containing mod files whre nrnivmodl/mknrndll was called 
+    */
+    ret_load = -1
+
+    if (unix_mac_pc() == 3) { // WINDOWS
+
+        // construct path
+        sprint(lib_path, "%s\\%s", $s1, "nrnmech.dll")
+
+        // Load if DLL exists
+        sprint(test_cmd, "test -f %s", lib_path)
+        if (system(test_cmd) == 0) {
+            ret_load = nrn_load_dll(lib_path)
+        }
+
+    } else { // UNIX
+
+        for fullpath_unix(lib_path, $s1, "i686", "x86_64", "powerpc", "umac") {
+            // Load if DLL exists
+            sprint(test_cmd, "test -f %s", lib_path)
+
+            if (system(test_cmd) == 0) {
+                if(nrn_load_dll(lib_path)) ret_load = 1
+            }
+        }
+    }
+
+    if (ret_load != 1) {
+        printf("Failed to load %s", lib_path)
+    }
+
+}
+
+load_mechanism("channels")
+
+/*******************************************************************************
+* START ORIGINAL SOURCE CODE
+*******************************************************************************/
+
+strdef curr_mod // variabile stringa per il modello in esecuzione
+
+// paragrafo per l'inizializzazione ad uno steady state (precedentemente creato)
+// se non utilizzato settare flag_svstate=1
+
+objref svstate, f
+strdef filename
+
+// NOTE: class for saving and loading a cell's state, see https://www.neuron.yale.edu/neuron/static/new_doc/simctrl/savstate.html
+svstate = new SaveState()
+
+proc balbi_init() {
+    /**
+     * Custom init function, originally named 'init' to override standard init.
+     */
+    finitialize(v_init)
+    if (flag_svstate==0) {svstate.restore()}
+    t=0
+    if (cvode.active()) {
+        cvode.re_init()
+    } else {
+        fcurrent()
+    }
+    frecord_init()
+}
+
+
+proc load_cell() { // loading soma and dendrites
+
+    forall delete_section() // cancella le sezioni di precedenti modelli
+    curr_mod = $s1
+    chdir("./cat_spinal_mn/")
+    load_file(1,curr_mod)
+    chdir("..")
+
+}
+
+proc load_steadystate() {
+    /** Load steate-state condition from file 
+     *  for motoneuron cell model with given cell id, 
+     *  see see https://www.neuron.yale.edu/neuron/static/new_doc/simctrl/savstate.html
+     *
+     * @note   h.load_steadystate() uses SaveState.restore() which means 
+           Between a save and a restore, it is important not to create or delete sections, NetCon objects, or point processes. Do not change the number of segments, insert or delete mechanisms, or change the location of point processes.
+     *
+     * @note    SaveState.restore() restores:
+     *          - all mechanism STATE variables
+     *          - voltage for all segments (seg.v)
+     *          - ion concentrations (nao,nai,ko,ki, ...)
+     *          - reversal potentials (ena,ek, ...)
+     *
+     * @param $1    cell number
+     */
+
+    //  load save-states, using model number argument
+    sprint(filename,"state%g.dat",$1)
+    chdir("./States/")
+    f = new File(filename)
+    svstate.fread(f)
+    chdir("..")
+}
+
+proc compl() {
+    /** Completion of single neurons (with respective steady-states)
+     *
+     * @param   $1  model number to load
+     *
+     * @effect  loads hoc file "2_complete_cell.hoc", which loads files
+     *          1_***.hoc to 7_***.hoc
+     */
+
+    load_file(1,"2_complete_cell.hoc")
+}
+
+// Physiological parameters
+celsius=37
+
+
+strdef morph_file
+proc choose_model() { local model_no
+    /**
+    * Choose which motoneuron model to load
+    * 
+    * @param $1    model number to load: integer in range 1-14
+    *
+    * @effect      Following variables will be available on Hoc interpreter:
+    *               - soma[N] <Section> somatic sections
+    *               - dend[M] <Section> dendritic sections
+    *               - AH[1] <Section> axon hillock
+    *               - IS[1] <Section> axon initial segment
+    *               - node[axonnodes] <Section>
+    *               - MYSA[paranodes1] <Section>
+    *               - FLUT[paranodes2] <Section>
+    *               - STIN[axoninter] <Section>
+    */
+    model_no = $1
+
+    if (model_no <= 8) {
+        sprint(morph_file, "AlphaMN%d.hoc", model_no)
+    } else {
+        sprint(morph_file, "v_e_moto%d.hoc", model_no-8)
+    }
+
+    // Load soma + dendrites morphology
+    load_cell(morph_file)
+    printf("\nLoaded morphology file %s", morph_file)
+
+    // Add other sections, insert mechanisms, etc
+    compl()
+    load_steadystate(model_no)
+
+}
+
+proc test_model() {
+    /**
+     * Create moto neuron model for testing.
+     */
+    load_mechanism("channels")
+    choose_model(1)
+}

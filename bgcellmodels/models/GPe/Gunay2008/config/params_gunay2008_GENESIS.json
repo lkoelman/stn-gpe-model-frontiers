@@ -1,0 +1,213 @@
+// Parameters for model at
+//
+// https://senselab.med.yale.edu/modeldb/ShowModel.cshtml?model=114639
+// Gunay, Edgerton, and Jaeger (2008). Channel Density Distributions Explain 
+// Spiking Variability in the Globus Pallidus: A Combined Physiology and 
+// Computer Simulation Database Approach.
+//
+// - main script in /runs/runsample/setup.g loads following scripts:
+//
+//   + /common/CIPfuncs.g
+//       + /common/simdefaults.g        -> sets param variables
+//
+//   + /runs/runsample/readGPparams.g
+//       + /common/GP<i>_default.g       -> sets param variables
+//       + /common/actpars.g             -> sets param variables
+//
+//   + /common/make_GP_libary.g          -> uses param variables
+//       + /common.GPchans.g             -> defines mechanisms using parameters
+//       + /common.GPcomps.g             -> defines compartments using parameters
+//
+// Parameters are copied from GENESIS script and put in dictionary format 
+// using regex replace, and following regular expression replacement:
+//
+//      float\s(\w+)\s+\=\s+([-\d.eE]+) -> "$1" : $2,
+
+{
+// #############################################################################
+// # Parameters from /common/simdefaults.g 
+// #############################################################################
+
+// Define simulation defaults that may need to be changed for optimization but
+//  that will be the same for all morphologies and for both spiking and
+//  non-spiking models.
+
+  //Sodium channel kinetics & voltage dependence
+  "Vhalfm_NaF" : -0.0324,
+  "Km_NaF" : 0.005,
+  "taummax_NaF" : 0.000028,
+  "taummin_NaF" : 0.000028,
+
+  "V0h_NaF" : -0.048,
+  "Kh_NaF" : -0.0028,
+  "tauhV0_NaF" : -0.043,
+  "tauhmax_NaF" : 0.004,
+  "tauhmin_NaF" : 0.00025,    // 0.0002
+
+  "V0s_NaF" : -0.040,
+  "Ks_NaF" : -0.0054,
+  "mins_NaF" : 0.15,
+  "Ktaus1_NaF" : 0.0183,
+  "Ktaus2_NaF" : 0.010,
+  "tausmax_NaF" : 1,
+  "tausmin_NaF" : 0.01,
+
+  "Vhalfm_NaP" : -0.050,
+  "V0h_NaP" : -0.057,
+  "Kh_NaP" : -0.004,
+  "hmin_NaP" : 0.154,
+  "V0s_NaP" : -0.01,
+  "Abeta_NaP" : 6.94,
+  "Bbeta_NaP" : 0.447,
+
+  //Kv2 properties
+  "npower_Kv2" : 4,
+  "Vhalfn_Kv2" : -0.018,
+  "Kn_Kv2" : 0.0091,
+  "taunmax_Kv2" : 0.03,
+  "taunmin_Kv2" : 0.0001,
+  "hmin_Kv2" : 0.2,
+
+  //Kv3 properties
+  "npower_Kv3" : 4,
+  "Vhalfn_Kv3" : -0.013,  // Actual Vhalf
+  "Kn_Kv3" : 0.0078,  // Yields K = 6 mV with Xpower = 4
+  "hmin_Kv3" : 0.6,
+
+  //Kv4 properties
+  "V0n_Kv4" : -0.049, // Yields Vhalf = -27 mV when Xpower = 4
+  "Kn_Kv4" : 0.0125,  // Yields K = 9.6 mV when Xpower = 4
+  "Ktaun1_Kv4" : 0.029,
+  "Ktaun2_Kv4" : 0.029,
+
+  "V0h_Kv4" : -0.083, // changed from -0.072 02/17/2005 to match 
+                                      // Tkatch et al
+  "Kh_Kv4" : -0.01,   // changed from -0.0047 02/17/2005 to match 
+                                      // Tkatch et al
+  "Ktauh1_Kv4" : 0.010,
+  "Ktauh2_Kv4" : 0.010,
+
+  //KCNQ properties
+  "Vhalfn_KCNQ" : -0.0285,
+  "Kn_KCNQ" : 0.0195, // Yields K = 15 mV for 1st order Boltzmann
+                                  //  when Xpower = 4.
+
+  //SK channel properties
+  "EC50_SK" : 0.00035,    // SI unit = mM; default = 350 nM.
+  "dQ10_SK" : 2,
+
+  //CaHVA properties
+  "npower_CaHVA" : 1,
+  "Vhalfn_CaHVA" : -0.02,
+  "Kn_CaHVA" : 0.007, 
+
+  //Voltage-gated ion channel reversal potentials
+  "ENa" : 0.050,
+  "ECa" : 0.130,
+  "EK" : -0.090,
+  "Eh" : -0.03,
+
+  //Calcium concentration parameters
+  "B_Ca_GP_conc" : 5.2e-12,  
+  "shell_thick" : 20e-9,  //  meters
+  "soma_shell_vol": 6.283185050026674e-08, // computed from source file params
+  "dend_shell_vol": 6.283185183253437e-08, // computed from source file params
+  "axon_shell_vol": 6.283185183253437e-08, // computed from source file params
+  "tau_CaClearance" : 0.001,  //  time constant for Ca2+ clearance (sec)
+  "Ca_base" : 5e-05, // [mM] source file: GPchans.g
+
+  //Synaptic conductances
+  // STN excitatory inputs
+  "G_AMPA" : 0.25e-9,
+  "tauRise_AMPA" : 0.001,
+  "tauFall_AMPA" : 0.003,
+
+  "G_NMDA" : 0.0125e-9,  //not used yet!
+  "tauRise_NMDA" : 0.01,
+  "tauFall_NMDA" : 0.03,
+
+  // Striatal inhibitory inputs
+  "G_GABA" : 0.25e-9,
+  "tauRise_GABA" : 0.001,
+  "tauFall_GABA" : 0.012,
+
+  // Pallidal inhibitory collaterals
+  "G_GABA_GP" : 1.50e-9,  //pallidal inputs
+  "tauRise_GABA_GP" : 0.001,
+  "tauFall_GABA_GP" : 0.012,
+
+  // Default input rates = 0
+  "STN_rate" : 0,
+  "striatum_rate" : 0,
+  "pallidum_rate" : 0,
+
+  // Reversal potentials
+  "E_AMPA" : 0,
+  "E_NMDA" : 0,
+  "E_GABA" : -0.080,
+
+// #############################################################################
+// # Parameters from /common/GP1_default.g 
+// #############################################################################
+
+  //Passive properties
+  "RA" : 1.74,        // uniform
+  "CM" : 0.024,   // all unmyelinated regions
+  "CM_my" : 0.00024,  // myelinated axon segments.
+  "RM_sd" : 1.47,     // soma
+  "RM_ax" : 1.47, // unmyelinated axonal regions
+  "RM_my" : 10,   // myelinated axon segments.
+  "ELEAK_sd" : -0.060,    // soma & dend
+  "ELEAK_ax" : -0.060,    // axon
+  "EREST_ACT" : -0.060,
+
+// #############################################################################
+// # Parameters from /common/actpars.g 
+// #############################################################################
+
+  // Voltage-gated ion channel densities
+  // These are the parameters in Gunay (2008) - Table 1 that are optimized
+  "G_Na_fast_GP" : 500,   // 'NaF' in DB
+  "G_Na_slow_GP" : 1.45,  // 'NaP' in DB
+  "G_Kv3_GP" : 10,        // 'Kv3' in DB
+  "G_Kv2_GP" : 1,         // 'Kv2' in DB
+  "G_Kv4_fast_GP" : 20,   // 'Kv4f' in DB
+  "G_Kv4_slow_GP" : 30,   // (not optimized)
+  "G_KCNQ_GP" : 2,        // 'KCQN' in DB
+  "G_Ca_HVA_GP" : 0.3,    // 'HVA' in DB
+  "G_K_ahp_GP" : 4,       // 'SK' in DB
+  "G_h_HCN_GP" : 1,       // 'HCN' in DB
+  "G_h_HCN2_GP" : 2.5,    // (not optimized)
+
+  // Multipliers for conductance densities
+  "G_mult" : 1,
+  "G_mult_Na_dend" : 0.7,
+  "G_mult_Kdr_dend" : 1,
+  "G_mult_KA_dend" : 2,
+  "G_mult_KCNQ_dend" : 1,
+  "G_mult_SK_dend" : 0.1,
+  "G_mult_Ca_dend" : 1,
+  "G_mult_HCN_dend" : 1,
+
+  "G_mult_Na_soma" : 0.7, 
+  "G_mult_Kdr_soma" : 1, 
+  "G_mult_KA_soma" : 1,
+  "G_mult_KCNQ_soma" : 1,
+  "G_mult_SK_soma" : 16,
+  "G_mult_Ca_soma" : 1,
+  
+  "G_mult_Na_axon" : 40,
+  "G_mult_Kdr_axon" : 40,
+  "G_mult_KA_axon" : 40,
+  "G_mult_KCNQ_axon" : 40,
+
+  // Parameters for axon stub in axonless morphology from Hendrickson (2011)
+  "G_NaF_axon": 5000,
+  "G_NaP_axon": 40,
+  "G_Kv2_axon": 640,
+  "G_Kv3_axon": 1280,
+  "G_Kv3_axon": 1280,
+  "G_Kv4f_axon": 1600,
+  "G_Kv4s_axon": 2400.0,
+  "G_KCNQ_axon": 0.4,
+}

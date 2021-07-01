@@ -1,0 +1,17 @@
+// complete cell
+
+access soma
+
+load_file(1,"3_ins_ch.hoc")
+load_file(1,"4_AHIS.hoc")
+	connect AH(0), soma[0](1)
+load_file(1,"5_axon.hoc")
+	node[0] delete_section()
+	connect MYSA[0](0), IS(1)
+load_file(1,"6_ax_term.hoc")
+load_file(1,"7_morphometry.hoc")
+
+flag_svstate = 0
+
+// Shape[0].color_list(secmed, 2) colora in rosso i dendriti medi
+

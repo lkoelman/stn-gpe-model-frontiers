@@ -1,0 +1,22 @@
+node[axonnodes-1] {
+	nseg = 5
+	diam = 3.84
+	L = 100
+	Ra=70
+	cm=1
+	
+	insert pas
+		g_pas = 0.002
+		e_pas = -72
+	insert na3rp
+		gbar_na3rp = 0.044
+		sh_na3rp = -3
+		ar_na3rp = 0.4
+	insert naps
+		gbar_naps = 0.00044
+		sh_naps = 7
+		ar_naps = 0.4
+	insert kdrRL
+		gMax_kdrRL = 0.07
+	insert extracellular xraxial=1e9 xg=1e10 xc=0
+}

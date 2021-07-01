@@ -1,0 +1,227 @@
+// file created to control purkinje simulation
+load_file("nrngui.hoc")
+
+objref vce	// voltage clamp
+objref g[7]	// some graphs
+
+objref vgraphbox, hgraphbox1, hgraphbox2
+vgraphbox=new VBox()
+vgraphbox.intercept(1)
+hgraphbox1=new HBox()
+hgraphbox1.intercept(1)
+
+for i=0,2 {
+	g[i]=new Graph()
+	g[i].exec_menu("Keep Lines")
+	
+}
+
+hgraphbox1.intercept(0)
+hgraphbox1.map()
+hgraphbox2=new HBox()
+hgraphbox2.intercept(1)
+
+for i=3,6 {
+	g[i]=new Graph()
+	g[i].exec_menu("Keep Lines")
+	
+}
+
+hgraphbox2.intercept(0)
+hgraphbox2.map()
+
+vgraphbox.intercept(0)
+
+vec_sizes = tstop/dt + 1	// recorded traces are all this size
+
+
+soma vce=new VClamp(0)
+
+vchold=-71
+vctestbase=-69
+
+vce.dur[0]=5
+vce.amp[0]=vchold
+vce.dur[1]=100
+vce.amp[1]=vctestbase
+vce.dur[2]=5 
+vce.amp[2]=vchold
+
+// load_file("runctrl.ses")
+
+vcincrement=10
+vcsteps=3
+
+proc voltfamily() {
+	
+
+	tstop=vce.dur[0]+vce.dur[1]+vce.dur[2]
+	
+
+	vce.amp[0]=vchold
+	vce.amp[2]=vchold
+	
+	for j=0, vcsteps-1 {
+		x=vctestbase+j*vcincrement
+		vce.amp[1]=x
+		// if (verbose) {print "test volt amplitude: ",x}
+		init()
+
+		run()
+		$o2.line(g[$1], dt)
+		if (stoppedrun()) {
+			break
+		}
+	}
+}
+
+print "Generating the curves for the model graphs 6 B, D, F, H, J, L, N"
+
+verbose=1
+
+// 6B
+if (verbose) { print "generating 6B (K fast)" }
+
+vchold=-71
+vcincrement=10
+vcsteps=8
+vce.dur[1]=100
+vce.dur[2]=30
+
+steps_per_ms=1
+dt=1
+
+objref Kfast
+Kfast= new Vector(vec_sizes)
+Kfast.record(&soma.ik_kpkj( 0.5 ))
+
+voltfamily(0, Kfast)	// first parameter is graph number, second is current object vector
+g[0].label(.5,.85,"K fast")
+
+// 6D
+if (verbose) { print "generating 6D (K mid)" }
+
+vchold=-71
+vcincrement=10
+vcsteps=9
+vce.dur[1]=100
+vce.dur[2]=30
+
+steps_per_ms=1
+dt=1
+
+objref Kmid
+Kmid= new Vector(vec_sizes)
+Kmid.record(&soma.ik_kpkj2( 0.5 ))
+
+voltfamily(1, Kmid)	// first parameter is graph number, second is current object vector
+g[1].label(.5,.9,"K mid")
+
+// 6F
+if (verbose) { print "generating 6F (K slow)" }
+
+vchold=-71
+vcincrement=10
+vctestbase=-61
+vcsteps=8
+vce.dur[1]=100
+vce.dur[2]=30
+
+steps_per_ms=1
+dt=1
+
+objref Kslow
+Kslow= new Vector(vec_sizes)
+Kslow.record(&soma.ik_kpkjslow( 0.5 ))
+
+voltfamily(2, Kslow)	// first parameter is graph number, second is current object vector
+g[2].label(.5,.9,"K slow")
+// 6H
+if (verbose) { print "generating 6H (BK)" }
+
+vchold=-90
+vcincrement=10
+vcsteps=5
+
+vce.dur[0]=2
+vce.dur[1]=20
+vce.dur[2]=5
+
+steps_per_ms=40
+dt=.025
+
+objref BK
+BK= new Vector(vec_sizes)
+BK.record(&soma.ik_bkpkj( 0.5 ))
+
+vctestbase=-40
+voltfamily(3, BK)	// first parameter is graph number, second is current object vector
+g[3].label(.5,.9,"BK")
+
+// 6J
+if (verbose) { print "generating 6J (P-type Ca)" }
+
+vchold=-90
+vcincrement=10
+vctestbase=-90
+vcsteps=11
+vce.dur[1]=10
+vce.dur[2]=5
+
+steps_per_ms=4
+dt=.25
+
+objref IP
+IP= new Vector(vec_sizes)
+IP.record(&soma.ica_cap( 0.5 ))
+
+voltfamily(4, IP)	// first parameter is graph number, second is current object vector
+g[4].label(.5,.95,"P-type Ca")
+
+// 6L
+if (verbose) { print "generating 6L (Ih)" }
+
+vchold=-50
+vcincrement=-10
+vctestbase=-60
+vcsteps=7
+vce.dur[0]=100
+vce.dur[1]=1200
+vce.dur[2]=300
+
+steps_per_ms=1
+dt=1
+
+objref Ih
+Ih= new Vector(vec_sizes)
+Ih.record(&soma.i_hpkj( 0.5 ))
+
+voltfamily(5, Ih)	// first parameter is graph number, second is current object vector
+g[5].label(.5,.95,"Ih")
+
+// 6N
+if (verbose) { print "generating 6N (leak)" }
+
+vchold=-71
+vcincrement=10
+vctestbase=-91
+vcsteps=5
+vce.dur[0]=10
+vce.dur[1]=100
+vce.dur[2]=30
+
+steps_per_ms=1
+dt=1
+
+objref leak
+leak= new Vector(vec_sizes)
+leak.record(&soma.i_lkpkj( 0.5 ))
+
+voltfamily(6, leak)	// first parameter is graph number, second is current object vector
+g[6].label(.5,.95,"I leak")
+
+for i=0, 6 {
+	g[i].exec_menu("View = plot")
+}
+
+vgraphbox.map()

@@ -1,0 +1,684 @@
+//Svjetlana Miocinovic
+//STN neuron (3D dendritic tree, no axon)
+//NEURON 5.5 (Windows version)
+//March 2004
+
+//NOTE: following files specify cell AND electrode topology, geometry, ionic concentrations
+load_file("n17_full9_fem_type1RD_Gillies.hoc") // Geometry #1
+//load_file("n17_full9_fem_type3RD_Gillies.hoc") // Geometry #3
+//load_file("n17_full9_fem_type4RD_Gillies.hoc") // Geometry #4
+
+
+//---------------------------------------------------------------------------------------
+// NOTE: Simulation parameters section
+
+strdef waveform_filename  //stimulus waveform made with capacitive Femlab model and fourier_waveform.m
+strdef voltage_filename  //voltage file (voltages for each cell and each compartment) made with dbs_pop_coord2.m
+strdef output_file1 , output_file2
+
+waveform_filename = "fem_fourier_waveform/ffw_reconstr_bipo2_encap250_136Hz_210us.txt"
+voltage_filename = "fem_voltage/STNtype4_bipo2_encap250_elecH1new.txt"
+output_file1  = "STNtype4_bipo2_elecH1new_FFT_Encap250_gaba0_1p8V_LKMN.dat"
+output_file2  = "STNtype4_bipo2_elecH1new_FFT_Encap250_gaba0_1p8V_LKMN.log"
+
+//Extracellular stimulation parameters
+Vamp = 30 //[V] extracell. stimulation voltage
+pw=0.21   //ms    //LOAD CORRECT FOURIER-DERIVED WAVEFORM
+
+//Extracellular stimulation parameters
+delay=100
+num_test_pulses = 25
+polarity = 1 //-1 for cathodic, +1 for anodic , set to 1 for bipolar stimuli
+freq=136  //Hz //LOAD CORRECT FOURIER-DERIVED WAVEFORM ; dont change later because extra_stim depends on it
+dur = num_test_pulses*1000/freq  //we want num_test_pulses current pulses
+ratio = 10      // for Asymmetric and pseudomonophasic : pre-pulse or post-pulse has amplitude amp/ratio, duration pw*ratio (and polarity -1*polarity)
+
+//Simulation parameters
+dt=0.01    //ms//   //CAN'T CHANGE BECAUSE extra_stim depends on it
+tstop = delay+dur+100  //don't change it later because extra_stim size depends on it.
+steps_per_ms=20 //100
+
+
+//create synapse and set parameters
+synstim=0 //2 	//[nA] amplitude for syntrainGABA and syntrainGLU trainIClamp -> DO NOT DEPEND ON ELECTRODE PARAMS
+synpw= 1	 	//[ms] pulse width for syntrainGABA and syntrainGLU trainIClamp -> DO NOT DEPEND ON ELECTRODE PARAMS
+GABAsynAg= 0.011 //[uS]
+
+//---------------------------------------------------------------------------------------
+
+objref GABAsynA, syntrainGABA
+
+// NOTE: create a pre-synaptic compartment
+create GABApre
+GABApre {
+	nseg=1
+	L=1
+	d=1
+	Ra=100
+	cm=1
+	insert pas
+		g_pas=0.001
+		e_pas=-65
+}
+
+// NOTE: `total` = total number of sections created per cell (comes from geometry file)
+
+max_pop = 60 // max number of cells in population
+objref V_raw, Ve, V
+V_raw=new Vector(total*max_pop,0) // NOTE: voltage attenuation for each section in entire simulation (all cells)
+Ve=new Vector(total,0) // NOTE: unit & amplitude corrected verson of V_raw for the current cell
+V=new Vector(total,0) // NOTE: temporary storage for V_raw for the current cell
+
+//variables for calculating average instantaneous firing freq, average interspike period and average freq (#spikes/recording_time)
+//at the end of axon, and in soma
+avg_inst_freq = 0
+std_inst_freq = 0
+avg_period = 0
+std_period = 0
+avg_freq = 0
+avg_inst_freq_soma = 0
+std_inst_freq_soma = 0
+avg_period_soma = 0
+std_period_soma = 0
+avg_freq_soma = 0
+objref order_freq
+order_freq = new Vector (dur, 0)   //instantaneous firing rate for each spike
+
+
+//initcell() //sets up mechanisms in the cell...from morphology file
+
+//------------------------------------------------------------------------
+// set up xyz scale bars
+
+// NOTE: create 3 sections that hold a pt3dlist
+// NOTE: these are the three unit vectors in X,Y,Z directions
+create xScale, yScale, zScale
+
+proc anatscale() {
+	if ($4>0) {  // if length arg is <= 0 then do nothing
+		xScale {
+			pt3dclear()
+			pt3dadd($1, $2, $3, 1)
+			pt3dadd($1+$4, $2, $3, 1)
+		}
+		yScale {
+			pt3dclear()
+			pt3dadd($1, $2, $3, 1)
+			pt3dadd($1, $2+$4, $3, 1)
+		}
+		zScale {
+			pt3dclear()
+			pt3dadd($1, $2, $3, 1)
+			pt3dadd($1, $2, $3+$4, 1)
+		}
+	}
+}
+
+anatscale(0,0,0,100)  // origin xyz and length
+
+//-----------------------------------------------------------------------------
+
+//Set up extracellular stimulus
+objref exIClmp
+exIClmp = new IClamp()  //extracellular stimulus//  FOURIER-DERIVED WAVEFORM  //this line must not be inside stimul()
+
+proc stimulus(){
+  // NOTE: this function is called in trial(), i.e. in each run
+
+	Vstim = Vamp * polarity
+
+  // NOTE: electrode = section representing the DBS electrode
+  // NOTE: this section will gets an IClamp that plays the waveform into it
+	electrode {  //electrode is created in morphology file
+		//exIClmp.PW=pw
+        //exIClmp.train=dur
+		//exIClmp.freq=freq
+
+    // NOTE: extra_stim (unscaled time-varying waveform) is played into &exIclmap.amp
+    // NOTE: exIClmp.i is multiplied with the constant unit & amplitude corrected version of V_raw (in Ve) at each timestep: see `proc advance()`
+		exIClmp.loc(0.5)
+		exIClmp.del=0         //will use vectorplay
+		exIClmp.dur = 1000000  //will use vectorplay
+		exIClmp.amp=0 //will use vectorplay to determine stimulus amplitude at any time point
+	}
+
+  // NOTE: V_raw (scaled voltage) are read into V.x[i] during simulation
+  // NOTE: Ve is unit & amplitude corrected verson of V_raw
+  // NOTE: Ve is then scaled by the time-dependent waveform in exiClamp.i
+	for i=0,total-1 {
+		Ve.x[i] = Vstim*V.x[i]*1e3	// V external (in mV) for each compartment
+	}
+
+	// NOTE: pre-synaptic compartments get a custom IClamp (see train.mod) that inject a rectangular current wavorm
+	GABApre { //pre-synaptic terminal (created in morphology file)
+		syntrainGABA = new trainIClamp()
+		syntrainGABA.loc(0.5)
+		syntrainGABA.del=delay
+		syntrainGABA.PW=synpw
+		syntrainGABA.train=dur
+		syntrainGABA.freq=freq
+		syntrainGABA.amp=synstim
+	}
+
+	soma[1] { //soma is stimulated (inhibited) by GABAa synaptic current
+		GABAsynA=new GABAa() // NOTE: see gabaa.mod: this is a Destexhe synapse with pointer to pre-synaptic voltage (g rising exponentially when Vpre>Vth, falling otherwise)
+		GABAsynA.loc(.5)
+		setpointer GABAsynA.pre, GABApre.v(0.5)
+		GABAsynA.gmax=GABAsynAg
+	}
+
+
+}
+stimulus()
+
+//----------------------------------------------------------------------
+
+
+//describes custom wavefrom for extracellular stimulus (fourier-derived waveform in this case)
+objref extra_stim
+time_step = int(tstop/dt) + 1 // NOTE: total number of simulation steps
+extra_stim = new Vector(time_step,-1)  //RESIZE IF CHANGING TSTOP LATER
+
+//load one cycle of fourier-derived waveform shape (normalized to 1V; dt=0.01); loads vector fdw
+objref fdw
+cycle_size = int(1000/(freq*dt)) + 1
+fdw = new Vector(cycle_size,0)
+xopen(waveform_filename) // NOTE: this sets all the fdw vector entries (one cycle of original stimulation waveform in time-domain, 1V peak-to-peak)
+
+// NOTE: extra_stim is played into the IClamp in the electrode compartment
+// calculate extra_stim values for each time-step. These values will then be fed to exIClmp.amp
+proc calc_extra_stim(){local tmp_del, tmp_dur, my_time, i, j
+
+    my_time = 0
+
+    if (freq == 0 || dur == 0 || Vamp == 0) {  //no stimulation
+        for i = 0, time_step-1 {
+            extra_stim.x[i] = 0
+        }
+    } else {
+          i = 0
+          while(my_time < delay && i < extra_stim.size()) {  //before stimulus train
+               extra_stim.x[i] = 0
+               i = i+1
+	       my_time = my_time + dt
+          }
+          while (my_time < delay+dur && i < extra_stim.size()) {   //during stimulus train
+		  for j = 0, cycle_size-1 {
+                 	 extra_stim.x[i] = fdw.x[j]   //extra_stim has no units
+                 	 i = i+1
+                 	 my_time = my_time + dt
+		  }
+          }
+	  while (i < extra_stim.size()) {     //after stimulus train
+                  extra_stim.x[i] = 0
+                  i = i+1
+                  my_time = my_time + dt
+          }
+     }
+
+}
+calc_extra_stim()
+
+//--------------------------------------------------------------------------
+// NOTE: set up AP counters/time recording
+
+
+// NOTE: first set up AP counters entering and exiting one cell
+objref apc, apc_times, apc_soma, apc_times_soma
+proc setup_AP_count(){
+
+  // NOTE: count APs exiting the axon (@ last node of Ranvier)
+	AP_ct_node = -1
+	node[axonnodes-2] apc = new APCount(0.2)
+	AP_ct_node = axonnodes-2
+	apc_times = new Vector()
+	apc.thresh = -20 //mV
+	apc.record(apc_times)
+
+  // NOTE: count APs in soma
+	soma[1] apc_soma = new APCount(0.2)
+	apc_times_soma = new Vector()
+	apc_soma.thresh = -20 //mV
+	apc_soma.record(apc_times_soma)
+}
+setup_AP_count()
+
+// NOTE: set up AP counters in all cells
+//set up AP counters in every node and soma
+objectvar AP_counters[axonnodes+1]  //AP counter at every node and soma
+objectvar AP_timerec[axonnodes+1]   //records AP time at every node and soma
+for i =0, axonnodes{
+    AP_timerec[i] = new Vector()
+}
+
+
+proc setup_APc_all(){
+	num_ap_counters = axonnodes + 1
+	for i = 0,num_ap_counters-2 {
+		node[i] AP_counters[i] = new APCount(.5)   //put AP counter in every node
+		AP_counters[i].record(AP_timerec[i])       //records times of APs
+	}
+	soma[1] AP_counters[num_ap_counters-1] = new APCount(.5)  //put AP counter in soma //MULTICOMPARTMENT SOMA
+	AP_counters[num_ap_counters-1].record(AP_timerec[num_ap_counters-1])
+}
+setup_APc_all()
+
+//------------------------------------------------------------------------------
+//threshold seeking functions
+
+objref extra_APs, required_APs
+required_APs = new Vector(200,0) //times of current stimulus pulses
+num_req_APs = 0 //number of APs expected in response to stimulus pulses (ie size of required_APs vector)
+extra_APs = new Vector(200,0)  //times of APs during stimulation that are not caused by stimulus pulses
+num_extra = 0 //size of extra_APs vector
+cyc = 0 //number of stimulation pulses
+epsilon = 0.1 //was 0.01 //was 0.001 //allowed error when looking for threshold
+AP_delay = 4 //ms// //time allowed between stimulus pulse initiation and AP at the AP_counter so that
+                //AP is considered to be caused by stimulus itself
+num_req = 0 //number of required APs that happened
+soma_orig_ap = 0 //number of APs that originated in soma but counted as stimulus related NOT ACCURATE
+soma_orig_ap2 = 0 //number of APs that originated in soma but counted as extra APs NOT ACCURATE
+num_soma_ap = 0 //number of APs in soma during stim
+
+//calculate times of current stimulus pulses (starting time), and store them in Vector required_APs
+//APs should follow after a certain time whose maximum is AP_delay
+proc calculate_required_APs() {  local i
+    num_req_APs = 0
+    if (freq == 1) {
+	cyc = 1
+    } else {
+         if (dur > tstop) {
+                  cyc = int((tstop-delay)*freq/1000)
+         } else {
+                  cyc = int(dur*freq/1000)
+         }
+     }
+
+     for i = 0, cyc-1 {
+              required_APs.x[num_req_APs] = delay+i*1000/freq
+              num_req_APs = num_req_APs +1
+     }
+
+     if (num_req_APs != num_test_pulses) {
+		print "Freq = ", freq, "...Number of required APs is not", num_test_pulses, "!!, but ", num_req_APs
+     }
+}
+
+
+//function checks if cell responds to all stimulus pulses (but it may overestimate # spike responses )
+//and records any extra APs to a vector extra_APs
+func response_to_stimulus(){  local i, j, flag, flag2
+
+     num_req = 0
+     num_extra = 0
+     flag = 0
+     flag2 = 0
+     soma_orig_ap= 0
+     soma_orig_ap2= 0
+
+     for i = 0, apc.n-1 {
+         if ((apc_times.x[i] > delay) && (apc_times.x[i] <= delay+dur+AP_delay)) { //AP_delay added if there are any APs that are responding to stimulus pulse at the very end of pulse duration
+                  flag = 0
+                  for j = flag2, num_req_APs-1 {
+                       if ((apc_times.x[i] > required_APs.x[j]) && (apc_times.x[i] <= required_APs.x[j]+AP_delay)) {
+  			      if (soma_ap(i)==1){
+                                  soma_orig_ap= soma_orig_ap+1
+                              }
+                              num_req = num_req+1
+                              flag = 1
+                              flag2= j+1
+                              break
+                       }
+                  }
+                  if (flag == 0) {
+		       if (soma_ap(i)==1){
+                                  soma_orig_ap2= soma_orig_ap2+1
+                       }
+                       extra_APs.x[num_extra] = apc_times.x[i]
+                       num_extra = num_extra+1
+                  }
+         }
+     }
+
+   print "      Num required current pulses = ", num_req_APs, "  Num required that happened = ", num_req
+   print "      Num_extra = ", num_extra
+
+	if (num_req >= 0.8*num_req_APs) {  //there is AP following 80% of stimulus pulses
+           return 1
+     }
+
+     return 0
+}
+
+//returns 1 is AP originated in soma, 0 otherwise
+//ap_number is ordinal number of AP
+func soma_ap(){local soma_ap, node0_ap
+
+	ap_number=$1
+        if ((AP_counters[num_ap_counters-1].n) <= ap_number || (AP_counters[0].n) <= ap_number) {
+            return 0 //couldn't determine if AP originated in soma
+        }
+
+        soma_ap = AP_timerec[num_ap_counters-1].x[ap_number]
+		node0_ap = AP_timerec[0].x[ap_number]
+
+        if (soma_ap < node0_ap) {
+              return 1
+        }
+
+        return 0
+}
+
+// NOTE: run a simulation with Voltage amplitude in argument $1
+func trial() {
+	Vamp = $1   //in volts
+        print "                 Trial voltage = ", Vamp*polarity, " V"
+	stimulus()
+	init()
+	run()
+
+        if (response_to_stimulus() == 1) {
+             return 1
+        }
+        return 0
+}
+
+// NOTE: squeezes bounds of Voltage amplitude until minimum Voltage for excitation is found
+//return voltage threshold in V
+func threshold() {
+	strength = 1.0   //in Volts
+        low_limit = 1e-3
+	lbound = low_limit
+        up_limit = 10
+	ubound = up_limit
+
+	while (lbound == low_limit || ubound == up_limit) {
+		excited = trial(strength) // NOTE: simulate with current amplitude
+		if (excited > 0) {
+			ubound = strength
+			strength = ubound/2
+		}else {
+	                lbound = strength
+		        strength = 2*lbound
+                }
+                if(lbound>ubound)  return up_limit
+                if (strength>ubound)  return up_limit
+	}
+
+	strength = (ubound+lbound)/2
+
+   while((abs(ubound-lbound))>(abs(epsilon*ubound))) {
+		excited = trial(strength)
+		if (excited > 0) {
+			ubound = strength
+			strength = (ubound+lbound)/2
+		}else {
+			lbound = strength
+			strength = (3*ubound+lbound)/4
+		}
+	}
+   
+   return strength  // threshold in Volts
+   //strength is between ubound and lbound; ubound is returned because that is the
+   //closest value to strength for which we know causes an AP (strength might not be enough)
+}
+
+//--------------------------------------------------------------
+//finding AP initiation site
+objref temp_vec
+temp_vec = new Vector(num_ap_counters,0)
+proc AP_init_site(){
+        AP_site1 = -1   //node where AP appears first
+        AP_site2 = -1   //node where AP appears second
+	time1 = -1   //time of AP appearance at site1
+	time2 = -1   //time of AP appearance at site2
+
+        for qw = 0, num_ap_counters-1{
+                 temp_vec.x[qw] = 100000  //set it to a big number so it doesn't interfere with finding shortest time
+		 for wh=0, AP_counters[qw].n-1 {
+			if (AP_timerec[qw].x[wh] > delay) {   //first AP when stim starts
+				temp_vec.x[qw] = AP_timerec[qw].x[wh]
+				break
+			}
+		 }
+        }
+
+        if (temp_vec.min() ==  100000) {
+               print "NO AP during stimulation...."
+        } else{
+              //find index of AP counter that recorded shortest time (ie where AP first appeared)
+              AP_site1 = temp_vec.min_ind()
+              time1 = temp_vec.x[AP_site1]
+
+	      //find second site for AP initialization
+              temp_vec.x[AP_site1]= 100000
+              AP_site2 = temp_vec.min_ind()  //2nd most depolarized node at time1
+              time2 = temp_vec.x[AP_site2]
+        }
+
+}
+//------------------------------------------------------------------------------
+//calculate firing freq (#spikes/recording_time), average instantaneous firing freq, firing period (and standard deviations)
+//consider time between time_beg and time_end (given as arguments)
+//AP counter is distal node
+proc calculate_freq(){ local time_beg, time_end, sum1, sum2, sum3, sum4, dd, kk, gg
+
+    time_beg = $1
+    time_end = $2
+
+    sum1 = 0
+    sum2 = 0
+    sum3 = 0
+    sum4 = 0
+    dd = 0  //number of interspike intervals
+    gg = 0 //number of spikes
+    for kk = 0, apc.n-2 {
+          if ((apc_times.x[kk] > time_beg) && (apc_times.x[kk+1] <= time_end)) {
+             tmp5 = apc_times.x[kk+1]-apc_times.x[kk]
+             sum1 = sum1 + tmp5
+             sum2 = sum2 + tmp5^2
+             sum3 = sum3 + (1000/tmp5)   //convert from ms to seconds, then to Hz
+             sum4 = sum4 + (1000/tmp5)^2
+
+	     order_freq.x[dd] = (1000/tmp5)   //convert from ms to seconds, then to Hz
+	     dd=dd+1
+        }
+    }
+
+    avg_period = 0
+    avg_inst_freq = 0
+    if (dd != 0)  {
+            avg_period = sum1/dd
+            avg_inst_freq = sum3/dd
+    }
+    for kk = 0, apc.n-1 {
+	  if ((apc_times.x[kk] > time_beg) && (apc_times.x[kk] <= time_end)) gg = gg+1
+    }
+    avg_freq = 1000*gg/(time_end-time_beg)  //convert time from ms to sec
+
+    std_period = 0
+    std_inst_freq = 0
+    if (dd-1 > 0)  {
+            var_period = (sum2 - sum1^2/dd)/(dd-1)
+            var_freq = (sum4 - sum3^2/dd)/(dd-1)
+            if (var_period > 0) {
+                std_period = sqrt(var_period)
+            }
+            if (var_freq > 0) {
+                std_inst_freq = sqrt(var_freq)
+            }
+    }
+}
+
+//calculate firing freq (#spikes/recording_time), average instantaneous firing freq, firing period (and standard deviations)
+//consider time between time_beg and time_end (given as arguments)
+//use AP counter at the soma
+proc calculate_freq_soma(){ local time_beg, time_end, sum1, sum2, sum3, sum4, dd, kk, gg
+
+    time_beg = $1
+    time_end = $2
+
+    sum1 = 0
+    sum2 = 0
+    sum3 = 0
+    sum4 = 0
+    dd = 0  //number of interspike intervals
+    gg = 0 //number of spikes
+    for kk = 0, apc_soma.n-2 {
+          if ((apc_times_soma.x[kk] > time_beg) && (apc_times_soma.x[kk+1] <= time_end)) {
+             tmp5 = apc_times_soma.x[kk+1]-apc_times_soma.x[kk]
+             sum1 = sum1 + tmp5
+             sum2 = sum2 + tmp5^2
+             sum3 = sum3 + (1000/tmp5)   //convert from ms to seconds, then to Hz
+             sum4 = sum4 + (1000/tmp5)^2
+
+	     order_freq.x[dd] = (1000/tmp5)   //convert from ms to seconds, then to Hz
+	     dd=dd+1
+        }
+    }
+
+    avg_period_soma = 0
+    avg_inst_freq_soma = 0
+    if (dd != 0)  {
+            avg_period_soma = sum1/dd
+            avg_inst_freq_soma = sum3/dd
+    }
+    for kk = 0, apc_soma.n-1 {
+	  if ((apc_times_soma.x[kk] > time_beg) && (apc_times_soma.x[kk] <= time_end)) gg = gg+1
+    }
+    avg_freq_soma = 1000*gg/(time_end-time_beg)  //convert time from ms to sec
+
+    std_period_soma = 0
+    std_inst_freq_soma = 0
+    if (dd-1 > 0)  {
+            var_period = (sum2 - sum1^2/dd)/(dd-1)
+            var_freq = (sum4 - sum3^2/dd)/(dd-1)
+            if (var_period > 0) {
+                std_period_soma = sqrt(var_period)
+            }
+            if (var_freq > 0) {
+                std_inst_freq_soma = sqrt(var_freq)
+            }
+    }
+}
+
+//return number of APs in soma
+//consider time between time_beg and time_end (given as arguments)
+//AP counter is in soma
+func calculate_soma_ap(){ local time_beg, time_end, gg, kk
+
+    time_beg = $1
+    time_end = $2
+
+    gg = 0 //number of spikes
+    for kk = 0, AP_counters[num_ap_counters-1].n-2 {
+          if ((AP_timerec[num_ap_counters-1].x[kk] > time_beg) && (AP_timerec[num_ap_counters-1].x[kk+1] <= time_end)) {
+		gg=gg+1
+          }
+    }
+    return gg
+}
+
+//calculate time between end of stimulus pulse and first spontaneous spike
+//return -1 if there are no spikes after stimulus ended
+//wait wait_time milliseconds after stimulus ends before looking for an after stimulus spike
+func calculate_delay(){ local wait_time
+
+    wait_time = 2 //ms   //WAS 2
+
+    for kk = 0, apc.n-1 {
+        if (apc_times.x[kk] > delay+dur+wait_time) {
+             return apc_times.x[kk]-(delay+dur)
+        }
+    }
+
+    return -1
+}
+
+//calculate instantaneous firing frequency of first interspike interval during stimulus
+//return -1 if there are no spikes (or only one) during stimulus
+func calculate_first_int(){
+
+    for kk = 0, apc.n-2 {
+        if ((apc_times.x[kk] > delay) && (apc_times.x[kk+1] <= delay+dur)) {
+             return 1000/(apc_times.x[kk+1]-apc_times.x[kk])  //convert to seconds, then to Hz
+        }
+    }
+
+    return -1
+}
+
+//procedure that returns number of APs between time time_beg and time_end
+func num_APs() { local count
+
+	time_beg = $1
+  	time_end = $2
+
+	count = 0
+	for kk = 0, apc.n-1 {
+		if ((apc_times.x[kk] > time_beg) && (apc_times.x[kk] <= time_end)) {
+	 		count = count + 1
+		}
+	}
+	return count
+}
+
+//---------------------------------------
+// NOTE: this is the custom advance() method called in NEURON's run() function
+proc advance(){
+	for i=0,total-1 {
+      // NOTE: s[] is defined in morphology file and contains all compartments
+		s[i].sec.e_extracellular(0.5)=(exIClmp.i)*Ve.x[i]	//mV//
+	}
+	fadvance()
+}
+
+
+//FOR FOURIER-WAVE STIM (COMMENT OUT FOR RECTANGULAR PULSES)
+//feed values of extra_stim to IClamp amplitude. Values change at each time step (dt).
+//It is important that 'play' be set up before finitialize, but actual values can be calculated later
+extra_stim.play(&exIClmp.amp, dt)
+
+finitialize(v_init)
+fcurrent()
+
+
+xopen("STN_dbs_fem_syn.ses")
+tstop = delay+dur+100
+
+//--------------------------------------------------------------------
+// NOTE: read 3D location info and V_raw values representing resistive voltage attenuation
+objref cell_pos
+cell_pos=new Vector(max_pop*3,0)
+
+// NOTE: see files in folder ./fem_voltage
+// NOTE: this sets `cell_pos` entries, which is consecutive x,y,z for 21 cells
+// NOTE: this sets `V_raw` entries (attenuated Voltage for each section of each cell)
+xopen(voltage_filename)  //load extracell. voltages from FEMLAB
+
+//locations of neurons
+//num_cells is number of cells in population (loaded with voltage data)
+// NOTE: `cell_coords` is used nowhere for positioning cell, but only used for logging/reporting (attenuation in V_raw for each compartment is sufficient to take into account location effect)
+objectvar cell_coords[num_cells]   //coordinates of cells in population (their center coords)
+for i =0, num_cells-1{
+    cell_coords[i] = new Vector(3,0)
+    cell_coords[i].x[0] = cell_pos.x[i*3]   //cell_pos is also loaded with voltage data
+    cell_coords[i].x[1] = cell_pos.x[i*3+1]
+    cell_coords[i].x[2] = cell_pos.x[i*3+2]
+}
+
+
+//Extracellular stimulus pulse frequency (Hz)
+objref freq_vec
+freq_vec = new Vector (5,0)
+freq_vec.x[0]=2
+freq_vec.x[1]=10
+freq_vec.x[2]=50
+freq_vec.x[3]=100
+freq_vec.x[4]=136
+
+// LKMN: apply rigid transformation to cell
+
+// LKMN: fill V_raw by evaluating function at each updated compartment location
+
+

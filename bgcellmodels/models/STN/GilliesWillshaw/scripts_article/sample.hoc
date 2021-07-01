@@ -1,0 +1,285 @@
+// *** STh Simulation
+   
+   // NOTE: set to 0 for no plots (e.g. if you want to plot using other library)
+   // NOTE: I commented this out so you can set this externally, before calling the script
+   graphics = 1     // go we do any graphics?
+   
+   if (graphics>0) {load_file("nrngui.hoc")} else {load_file("stdgui.hoc")}
+   
+   tstop      = 8000   
+   
+// *** Load the cell prototypes
+
+   hide = xopen("SThprotocell.hoc")   
+   
+// *** Turn on CVode mode
+
+   objref cvode
+
+   cvode = new CVode(0)
+   cvode.active(1)
+   
+// *** Create the STh cells
+
+   objref SThtype,SThcells[1]
+
+   printf("Creating STh Neurons\n\n")
+   
+   SThtype = new SThproto()
+   
+   SThcells[0] = new SThcell(0,SThtype)
+
+// *** Setup the maximum conductances over the morphology
+
+   // general support functions
+   // NOTE: recording vectors also declared here
+   // NOTE: every time newgraph() is called, Vectors rect and recv are copied to the given vectors
+   hide = xopen("tools.hoc")
+   
+   // uniform conductances...
+   // extra var definitions (e.g.  default_*) are used in the set/unset TTX functions.
+      
+   // Na   
+   default_gNa_soma = 1.483419823e-02 
+   default_gNa_dend = 1.0e-7
+   SThcells[0].soma.gna_Na = default_gNa_soma
+   // NaL (can interchange with the Do & Bean model)
+   default_gNaL_soma = 1.108670852e-05
+   default_gNaL_dend = 0.81e-5
+   SThcells[0].soma.gna_NaL = 1.108670852e-05
+   
+   // linear conductances (loaded from files)...
+   printf("loading linear+uniform conductances\n")
+   
+   // KDR
+   cset(0,"gk_KDR","")
+   // Kv3.1   
+   cset(0,"gk_Kv31","")
+   // Ih
+   cset(0,"gk_Ih","")
+   // sKCa
+   cset(0,"gk_sKCa","")
+   // CaT   
+   cset(0,"gcaT_CaT","")
+   // CaN
+   cset(0,"gcaN_HVA","")
+   // CaL
+   cset(0,"gcaL_HVA","")
+   
+   // set the ion styles  
+   
+   forall ion_style("na_ion",1,2,1,0,1)
+   forall ion_style("k_ion",1,2,1,0,1)
+   forall ion_style("ca_ion",3,2,1,1,1)   
+   
+  
+// *** Default section
+
+   access SThcells[0].soma
+   
+// *** Other objects (stimulators and AP counts etc)
+
+   objectvar stim1, stim2, stim3
+   
+   SThcells[0].soma stim1 = new IClamp(0.5)
+   SThcells[0].soma stim2 = new IClamp(0.5)
+   SThcells[0].soma stim3 = new IClamp(0.5)
+   
+   stim1.del = 0
+   stim1.dur = 0
+   stim1.amp = 0.0
+
+   stim2.del = 0
+   stim2.dur = 0
+   stim2.amp = 0.0
+   
+   stim3.del = 0
+   stim3.dur = 0
+   stim3.amp = 0.0
+   
+// *** cvode tolerance scales...
+
+   cvode.atol(0.0001)
+   cvode.atolscale(&SThcells[0].soma.cai,1.0e-3)   
+   
+// *** demo graphs...
+   
+   objref vgraph,mingraph,spon1graph,spon2graph,reboundgraph,slowgraph,fastgraph,mixedgraph
+   
+   if (graphics>0) {
+     vgraph = new Graph(0)
+     vgraph.view(0,-75.0-5,tstop, 90+10, 10, 400, 325, 215)
+     vgraph.addexpr("SThcells[0].soma.v(0.5)")
+     graphList[0].append(vgraph)   
+   }
+      
+   // record voltage/time points to transfer into other vectors/plots or for later analysis
+   recv.record(&SThcell[0].soma.v(0.5))
+   rect.record(&t)
+   
+   // *** AP characteristics (compare with Beurrier et al. 1999)
+   
+   celsius = 30
+   
+   printf("*** Action potential form\n")
+   
+   // Beurrier et al (1999) Calculated aCSF
+   
+   set_aCSF(3)
+   
+   tstop = 500
+   
+   dt=0.025
+   init()
+   run()
+   
+   whichAP = tstop-200  
+   
+   APOK=findAP(whichAP,-42.0,recv,rect,recapv,recapt)   
+   
+   printf(">>> len(rect) = %d , len(recv) = %d", rect.size(), recv.size())
+   if (graphics>0) {newgraph(recapt,recapv,mingraph,tstop-200,380,110,0,"Action Potential (30 degC)")}
+   printf(">>> len(rect) = %d , len(recv) = %d", rect.size(), recv.size())
+   printf(">>> len(recapt) = %d , len(recapv) = %d", recapt.size(), recapv.size())
+   
+   // *** spontaneous firing characteristics (compare with Beven & Wilson 1999)
+   
+   printf("*** Resting firing rate (at 25 & 37 degC) \n")
+   
+   celsius = 25
+   
+   set_aCSF(4)
+   
+   tstop = 2100
+   
+   dt=0.025  
+   init()
+   run()
+   
+   if (graphics>0) {newgraph(recsp1t,recsp1v,spon1graph,200,380,400,1,"Rest firing at 25 degC")}
+   printf(">>> len(rect) = %d , len(recv) = %d", rect.size(), recv.size())
+   printf(">>> len(recapt) = %d , len(recapv) = %d", recapt.size(), recapv.size())
+   printf(">>> len(recsp1t) = %d , len(recsp1v) = %d", recsp1t.size(), recsp1v.size())    
+   
+   // now at 37 degC (compare with Hallworth et al 2003)
+   celsius = 37
+   
+   // aCSF same as already set above
+   
+   tstop = 2100
+   
+   dt=0.025  
+   init()
+   run()   
+   
+   if (graphics>0) {newgraph(recsp2t,recsp2v,spon2graph,200,380,690,1,"Rest firing at 37 degC")}   
+   
+   // *** Rebound bursting (compare with Beven et al. 2002)
+   
+   printf("*** Rebound burst (at 35 degC) \n")   
+   
+   celsius = 35
+   
+   // aCSF same as already set above
+   
+   stim1.del = 0
+   stim1.dur = 1000
+   stim1.amp = 0.0
+   
+   stim2.del = 1000
+   stim2.dur = 500
+   stim2.amp = -0.25
+   
+   stim3.del = 1500
+   stim3.dur = 1000
+   stim3.amp = 0.0
+   
+   tstop    = 2500
+   
+   dt=0.025  
+   init()
+   run()   
+   
+   if (graphics>0) {newgraph(recrbt,recrbv,reboundgraph,500,10,690,1,"Rebound (35 degC)")}      
+   
+   // *** Rhythmic bursting (compare with Hallworth et al. 2003)
+   
+   printf("*** Slow rhythmic bursting (at 37 degC) \n")    
+   
+   celsius = 37
+   
+   // aCSF same as already set above
+   
+   stim1.del = 0
+   stim1.dur = 40000
+   stim1.amp = -0.25
+   
+   stim2.del = 0
+   stim2.dur = 0
+   stim2.amp = 0.0
+   
+   stim3.del = 0
+   stim3.dur = 0
+   stim3.amp = 0.0   
+   
+   tstop = 8000
+   
+   applyApamin()
+   
+   dt=0.025  
+   init()
+   run()
+   
+   washApamin()
+   
+   if (graphics>0) {newgraph(recsrt,recsrv,slowgraph,2000,750,400,1,"Slow rhythmic bursting (Apamin, 37 degC)")}    
+   
+   printf("*** Fast rhythmic bursting (at 37 degC) \n")    
+   
+   celsius = 37
+   
+   // aCSF same as already set above
+   
+   stim1.del = 0
+   stim1.dur = 40000
+   stim1.amp = -0.35
+   
+   tstop = 4000
+   
+   // 10% decrease in dendritic linear CaL (see Figure 8A)
+   cset(0,"gcaL_HVA","-dl0.9")
+   
+   applyApamin()
+   
+   dt=0.025  
+   init()
+   run()
+   
+   washApamin()
+   
+   if (graphics>0) {newgraph(recfrt,recfrv,fastgraph,2000,750,110,1,"Fast rhythmic bursting (Apamin, 37 degC, CaL-10%)")}
+ 
+    printf("*** Mixed rhythmic bursting (at 37 degC) \n")    
+   
+   celsius = 37
+
+   // aCSF same as already set above
+   
+   stim1.del = 0
+   stim1.dur = 40000
+   stim1.amp = -0.32
+   
+   tstop = 8000
+   
+   // 10% increase in dendritic linear CaL (see Figure 8A,B)
+   cset(0,"gcaL_HVA","-dl1.1")
+   
+   applyApamin()
+   
+   dt=0.025  
+   init()
+   run()
+   
+   washApamin()
+   
+   if (graphics>0) {newgraph(recmrt,recmrv,mixedgraph,5000,750,690,1,"Mixed rhythmic bursting (Apamin, 37 degC, CaL+10%)")}

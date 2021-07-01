@@ -1,0 +1,642 @@
+{
+  "GABAsynTM": {
+    "parameters": {
+      "gmax_GABAA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.05
+      }, 
+      "gmax_GABAB": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "tau_r_GABAB": {
+        "units": "ms", 
+        "comment": "Dual-exponential neurotransmitter profile", 
+        "value": 16.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 100.0
+      }, 
+      "Erev_GABAB": {
+        "units": "mV", 
+        "comment": "GABAB reversal potential", 
+        "value": -95.0
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 5.0
+      }, 
+      "Erev_GABAA": {
+        "units": "mV", 
+        "comment": "GABAA reversal potential", 
+        "value": -80.0
+      }, 
+      "tau_r_GABAA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_GABAA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_d_GABAB": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 60.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GABAsynTM.mod"
+  }, 
+  "GABAsynTM2": {
+    "parameters": {
+      "gmax_GABAA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "tau_facil_A": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 100.0
+      }, 
+      "tau_facil_B": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 100.0
+      }, 
+      "gmax_GABAB": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "tau_rec_A": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 5.0
+      }, 
+      "tau_rec_B": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 5.0
+      }, 
+      "tau_r_GABAB": {
+        "units": "ms", 
+        "comment": "Dual-exponential neurotransmitter profile", 
+        "value": 5.0
+      }, 
+      "Erev_GABAB": {
+        "units": "mV", 
+        "comment": "GABAB reversal potential", 
+        "value": -95.0
+      }, 
+      "Erev_GABAA": {
+        "units": "mV", 
+        "comment": "GABAA reversal potential", 
+        "value": -80.0
+      }, 
+      "U1_B": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.05
+      }, 
+      "U1_A": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.05
+      }, 
+      "tau_r_GABAA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_GABAA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_d_GABAB": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 25.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GABAsynTM2.mod"
+  }, 
+  "AMPAsynTM": {
+    "parameters": {
+      "e": {
+        "units": "mV", 
+        "comment": "AMPA reversal potential", 
+        "value": 0.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 200.0
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.5
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 200.0
+      }, 
+      "tau_r_AMPA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_AMPA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "gmax_AMPA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/AMPAsynTM.mod"
+  }, 
+  "GABAAsynTM": {
+    "parameters": {
+      "gmax_GABAA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "use_stdp_A": {
+        "units": "1", 
+        "comment": "flag indicating whether STD/STP is enabled for GABA-A", 
+        "value": 1.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 200.0
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.5
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 200.0
+      }, 
+      "Erev_GABAA": {
+        "units": "mV", 
+        "comment": "GABAA reversal potential", 
+        "value": -80.0
+      }, 
+      "tau_r_GABAA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_GABAA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GABAAsynTM.mod"
+  }, 
+  "GLUsyn": {
+    "parameters": {
+      "mg": {
+        "units": "mM", 
+        "comment": "Initial concentration of mg2+", 
+        "value": 1.0
+      }, 
+      "e": {
+        "units": "mV", 
+        "comment": "AMPA and NMDA reversal potential", 
+        "value": 0.0
+      }, 
+      "tau_d_NMDA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 43.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 200.0
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.5
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 200.0
+      }, 
+      "tau_r_AMPA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_AMPA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_r_NMDA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.29
+      }, 
+      "gmax_NMDA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "gmax_AMPA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GLUsyn.mod"
+  }, 
+  "GABAsyn2": {
+    "parameters": {
+      "gmax_GABAA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.05
+      }, 
+      "gmax_GABAB": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "KD": {
+        "units": "None", 
+        "comment": "dissociation constant of K+ channel", 
+        "value": 100.0
+      }, 
+      "tau_r_GABAB": {
+        "units": "ms", 
+        "comment": "Dual-exponential neurotransmitter profile", 
+        "value": 5.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 100.0
+      }, 
+      "Erev_GABAB": {
+        "units": "mV", 
+        "comment": "GABAB reversal potential", 
+        "value": -95.0
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 5.0
+      }, 
+      "Erev_GABAA": {
+        "units": "mV", 
+        "comment": "GABAA reversal potential", 
+        "value": -80.0
+      }, 
+      "K3": {
+        "units": "None", 
+        "comment": "/ms)       : rate of G-protein production", 
+        "value": 0.098
+      }, 
+      "n": {
+        "units": "None", 
+        "comment": "nb of binding sites of G-protein on K+", 
+        "value": 4.0
+      }, 
+      "K4": {
+        "units": "None", 
+        "comment": "/ms)       : rate of G-protein decay", 
+        "value": 0.033
+      }, 
+      "tau_r_GABAA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_GABAA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_d_GABAB": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 25.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GABAsynTmGprot2.mod"
+  }, 
+  "GABAsyn": {
+    "parameters": {
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.5
+      }, 
+      "K3": {
+        "units": "None", 
+        "comment": "/ms)       : rate of G-protein production", 
+        "value": 0.083
+      }, 
+      "K2": {
+        "units": "None", 
+        "comment": "/ms)       : backward (unbinding) rate of receptor", 
+        "value": 0.02
+      }, 
+      "K1": {
+        "units": "None", 
+        "comment": "/ms mM)    : forward binding rate to receptor", 
+        "value": 0.66
+      }, 
+      "K4": {
+        "units": "None", 
+        "comment": "/ms)      : rate of G-protein decay", 
+        "value": 0.0079
+      }, 
+      "n": {
+        "units": "None", 
+        "comment": "nb of binding sites of G-protein on K+", 
+        "value": 4.0
+      }, 
+      "d2": {
+        "units": "None", 
+        "comment": "/ms)      : rate of re-sensitization", 
+        "value": 0.0053
+      }, 
+      "tau_d_GABAA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_d_GABAB": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "d1": {
+        "units": "None", 
+        "comment": "/ms)       : rate of desensitization", 
+        "value": 0.017
+      }, 
+      "gmax_GABAA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "gmax_GABAB": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 200.0
+      }, 
+      "Tmax": {
+        "units": "mM", 
+        "comment": "peak neurotransmitter concentration", 
+        "value": 1.3
+      }, 
+      "tau_r_GABAB": {
+        "units": "ms", 
+        "comment": "Dual-exponential neurotransmitter profile", 
+        "value": 0.2
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 200.0
+      }, 
+      "tau_r_GABAA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "use_stdp_B": {
+        "units": "1", 
+        "comment": "flag indicating whether STD/STP is enabled for GABA-B", 
+        "value": 1.0
+      }, 
+      "use_stdp_A": {
+        "units": "1", 
+        "comment": "flag indicating whether STD/STP is enabled for GABA-A", 
+        "value": 1.0
+      }, 
+      "KD": {
+        "units": "None", 
+        "comment": "dissociation constant of K+ channel", 
+        "value": 100.0
+      }, 
+      "Erev_GABAB": {
+        "units": "mV", 
+        "comment": "GABAB reversal potential", 
+        "value": -95.0
+      }, 
+      "Erev_GABAA": {
+        "units": "mV", 
+        "comment": "GABAA reversal potential", 
+        "value": -80.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GABAsynTmGprot.mod"
+  }, 
+  "NetStimExt": {
+    "parameters": {
+      "start": {
+        "units": "ms", 
+        "comment": "start of first spike", 
+        "value": 50.0
+      }, 
+      "interval": {
+        "units": "ms", 
+        "comment": "<1e-9,1e9>: time between spikes (msec)", 
+        "value": 10.0
+      }, 
+      "number": {
+        "units": "None", 
+        "comment": "<0,1e9>\t: number of spikes (independent of noise)", 
+        "value": 10.0
+      }, 
+      "noise": {
+        "units": "None", 
+        "comment": "<0,1>\t: amount of randomness (0.0 - 1.0)", 
+        "value": 0.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/NetStimExt.mod"
+  }, 
+  "NMDAsynTM": {
+    "parameters": {
+      "mg": {
+        "units": "mM", 
+        "comment": "Initial concentration of mg2+", 
+        "value": 1.0
+      }, 
+      "e": {
+        "units": "mV", 
+        "comment": "NMDA reversal potential", 
+        "value": 0.0
+      }, 
+      "tau_d_NMDA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 43.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of facilitation", 
+        "value": 200.0
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "baseline release probability", 
+        "value": 0.5
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of recovery from depression", 
+        "value": 200.0
+      }, 
+      "tau_r_NMDA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.29
+      }, 
+      "gmax_NMDA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/NMDAsynTM.mod"
+  }, 
+  "BurstStim": {
+    "parameters": {
+      "slow_invl": {
+        "units": "ms", 
+        "comment": "burst period (msec)", 
+        "value": 50.0
+      }, 
+      "noise": {
+        "units": "None", 
+        "comment": "amount of randomeaness (0.0 - 1.0)", 
+        "value": 0.0
+      }, 
+      "end": {
+        "units": "ms", 
+        "comment": "time to stop bursting", 
+        "value": 10000000000.0
+      }, 
+      "fast_invl": {
+        "units": "ms", 
+        "comment": "time between spikes in a burst (msec)", 
+        "value": 1.0
+      }, 
+      "start": {
+        "units": "ms", 
+        "comment": "start of first interburst interval", 
+        "value": 50.0
+      }, 
+      "burst_len": {
+        "units": "None", 
+        "comment": "burst length (# spikes)", 
+        "value": 10.0
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/BurstStim.mod"
+  }, 
+  "GLUsynStochTM": {
+    "parameters": {
+      "mg": {
+        "units": "mM", 
+        "comment": "Initial concentration of mg2+", 
+        "value": 1.0
+      }, 
+      "e": {
+        "units": "mV", 
+        "comment": "AMPA and NMDA reversal potential", 
+        "value": 0.0
+      }, 
+      "tau_d_NMDA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 43.0
+      }, 
+      "tau_facil": {
+        "units": "ms", 
+        "comment": "time constant of release facilitation relaxation", 
+        "value": 10.0
+      }, 
+      "U1": {
+        "units": "1", 
+        "comment": "release probability in the absence of facilitation", 
+        "value": 0.5
+      }, 
+      "tau_rec": {
+        "units": "ms", 
+        "comment": "time constant of vesicle pool recovery", 
+        "value": 600.0
+      }, 
+      "tau_r_AMPA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.2
+      }, 
+      "tau_d_AMPA": {
+        "units": "ms", 
+        "comment": "IMPORTANT: tau_r < tau_d", 
+        "value": 1.7
+      }, 
+      "tau_r_NMDA": {
+        "units": "ms", 
+        "comment": "Dual-exponential conductance profile", 
+        "value": 0.29
+      }, 
+      "gmax_NMDA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }, 
+      "gmax_AMPA": {
+        "units": "uS", 
+        "comment": "Weight conversion factor (from nS to uS)", 
+        "value": 0.001
+      }
+    }, 
+    "filename": "/home/luye/workspace/bgcellmodels/bgcellmodels/mechanisms/synapses/GLUsynStochTM.mod"
+  }
+}

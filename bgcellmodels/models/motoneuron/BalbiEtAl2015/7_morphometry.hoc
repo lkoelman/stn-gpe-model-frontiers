@@ -1,0 +1,66 @@
+// Lista variabili utilizzate nel presente file,
+// dichiarate in files eseguiti precedentemente:
+//
+// sl: lista dei dendriti primari (file 3)
+// secmed: lista dei dendriti medi (dendriti con i canali per la PIC) (file 3)
+// term: vettore delle distanze dei dendriti terminali da soma[0] (file 3)
+// min_d, max_d: distanze minima e massima dei dendriti medi (file 3)
+
+// load_file("fixnseg.hoc")  // calcolo di nseg in base a d_lambda
+// geom_nseg()
+
+print ""
+print "Dati morfometrici da ", curr_mod, ":"
+print ""
+
+sect_num = 0 // numero sezioni
+segm_num = 0 // numero compartimenti
+area_tot = 0
+forall {
+sect_num = sect_num + 1
+	for(x) {
+		segm_num = segm_num + 1
+		area_tot = area_tot + area(x)
+	}
+}
+
+area_soma = 0
+forsec "soma" {
+	for(x) {area_soma = area_soma + area(x)}
+}
+
+area_dend = 0
+sect_dend = 0
+segm_dend = 0
+forsec "dend" {
+	sect_dend = sect_dend + 1
+	for(x) {
+		area_dend = area_dend + area(x)
+		segm_dend = segm_dend + 1
+	}
+}
+
+diam_dend = 0
+diam_equi = 0
+forsec sl {
+	diam_dend = diam_dend + diam(0)
+	diam_equi = diam_equi + diam(0)^(3/2)
+}
+
+print "numero di sezioni del modello: ", sect_num
+print "numero di compartimenti del modello: ", segm_num
+print "numero di sezioni dendritiche: ", sect_dend
+print "numero di compartimenti dendritici: ", segm_dend
+print "superficie totale: ", area_tot, " micron2"
+print "superficie somatica: ", area_soma, " micron2"
+print "superficie dendriti: ", area_dend, "micron2"
+print "rapporto area dendriti/area soma: ", area_dend/area_soma
+print "diametro soma: ", soma[0].diam, " micron"
+print "diametro totale dendriti primari: ", diam_dend, " micron"
+print "diametro cilindro equivalente somatico: ", soma[0].diam^(3/2), " micron"
+print "diametro cilindro equivalente dendritico: ", diam_equi, " micron"
+print "scostamento diametro equiv soma-dendriti: ", soma[0].diam^(3/2)-diam_equi, " micron"
+print "distanza media delle terminazioni da soma: ", term.mean(), " micron"
+print "distanza minima delle terminazioni da soma: ", term.min(), " micron"
+print "distanza massima delle terminazioni da soma: ", term.max(), " micron"
+

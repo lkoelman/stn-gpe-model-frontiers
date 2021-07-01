@@ -1,0 +1,129 @@
+//----------------------------------------------
+
+print "Simulation running...\n"
+
+
+objref f1, f2
+f1 = new File()
+f2 = new File()
+
+f1.wopen(output_file1)
+f2.wopen(output_file2)
+
+f1.printf("DBS voltage pulse train stimulation of active STN neuron POPULATION\n\n")
+f2.printf("DBS voltage pulse train stimulation of active STN neuron POPULATION\n\n")
+
+f1.printf("Stimulus waveform used: %s\n", waveform_filename)
+f1.printf("Voltage stimulus params: freq=variable Hz, pw=%f, delay=%f ms, dur=variable, amp=%f, polarity=%d, # test pulses = %d \n", pw, delay, Vamp, polarity, num_test_pulses)
+f1.printf("Other params: tstop=%f ms, dt=%f ms, steps_per_ms=%f ms, AP_delay=%f, number of nodes=%d, epsilon=%f, AP_counter at node %d, ratio=%f\n", tstop, dt, steps_per_ms, AP_delay, axonnodes, epsilon, AP_ct_node, ratio)
+f1.printf("GABA synapse in soma[1]: synstim = %f, synpw = %f, GABAsynAg = %f\n\n", synstim, synpw, GABAsynAg)
+
+f2.printf("Voltage stimulus params: freq=variable Hz, pw=%f, delay=%f ms, dur=variable, amp=%f, polarity=%d, # test pulses = %d \n", pw, delay, Vamp, polarity, num_test_pulses)
+f2.printf("Other params: tstop=%f ms, dt=%f ms, steps_per_ms=%f ms, AP_delay=%f, number of nodes=%d, epsilon=%f, AP_counter at node %d \n\n", tstop, dt, steps_per_ms, AP_delay, axonnodes, epsilon, AP_ct_node)
+f2.printf("Cell locations (x,y,z)\n")
+for i = 0, num_cells-1 {
+   f2.printf("%f\t%f\t%f\n", cell_coords[i].x[0], cell_coords[i].x[1], cell_coords[i].x[2])
+}
+
+if (dt != 0.01) {
+	print "dt is not 0.01!!!!!!!"
+}
+
+//main loop of the program...cycles thru frequencies, electrode locations
+for ff = 0,0{  //0 to 4
+   print "Stim_freq = ", freq
+   f1.printf("\nStimulus voltage pulse frequency: %f\n", freq)
+   f2.printf("\n\nStimulus voltage pulse frequency: %f\n", freq)
+
+   calculate_required_APs()
+
+   f2.printf("Times of stimulus pulses\n")
+   f2.printf("Voltage Pulse \t Time \n")
+   for i = 0, num_req_APs-1 {
+          f2.printf("%d \t %f\n", i+1, required_APs.x[i])   //print times of voltage stimulus pulses
+   }
+
+   f1.printf("Cell # \t X \t Y \t Z \t Thresh voltage(V) \t ubound \t # required APs \t #extra APs during stim \t")
+   f1.printf("Avg spikes/sec B(Hz) \t Avg Inst firing B (Hz) \t Inst rate STD B (Hz) \t Avg spikes/sec SOMA B(Hz) \t Avg Inst firing SOMA B (Hz) \t ")
+   f1.printf("Avg spikes/sec D (Hz) \t Avg Inst firing D \t Inst rate STD D (Hz) \t Avg spikes/sec SOMA D(Hz) \t Avg Inst firing SOMA D (Hz) \t ")
+   f1.printf("Avg spikes/sec A (Hz) \t Avg Inst firing A \t Inst rate STD A (Hz) \t Avg spikes/sec SOMA A(Hz) \t Avg Inst firing SOMA A (Hz) \t ")
+   f1.printf("Avg freq D aft 100ms(Hz) \t Delay after stim (ms) \t")
+   f1.printf("AP site#1 \t AP site#2 \t AP time1 \t AP time2\t soma_orig \t soma_orig2\t #soma AP during stim\n")
+
+   // NOTE: loop over all cells
+   num_sim_cells = 1
+   for jj=0, num_sim_cells-1{  // NOTE: original: 0, num_cells-1
+
+      print "     Cell# ", jj, ", Cell location ", cell_coords[jj].x[0], cell_coords[jj].x[1], cell_coords[jj].x[2]
+   	
+      f2.printf("\n\nCell position: %d %d %d\n", cell_coords[jj].x[0], cell_coords[jj].x[1], cell_coords[jj].x[2])
+
+      // NOTE: for all compartments of current cell, copy V_raw to V.x[]
+      // NOTE: V.x[] is used in trial() -> stimulus() before each call to run()
+      for kk = 0,total-1{
+      	V.x[kk] = V_raw.x[jj*total+kk]
+      }
+
+      // NOTE: find voltage threshold for excitation of current cell (runs a few simulations)
+      thresh_curr = threshold()
+      //   thresh_curr = -10
+
+      // NOTE: run simulation for current cell and current Voltage amplitude
+      // NOTE: Vamp was the last used in trial() in threshold(), hence the threshold voltage
+      ubound = Vamp // NOTE: threshold voltage (in Volts)
+      trial(ubound)  //do it again to get AP times for determined threshold
+
+      //--------------------------------------------------------------------
+      // NOTE: Calculate statistics for trial with threshold voltage
+
+      calculate_freq(delay, delay+dur)  //during stimulation
+      AP_init_site()
+
+      f1.printf("%d \t %f \t %f \t %f \t %f \t %f \t %d\t %d\t", jj,cell_coords[jj].x[0], cell_coords[jj].x[1], cell_coords[jj].x[2],thresh_curr, ubound, num_req, num_extra)
+
+
+      //before stimulation
+      calculate_freq(0, delay)
+      calculate_freq_soma(0, delay)
+      print "Before stimulation"
+      print "     avg_fr =" , avg_freq, "Avg Inst fr = ", avg_inst_freq, "Hz, std_fr = ", std_inst_freq
+      f1.printf("%f \t %f \t %f \t %f \t %f \t ", avg_freq, avg_inst_freq, std_inst_freq,avg_freq_soma, avg_inst_freq_soma)
+
+      //during stimulation
+      calculate_freq(delay, delay+dur)
+      calculate_freq_soma(delay, delay+dur)
+      print "During stimulation"
+      print "     avg_fr =" , avg_freq, "Avg Inst fr = ", avg_inst_freq, "Hz, std_fr = ", std_inst_freq
+      f1.printf("%f \t %f \t %f \t %f \t %f \t ", avg_freq, avg_inst_freq, std_inst_freq,avg_freq_soma, avg_inst_freq_soma)
+
+      //after stimulation
+      calculate_freq(delay+dur, tstop)
+      calculate_freq_soma(delay+dur, tstop)
+      print "After stimulation"
+      print "     avg_fr =" , avg_freq, "Avg Inst fr = ", avg_inst_freq, "Hz, std_fr = ", std_inst_freq
+      f1.printf("%f \t %f \t %f \t %f \t %f \t ", avg_freq, avg_inst_freq, std_inst_freq,avg_freq_soma, avg_inst_freq_soma)
+      spike_del = calculate_delay()
+      print "     spike delay =" , spike_del, " ms"
+
+      calculate_freq(delay+100, delay+dur)  //100ms after stim begins
+      f1.printf("%f \t %f \t ", avg_freq, spike_del)
+      f1.printf("%d \t %d \t %f \t %f \t %d \t %d \t %d\n", AP_site1, AP_site2, time1, time2, soma_orig_ap,soma_orig_ap2,calculate_soma_ap(delay,delay+dur))
+
+      f2.printf("\n\nAll AP times for cell# %d(ms)\n", jj)
+      for kk=0, apc.n-1 {
+           f2.printf("\t %f\n", apc_times.x[kk])
+      }
+      f2.printf("Extra AP times during stimulation (ms) of cell# %d\n", jj)
+      for kk=0, num_extra-1 {
+        f2.printf("\t %f\n", extra_APs.x[kk])
+      }
+      f2.printf("Soma AP times all (ms) of cell# %d\n", jj)
+      for kk=0, AP_counters[num_ap_counters-1].n-1 {
+        f2.printf("\t %f\n", AP_timerec[num_ap_counters-1].x[kk])
+      }
+
+   } // NOTE: end loop over all cells
+}
+
+f1.close()
+f2.close()

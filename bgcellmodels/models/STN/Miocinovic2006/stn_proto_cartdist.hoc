@@ -1,0 +1,465 @@
+/**
+ * Hoc Prototype for Miocinovic STN template for use with any SWC morphology.
+ *
+ * Channel density distributions (peak conductances) are determined based
+ * on the absolute cartesian distance from the soma as in the original
+ * Miocinovic (2006) model.
+ *
+ * @author      Lucas Koelman
+ * @date        01/04/2018
+ */
+
+// load_file("stdlib.hoc")
+// load_file("stdrun.hoc")
+
+/**
+ * Properly encapsulated version of STN cell that doesn't pollute global
+ * namespace.
+ *
+ * Example
+ * -------
+ * 
+ * >>> from neuron import h
+ * >>> h.load_file('stdrun.hoc')
+ * >>> h.load_file('import3d.hoc')
+ * >>> 
+ * >>> icell = h.STN_morph_cartdist()
+ * >>> imorphology = h.Import3d_SWC_read()
+ * >>> imorphology.input(str("/path/to/morphology.swc"))
+ * >>> importer = h.Import3d_GUI(imorphology, 0)
+ * >>> importer.instantiate(icell)
+ * >>> icell.post_morphology()
+ *
+ * To simplify this process, you can also use this template with
+ * the BluePyOpt class 'NrnFileMorphology' defined in
+ * https://github.com/BlueBrain/BluePyOpt/blob/master/bluepyopt/ephys/morphologies.py
+ */
+begintemplate STN_morph_cartdist
+
+    // Hoc template starts new namespace that is encapsulated/isolated
+    // - Declare public members using 'public <varname>'
+    // - Cannot initialize variables outside funcitons, except 'create <secname>'
+    // - objref are public by default
+
+    // Import3d requires following pairs of section array and SectionList:
+    // (soma, somatic), (dend, basal), (apic, apical), (axon, axonal), (,all)
+    // The following variables are not required but can be inluded:
+    // (myelin, myelinated), (node, nodal)
+
+    // Section variables
+    public soma
+
+    // Section array variables required by Import3d
+    create soma[1], dend[1], apic[1], axon[1] //, myelin[1], node[1]
+
+    // Section list variables required by Import3d
+    objref all, somatic, basal, apical, axonal //, myelinated, nodal
+
+    // 'this' is reserved keyword but must be declared if used
+    objref this
+
+    // Other public variables
+    public v_init, cai0, cao0, nai0, nao0, ki0, ko0, with_extracellular
+    objref fih_ions, fih_states // FInitializeHandlers for ions
+
+    // =========================================================================
+    // Public initialization functions
+    // =========================================================================
+
+    /**
+     * Cell constructor.
+     */
+    proc init() {
+
+        // Initialize sectionlists rquired by Morphology Importer & BluePyOpt interface
+        all = new SectionList()
+        somatic = new SectionList()
+        basal = new SectionList()
+        apical = new SectionList()
+        axonal = new SectionList()
+        // myelinated = new SectionList()
+        // nodal = new SectionList()
+
+        set_constant_params()
+        with_extracellular = 1
+
+        fih_ions = new FInitializeHandler(1, "init_ions()", this)
+        fih_states = new FInitializeHandler(1, "init_states()", this)
+    }
+
+
+    /**
+     * Set biophysical properties of sections.
+     *
+     * NOTE: conductances assigned here will be copied to additonally created
+    *        sections.
+     *
+     * @pre     Morphology must be instantiated (all sections and their spatial
+     *          coordinates must be final).
+     *
+     * @post    All mechanisms are inserted but spatially non-uniform,
+     *          segment-wise properties are not yet final.
+     */
+    proc insert_biophys() {
+
+        forsec somatic {
+            Ra = 150.2  //Ohm-cm//  //from Gillies 2005
+            cm = 1
+  
+            insert Cacum    
+                cai0_Cacum = cai0_ca_ion
+            insert CaT
+                gcaT_CaT = my_gcaT_CaT
+            insert HVA
+                gcaL_HVA = my_gcaL_HVA
+                gcaN_HVA = my_gcaN_HVA
+            insert sKCa 
+                gk_sKCa = my_gk_sKCa
+            insert KDR  
+                gk_KDR = my_gk_KDR
+            insert Kv31
+                gk_Kv31 = my_gk_Kv31
+            insert Na   
+                gna_Na = my_gna_Na
+            insert NaL
+                gna_NaL = my_gna_NaL    
+            insert Ih
+                gk_Ih = my_gk_Ih
+            insert STh  
+                gpas_STh = my_gpas_STh          
+        
+            if (with_extracellular) {
+                insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+            }
+        }
+
+        forsec basal {
+            Ra = 150.2  //Ohm-cm//  //from Gillies 2005
+            cm = 1
+
+            // conductances for dendrites set at the end of file    
+            insert Cacum    
+                cai0_Cacum = cai0_ca_ion
+            insert CaT
+            insert HVA
+            insert sKCa //CHANGED AT THE END 1.8*
+            insert KDR  
+            insert Kv31
+            insert Na   
+                gna_Na = 0.65*1e-7
+            insert NaL
+                gna_NaL = 0.65*8.1e-6
+            insert Ih
+            insert STh  
+                gpas_STh = my_gpas_STh          
+
+            if (with_extracellular) {
+                insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+            }
+        }
+
+        // TODO: Should only be applied to Axon initial segment
+        forsec axonal {
+            Ra = 150.2  //Ohm-cm//  //from Gillies 2005
+            cm = 1
+    
+            insert Cacum    
+                cai0_Cacum = cai0_ca_ion
+            insert CaT
+                gcaT_CaT = my_gcaT_CaT
+            insert HVA
+                gcaL_HVA = my_gcaL_HVA
+                gcaN_HVA = my_gcaN_HVA
+            insert sKCa 
+                gk_sKCa = my_gk_sKCa
+            insert KDR  
+                gk_KDR = my_gk_KDR
+            insert Kv31
+                gk_Kv31 = my_gk_Kv31
+            insert Na   
+                gna_Na = my_gna_Na
+            insert NaL
+                gna_NaL = my_gna_NaL    
+            insert Ih
+                gk_Ih = my_gk_Ih
+            insert STh  
+                gpas_STh = my_gpas_STh          
+
+            if (with_extracellular) {
+                insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+            }
+
+        }
+
+        // Ion styles frol Gillies & Willshaw model
+        forsec all {
+            ion_style("na_ion",1,2,1,0,1)
+            ion_style("k_ion",1,2,1,0,1)
+            ion_style("ca_ion",3,2,1,1,1)
+        }
+
+        // If CVode is used
+        // cvode.atol(0.0001)
+        // cvode.atolscale(soma[0].cai, 1.0e-3)
+    }
+
+
+    /**
+     * Set spatially varying (non-uniform) biophysical properties.
+     *
+     * NOTE: as in the original implementation, each section has uniform
+     *       channel density (conductance).
+     *
+     * @pre     Must be called _after_ nseg (number of segments per section)
+     *          are set to their final value. Otherwise distributions will be invalid.
+     *
+     * @post    All spatially non-uniform, segment-wise properties are finalized.
+     */
+    proc set_biophys_spatial() { \
+        local sec_gcaT_CaT, sec_gcaL_HVA, sec_gcaN_HVA, \
+              sec_gk_KDR, sec_gk_Kv31, sec_gk_Ih, sec_gk_sKCa
+        
+        access soma[1]
+
+        // Get coordinates of middle 3D point of soma (not necessarily center!)
+        my_ind = int(n3d()/2)
+        xsoma=x3d(my_ind)  //get coordinates for soma location
+        ysoma=y3d(my_ind)
+        zsoma=z3d(my_ind)
+
+        // Maximum dendrite-soma distance ; set to zero when calculating for the first time
+        max_dist = 734.15
+
+        kdr_prox = -0.05 //Proximity for KDR channel (from Gillies 2005)
+        kfr_prox = 0.8 //Proximity for Kv31 channel (from Gillies 2005)
+        kca_prox = -0.52 //Proximity for KCa channel (from Gillies 2005)
+        hcn_prox = -0.39 //Proximity for HCN channel (from Gillies 2005)
+        cat_prox = -0.01 //Proximity for CaT channel (from Gillies 2005)
+        can_prox = 0.5 //Proximity for CaN channel (from Gillies 2005)
+        cal_prox = -0.57 //Proximity for CaL channel (from Gillies 2005)
+
+        forsec basal {
+
+            // Get coordinates of middle 3D point of section (not necessarily center!)
+            my_ind = int(n3d()/2)
+            xdend = x3d(my_ind)  //get coordinates for dendrite
+            ydend = y3d(my_ind)
+            zdend = z3d(my_ind)
+
+            // Cartesian distance from middle 3D point to soma
+            app_dist = sqrt((xsoma-xdend)^2 + (ysoma-ydend)^2 + (zsoma-zdend)^2)
+
+            // Parametrized distance (from 0 to 1)
+            pd = app_dist / max_dist   
+            //if (max_dist < app_dist) max_dist = app_dist  //for calculating maximum dendrite-soma distance
+            
+            //set up KDR conductance
+            if (kdr_prox == 0) { 
+                f = 1   
+            } else {
+                if (kdr_prox > 0) { 
+                    f = (1-kdr_prox-pd)/(1-kdr_prox)
+                } else { 
+                    f = (kdr_prox+pd)/(1+kdr_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gk_KDR = 4.22e-5 + f*9.32e-5  //Basal conductance * f*Tree_Conductance 
+
+
+            //set up CaT conductance
+            if (cat_prox == 0) { 
+                f = 1   
+            } else {
+                if (cat_prox > 0) { 
+                    f = (1-cat_prox-pd)/(1-cat_prox)
+                } else { 
+                    f = (cat_prox+pd)/(1+cat_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gcaT_CaT   = 1.17e-3 + f*1.67e-3  //Basal conductance * f*Tree_Conductance 
+
+            //set up CaL conductance
+            if (cal_prox == 0) { 
+                f = 1   
+            } else {
+                if (cal_prox > 0) { 
+                    f = (1-cal_prox-pd)/(1-cal_prox)
+                } else { 
+                    f = (cal_prox+pd)/(1+cal_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gcaL_HVA   = 1.21e-4 + f*1.87e-3  //Basal conductance * f*Tree_Conductance 
+            
+            //set up CaN conductance
+            if (can_prox == 0) { 
+                f = 1   
+            } else {
+                if (can_prox > 0) { 
+                    f = (1-can_prox-pd)/(1-can_prox)
+                } else { 
+                    f = (can_prox+pd)/(1+can_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gcaN_HVA   = 0 + f*4.79e-4  //Basal conductance * f*Tree_Conductance 
+
+            //set up KCa conductance
+            if (kca_prox == 0) { 
+                f = 1   
+            } else {
+                if (kca_prox > 0) { 
+                    f = (1-kca_prox-pd)/(1-kca_prox)
+                } else { 
+                    f = (kca_prox+pd)/(1+kca_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gk_sKCa   = 0 + 1.8*f*3.92e-5  //Basal conductance * f*Tree_Conductance 
+            
+            //set up Kv31 (KFR) conductance
+            if (kfr_prox == 0) { 
+                f = 1   
+            } else {
+                if (kfr_prox > 0) { 
+                    f = (1-kfr_prox-pd)/(1-kfr_prox)
+                } else { 
+                    f = (kfr_prox+pd)/(1+kfr_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gk_Kv31   = 8.91e-4 + f*1.0e-3  //Basal conductance * f*Tree_Conductance 
+
+
+            //set up HCN conductance
+            if (hcn_prox == 0) { 
+                f = 1   
+            } else {
+                if (hcn_prox > 0) { 
+                    f = (1-hcn_prox-pd)/(1-hcn_prox)
+                } else { 
+                    f = (hcn_prox+pd)/(1+hcn_prox) 
+                }
+            } 
+            if (f < 0) f = 0
+            sec_gk_Ih = 0 + f*5.1e-4  //Basal conductance * f*Tree_Conductance        
+
+            // Original model only has one segment per section.
+            // Here we must set conductance in each segment.
+            for (x, 0) {
+                gk_KDR(x) = sec_gk_KDR
+                gcaT_CaT(x) = sec_gcaT_CaT
+                gcaL_HVA(x) = sec_gcaL_HVA                
+                gcaN_HVA(x) = sec_gcaN_HVA
+                gk_sKCa(x) = sec_gk_sKCa
+                gk_Kv31(x) = sec_gk_Kv31
+                gk_Ih(x) = sec_gk_Ih
+            }
+        }
+    }
+
+    // =========================================================================
+    // Initializers for Hoc FInitializeHandler
+    // =========================================================================
+
+    /**
+     * Set initial ion concentrations
+     */
+    proc init_ions() {
+        forsec somatic {
+            cai0_Cacum = this.cai0
+            cai0_ca_ion = this.cai0
+            cao0_ca_ion = this.cao0
+            ki0_k_ion = this.ki0
+            ko0_k_ion = this.ko0 
+            nao0_na_ion = this.nao0
+            nai0_na_ion = this.nai0
+        }
+        forsec basal {
+            cai0_Cacum = this.cai0
+            cai0_ca_ion = this.cai0
+            cao0_ca_ion = this.cao0
+            ki0_k_ion = this.ki0
+            ko0_k_ion = this.ko0  
+            nao0_na_ion = this.nao0
+            nai0_na_ion = this.nai0
+        }
+    }
+
+    /**
+     * Initialize state variables
+     */
+    proc init_states() {
+        forsec all {
+            v = this.v_init
+        }
+    }
+
+    // =========================================================================
+    // Private initialization functions
+    // =========================================================================
+
+
+    /**
+     * Set variables in class/prototype namespace.
+     */
+    proc set_constant_params() {
+        v_init = -60
+
+        // Extracell. ion concentrations taken from Bevan,Wilson 1999 paper (slice bathing solution)                                 
+        // Intracell. ion concentrations are typical mammalian values (from Johnston & Wu, 1999 via NEURON tutorial)
+        cai0 = 1e-4  //from Gillies mod file  //was 2e-4     
+        cao0 = 2             
+        ki0 = 140 
+        ko0 = 2.5     
+        nao0 = 126   
+        nai0 = 10 
+        
+        //insert CaT
+        my_gcaT_CaT = 0 //0.001 (mho/cm2)
+        //insert HVA
+        my_gcaL_HVA = 9.5e-4 //0.002 (mho/cm2)
+        my_gcaN_HVA = 1.15e-3 //0.012 (mho/cm2)
+        //insert sKCa   
+        my_gk_sKCa = 1.8*6.84e-5 //0.0001 (mho/cm2)
+        //insert KDR    
+        my_gk_KDR = 3.84e-3 //3.842910637e-03 (mho/cm2)
+        //insert Kv31
+        my_gk_Kv31 = 1.2*1.34e-2 //0.015 (mho/cm2)
+        //insert Na 
+        my_gna_Na = 0.75*1.48e-2 //1.0e-7 (mho/cm2)
+        //insert NaL
+        my_gna_NaL = 0.75*1.11e-5 //0.81e-5 (mho/cm2)   
+        //insert Ih
+        my_gk_Ih = 1.01e-3 //0.001 (mho/cm2)    
+        //insert STh    
+        my_gpas_STh = 7.84112e-05 //7.84112e-05 (mho/cm2) <0,1e9>
+    }
+
+
+    /**
+     * Delete unused sections created by template before loading morphology.
+     */
+    proc del_unused_sections() { \
+        local ncell
+
+        ncell = 0
+        forsec apical {
+            ncell = ncell + 1
+        }
+        if (!ncell) {
+            apic[0] delete_section()
+        }
+
+        ncell = 0
+        forsec axonal {
+            ncell = ncell + 1
+        }
+        if (!ncell) {
+            axon[0] delete_section()
+        }
+    }
+
+endtemplate STN_morph_cartdist

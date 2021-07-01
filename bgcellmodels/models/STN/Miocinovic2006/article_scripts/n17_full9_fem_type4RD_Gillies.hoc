@@ -1,0 +1,4188 @@
+//Svjetlana Miocinovic
+//STN neuron (3D dendritic tree, no axon)
+//NEURON 5.5 (Windows version)
+//March 2004
+
+
+//Variables//
+proc model_globals(){
+
+	celsius=36	//degC//
+	v_init=-60	//mV//
+
+//topological parameters//
+	dendelements=288
+	somaelements = 3
+	iselements=1   //initial segment elements
+	axonnodes=49		
+	paranodes1=(axonnodes-1)*2
+	paranodes2=(axonnodes-1)*2
+	axoninter=(axonnodes-1)*3
+	total=dendelements+somaelements+iselements+axonnodes+paranodes1+paranodes2+axoninter	 
+//morphological parameters//
+	fiberD=2   //fiber diameter
+	paralength1=3  //MYSA length
+	nodelength=1
+	space_p1=0.002  
+	space_p2=0.004
+	space_i=0.004
+//electrical parameters//	
+	rhoa=0.7e6 //Ohm-um//
+	mycm=0.1 //uF/cm2/lamella membrane//
+	mygm=0.001 //S/cm2/lamella membrane//	
+}
+model_globals ()
+
+proc dependent_var() {
+	if (fiberD==1) {axonD=0.8 nodeD=0.7 paraD1=0.7 paraD2=0.8 deltax=200 paralength2=10 nl=20}
+	if (fiberD==2) {axonD=1.6 nodeD=1.4 paraD1=1.4 paraD2=1.6 deltax=200 paralength2=10 nl=30}
+
+	Rpn0=(rhoa*.01)/(PI*((((nodeD/2)+space_p1)^2)-((nodeD/2)^2)))
+	Rpn1=(rhoa*.01)/(PI*((((paraD1/2)+space_p1)^2)-((paraD1/2)^2)))
+	Rpn2=(rhoa*.01)/(PI*((((paraD2/2)+space_p2)^2)-((paraD2/2)^2)))
+	Rpx=(rhoa*.01)/(PI*((((axonD/2)+space_i)^2)-((axonD/2)^2)))
+
+	interlength=(deltax-nodelength-(2*paralength1)-(2*paralength2))/6
+}
+dependent_var()
+
+objref s[total] //list of all compartments
+
+//----------------------------------------------------------------------------------------
+//change parameters here:
+
+//insert myions (used to be set in STN_multi.hoc)									
+//Extracell. ion concentrations taken from Bevan,Wilson 1999 paper (slice bathing solution)									
+//Intracell. ion concentrations are typical mammalian values (from Johnston & Wu, 1999 via NEUORN tutorial)
+	cai0_ca_ion = 1e-4 	//from Gillies mod file  //was 2e-4		
+	cao0_ca_ion = 2   			
+	ki0_k_ion = 140 
+	ko0_k_ion = 2.5 	
+	nao0_na_ion = 126 	
+	nai0_na_ion = 10 
+	
+//params for soma and init segment 
+//insert Cacum	
+//insert CaT
+	my_gcaT_CaT = 0 //0.001 (mho/cm2)
+//insert HVA
+	my_gcaL_HVA = 9.5e-4 //0.002 (mho/cm2)
+	my_gcaN_HVA = 1.15e-3 //0.012 (mho/cm2)
+//insert sKCa	
+	my_gk_sKCa = 1.8*6.84e-5 //0.0001 (mho/cm2)
+//insert KDR	
+	my_gk_KDR = 3.84e-3 //3.842910637e-03 (mho/cm2)
+//insert Kv31
+	my_gk_Kv31 = 1.2*1.34e-2 //0.015 (mho/cm2)
+//insert Na	
+	my_gna_Na = 0.75*1.48e-2 //1.0e-7 (mho/cm2)
+//insert NaL
+	my_gna_NaL = 0.75*1.11e-5 //0.81e-5 (mho/cm2)	
+//insert Ih
+	my_gk_Ih = 1.01e-3 //0.001 (mho/cm2)	
+//insert STh	
+	my_gpas_STh = 7.84112e-05 //7.84112e-05 (mho/cm2) <0,1e9>		
+
+//-------------------------------------------------------------------------------------------------
+create soma[somaelements], dend[dendelements], initseg[iselements]
+create node[axonnodes], MYSA[paranodes1], FLUT[paranodes2], STIN[axoninter]
+create electrode 
+access soma[1]
+
+proc initcell(){
+	for i=0,somaelements-1 {
+		soma[i] {
+			s[i] = new SectionRef()
+			nseg = 1
+			Ra = 150.2 	//Ohm-cm//  //from Gillies 2005
+			cm = 1
+
+/*			insert myions  //dummy mechanism to set up ion concentrations for na and k		
+			insert Cacum	
+				cai0_Cacum = cai0_ca_ion
+			insert CaT
+				gcaT_CaT = my_gcaT_CaT
+			insert HVA
+				gcaL_HVA = my_gcaL_HVA
+				gcaN_HVA = my_gcaN_HVA
+			insert sKCa	
+				gk_sKCa = my_gk_sKCa
+			insert KDR	
+				gk_KDR = my_gk_KDR
+			insert Kv31
+				gk_Kv31 = my_gk_Kv31
+			insert Na	
+				gna_Na = my_gna_Na
+			insert NaL
+				gna_NaL = my_gna_NaL	
+			insert Ih
+				gk_Ih = my_gk_Ih
+			insert STh	
+				gpas_STh = my_gpas_STh			
+*/
+			insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+		}
+	}
+	for i=0,dendelements-1 {
+		dend[i] {
+			s[i+somaelements] = new SectionRef()
+			nseg = 1
+			Ra = 150.2 	//Ohm-cm//  //from Gillies 2005
+			cm = 1
+/*
+			//conductances for dendrites set at the end of file
+			insert myions  //dummy mechanism to set up ion concentrations for na and k		
+			insert Cacum	
+				cai0_Cacum = cai0_ca_ion
+			insert CaT
+			insert HVA
+			insert sKCa	//CHANGED AT THE END 1.8*
+			insert KDR	
+			insert Kv31
+			insert Na	
+				gna_Na = 0.65*1e-7
+			insert NaL
+				gna_NaL = 0.65*8.1e-6
+			insert Ih
+			insert STh	
+				gpas_STh = my_gpas_STh			
+*/
+			insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+		}
+	}
+	for i=0,iselements-1 {
+		initseg[i] {
+			s[i+dendelements+somaelements] = new SectionRef()
+			nseg = 1
+			Ra = 150.2 	//Ohm-cm//  //from Gillies 2005
+			cm = 1
+
+			insert myions
+			insert myions  //dummy mechanism to set up ion concentrations for na and k		
+			insert Cacum	
+				cai0_Cacum = cai0_ca_ion
+			insert CaT
+				gcaT_CaT = my_gcaT_CaT
+			insert HVA
+				gcaL_HVA = my_gcaL_HVA
+				gcaN_HVA = my_gcaN_HVA
+			insert sKCa	
+				gk_sKCa = my_gk_sKCa
+			insert KDR	
+				gk_KDR = my_gk_KDR
+			insert Kv31
+				gk_Kv31 = my_gk_Kv31
+			insert Na	
+				gna_Na = my_gna_Na
+			insert NaL
+				gna_NaL = my_gna_NaL	
+			insert Ih
+				gk_Ih = my_gk_Ih
+			insert STh	
+				gpas_STh = my_gpas_STh			
+
+			insert extracellular xraxial=1e+09 xg=1e+09 xc=0
+		}
+	}
+	for i=0,axonnodes-2 {
+		node[i]{
+			s[i+dendelements+somaelements+iselements] = new SectionRef()					
+			nseg=1
+			Ra=rhoa/10000
+			cm=2
+			insert axnode75	
+				gnabar_axnode75 = 2.0 //3  
+				gnapbar_axnode75 = 0.05 
+				gkbar_axnode75 = 0.07
+				gl_axnode75 = 0.005
+				ek_axnode75 = -85 //-95
+				ena_axnode75 = 55 //45
+				el_axnode75 = -60 
+				vshift_axnode75 = 15 //10   //rest potential should be -80+vshift
+				vtraub_axnode75 = -80 //-80
+
+			insert extracellular xraxial=Rpn0 xg=1e10 xc=0
+		}
+	}
+	node[axonnodes-1] { 
+		s[dendelements+somaelements+iselements+axonnodes-1] = new SectionRef()
+		nseg=1
+		Ra=rhoa/10000
+		cm=2
+		insert pas
+			g_pas = 0.0001
+			e_pas = -65 
+		insert extracellular xraxial=Rpn0 xg=1e10 xc=0
+	}
+	for i=0, paranodes1-1 {
+		MYSA[i]{
+			s[i+dendelements+somaelements+iselements+axonnodes] = new SectionRef()
+			nseg=1
+			Ra=rhoa/10000
+			cm=2
+			insert pas
+				g_pas=0.0001	
+				e_pas=-65
+			insert extracellular xraxial=Rpn1 xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	for i=0, paranodes2-1 {
+		FLUT[i]{
+			s[i+dendelements+somaelements+iselements+axonnodes+paranodes1] = new SectionRef()
+			nseg=1
+			Ra=rhoa/10000
+			cm=2
+			insert parak75
+				gkbar_parak75 = 0.02 //0.02
+				ek_parak75 = -85 //-95
+				vshift_parak75 = 15 //10
+			insert pas
+				g_pas=0.0001		
+				e_pas=-60
+			insert extracellular xraxial=Rpn2 xg=mygm/(nl*2) xc=mycm/(nl*2)
+		}
+	}
+	for i=0, axoninter-1 {
+		STIN[i]{
+			s[i+dendelements+somaelements+iselements+axonnodes+paranodes1+paranodes2] = new SectionRef()
+			nseg=1
+			Ra=rhoa/10000
+			cm=2
+			insert pas
+				g_pas=0.0001
+				e_pas=-65
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+		}
+	}
+	electrode {
+		L=1
+		d=1
+	}
+}
+
+connect soma[1](0), soma[0](1)  
+connect soma[2](0), soma[1](1)
+
+connect dend[0](0), soma[0](0)
+connect dend[1](0), dend[0](1)
+connect dend[2](0), dend[1](1)
+connect dend[3](0), dend[2](1)
+connect dend[4](0), dend[3](1)
+connect dend[5](0), dend[4](1)
+connect dend[6](0), dend[5](1)
+connect dend[7](0), dend[6](1)
+connect dend[8](0), dend[7](1)
+connect dend[9](0), dend[8](1)
+connect dend[10](0), dend[9](1)
+connect dend[11](0), dend[10](1)
+connect dend[12](0), dend[11](1)
+connect dend[13](0), dend[12](1)
+connect dend[14](0), dend[13](1)
+connect dend[15](0), dend[14](1)
+connect dend[16](0), dend[15](1)
+connect dend[17](0), dend[16](1)
+connect dend[18](0), dend[17](1)
+connect dend[19](0), dend[1](1)
+connect dend[20](0), dend[19](1)
+connect dend[21](0), dend[20](1)
+connect dend[22](0), dend[21](1)
+connect dend[23](0), dend[22](1)
+connect dend[24](0), dend[23](1)
+connect dend[25](0), dend[24](1)
+connect dend[26](0), dend[25](1)
+connect dend[27](0), dend[26](1)
+connect dend[28](0), dend[27](1)
+connect dend[29](0), dend[28](1)
+connect dend[30](0), dend[29](1)
+connect dend[31](0), dend[30](1)
+connect dend[32](0), dend[31](1)
+connect dend[33](0), dend[19](1)
+connect dend[34](0), dend[33](1)
+connect dend[35](0), dend[34](1)
+connect dend[36](0), dend[35](1)
+connect dend[37](0), dend[36](1)
+connect dend[38](0), dend[37](1)
+connect dend[39](0), dend[38](1)
+connect dend[40](0), dend[0](1)
+connect dend[41](0), dend[40](1)
+connect dend[42](0), dend[41](1)
+connect dend[43](0), dend[42](1)
+connect dend[44](0), dend[43](1)
+connect dend[45](0), dend[44](1)
+connect dend[46](0), dend[45](1)
+connect dend[47](0), dend[46](1)
+connect dend[48](0), dend[47](1)
+connect dend[49](0), dend[48](1)
+connect dend[50](0), dend[40](1)
+connect dend[51](0), dend[50](1)
+connect dend[52](0), dend[51](1)
+connect dend[53](0), dend[52](1)
+connect dend[54](0), dend[53](1)
+connect dend[55](0), dend[54](1)
+connect dend[56](0), dend[55](1)
+connect dend[57](0), dend[56](1)
+connect dend[58](0), dend[57](1)
+connect dend[59](0), dend[58](1)
+connect dend[60](0), dend[59](1)
+connect dend[61](0), dend[60](1)
+connect dend[62](0), dend[50](1)
+connect dend[63](0), dend[62](1)
+connect dend[64](0), dend[63](1)
+connect dend[65](0), dend[64](1)
+connect dend[66](0), dend[65](1)
+connect dend[67](0), dend[66](1)
+connect dend[68](0), dend[67](1)
+connect dend[69](0), dend[68](1)
+connect dend[70](0), dend[68](1)
+connect dend[71](0), dend[70](1)
+connect dend[72](0), dend[71](1)
+connect dend[73](0), dend[72](1)
+connect dend[74](0), dend[73](1)
+connect dend[75](0), dend[74](1)
+connect dend[76](0), dend[75](1)
+connect dend[77](0), soma[2](1)
+connect dend[78](0), dend[77](1)
+connect dend[79](0), dend[78](1)
+connect dend[80](0), dend[79](1)
+connect dend[81](0), dend[80](1)
+connect dend[82](0), dend[81](1)
+connect dend[83](0), dend[82](1)
+connect dend[84](0), dend[83](1)
+connect dend[85](0), dend[84](1)
+connect dend[86](0), dend[85](1)
+connect dend[87](0), dend[77](1)
+connect dend[88](0), dend[87](1)
+connect dend[89](0), dend[88](1)
+connect dend[90](0), dend[89](1)
+connect dend[91](0), dend[90](1)
+connect dend[92](0), dend[91](1)
+connect dend[93](0), dend[92](1)
+connect dend[94](0), dend[93](1)
+connect dend[95](0), dend[94](1)
+connect dend[96](0), dend[95](1)
+connect dend[97](0), dend[96](1)
+connect dend[98](0), dend[97](1)
+connect dend[99](0), dend[87](1)
+connect dend[100](0), dend[99](1)
+connect dend[101](0), dend[100](1)
+connect dend[102](0), dend[101](1)
+connect dend[103](0), dend[102](1)
+connect dend[104](0), dend[103](1)
+connect dend[105](0), dend[104](1)
+connect dend[106](0), dend[105](1)
+connect dend[107](0), dend[106](1)
+connect dend[108](0), dend[107](1)
+connect dend[109](0), dend[108](1)
+connect dend[110](0), dend[109](1)
+connect dend[111](0), dend[110](1)
+connect dend[112](0), dend[111](1)
+connect dend[113](0), dend[105](1)
+connect dend[114](0), dend[113](1)
+connect dend[115](0), dend[114](1)
+connect dend[116](0), dend[115](1)
+connect dend[117](0), dend[116](1)
+connect dend[118](0), dend[117](1)
+connect dend[119](0), dend[118](1)
+connect dend[120](0), soma[2](1)
+connect dend[121](0), dend[120](1)
+connect dend[122](0), dend[121](1)
+connect dend[123](0), dend[122](1)
+connect dend[124](0), dend[123](1)
+connect dend[125](0), dend[124](1)
+connect dend[126](0), dend[125](1)
+connect dend[127](0), dend[126](1)
+connect dend[128](0), dend[127](1)
+connect dend[129](0), dend[128](1)
+connect dend[130](0), dend[129](1)
+connect dend[131](0), dend[130](1)
+connect dend[132](0), dend[124](1)
+connect dend[133](0), dend[132](1)
+connect dend[134](0), dend[133](1)
+connect dend[135](0), dend[134](1)
+connect dend[136](0), dend[135](1)
+connect dend[137](0), dend[136](1)
+connect dend[138](0), dend[137](1)
+connect dend[139](0), dend[138](1)
+connect dend[140](0), dend[139](1)
+connect dend[141](0), dend[121](1)
+connect dend[142](0), dend[141](1)
+connect dend[143](0), dend[142](1)
+connect dend[144](0), dend[143](1)
+connect dend[145](0), dend[144](1)
+connect dend[146](0), dend[145](1)
+connect dend[147](0), dend[146](1)
+connect dend[148](0), dend[147](1)
+connect dend[149](0), dend[148](1)
+connect dend[150](0), dend[149](1)
+connect dend[151](0), dend[150](1)
+connect dend[152](0), dend[151](1)
+connect dend[153](0), dend[152](1)
+connect dend[154](0), dend[153](1)
+connect dend[155](0), dend[154](1)
+connect dend[156](0), dend[120](1)
+connect dend[157](0), dend[156](1)
+connect dend[158](0), dend[157](1)
+connect dend[159](0), dend[158](1)
+connect dend[160](0), dend[159](1)
+connect dend[161](0), dend[160](1)
+connect dend[162](0), dend[161](1)
+connect dend[163](0), dend[162](1)
+connect dend[164](0), dend[163](1)
+connect dend[165](0), dend[164](1)
+connect dend[166](0), dend[165](1)
+connect dend[167](0), soma[2](1)
+connect dend[168](0), dend[167](1)
+connect dend[169](0), dend[168](1)
+connect dend[170](0), dend[169](1)
+connect dend[171](0), dend[170](1)
+connect dend[172](0), dend[171](1)
+connect dend[173](0), dend[172](1)
+connect dend[174](0), dend[173](1)
+connect dend[175](0), dend[174](1)
+connect dend[176](0), dend[175](1)
+connect dend[177](0), dend[173](1)
+connect dend[178](0), dend[177](1)
+connect dend[179](0), dend[178](1)
+connect dend[180](0), dend[172](1)
+connect dend[181](0), dend[169](1)
+connect dend[182](0), dend[181](1)
+connect dend[183](0), dend[182](1)
+connect dend[184](0), dend[183](1)
+connect dend[185](0), dend[184](1)
+connect dend[186](0), dend[185](1)
+connect dend[187](0), dend[186](1)
+connect dend[188](0), dend[187](1)
+connect dend[189](0), dend[188](1)
+connect dend[190](0), dend[168](1)
+connect dend[191](0), dend[190](1)
+connect dend[192](0), dend[191](1)
+connect dend[193](0), dend[192](1)
+connect dend[194](0), dend[193](1)
+connect dend[195](0), dend[167](1)
+connect dend[196](0), dend[195](1)
+connect dend[197](0), dend[196](1)
+connect dend[198](0), dend[197](1)
+connect dend[199](0), dend[198](1)
+connect dend[200](0), dend[199](1)
+connect dend[201](0), dend[200](1)
+connect dend[202](0), dend[198](1)
+connect dend[203](0), dend[202](1)
+connect dend[204](0), dend[203](1)
+connect dend[205](0), dend[204](1)
+connect dend[206](0), dend[205](1)
+connect dend[207](0), dend[197](1)
+connect dend[208](0), dend[207](1)
+connect dend[209](0), dend[208](1)
+connect dend[210](0), dend[209](1)
+connect dend[211](0), dend[210](1)
+connect dend[212](0), dend[211](1)
+connect dend[213](0), dend[212](1)
+connect dend[214](0), dend[213](1)
+connect dend[215](0), dend[214](1)
+connect dend[216](0), dend[196](1)
+connect dend[217](0), dend[216](1)
+connect dend[218](0), dend[217](1)
+connect dend[219](0), dend[218](1)
+connect dend[220](0), dend[219](1)
+connect dend[221](0), dend[220](1)
+connect dend[222](0), dend[221](1)
+connect dend[223](0), dend[222](1)
+connect dend[224](0), dend[223](1)
+connect dend[225](0), dend[224](1)
+connect dend[226](0), dend[220](1)
+connect dend[227](0), dend[226](1)
+connect dend[228](0), dend[227](1)
+connect dend[229](0), dend[228](1)
+connect dend[230](0), dend[229](1)
+connect dend[231](0), dend[230](1)
+connect dend[232](0), dend[231](1)
+connect dend[233](0), dend[195](1)
+connect dend[234](0), dend[233](1)
+connect dend[235](0), dend[234](1)
+connect dend[236](0), dend[235](1)
+connect dend[237](0), dend[236](1)
+connect dend[238](0), dend[237](1)
+connect dend[239](0), dend[238](1)
+connect dend[240](0), soma[2](1)
+connect dend[241](0), dend[240](1)
+connect dend[242](0), dend[241](1)
+connect dend[243](0), dend[242](1)
+connect dend[244](0), dend[243](1)
+connect dend[245](0), dend[244](1)
+connect dend[246](0), dend[245](1)
+connect dend[247](0), dend[246](1)
+connect dend[248](0), dend[247](1)
+connect dend[249](0), dend[248](1)
+connect dend[250](0), dend[244](1)
+connect dend[251](0), dend[250](1)
+connect dend[252](0), dend[251](1)
+connect dend[253](0), dend[252](1)
+connect dend[254](0), dend[250](1)
+connect dend[255](0), dend[254](1)
+connect dend[256](0), dend[255](1)
+connect dend[257](0), dend[256](1)
+connect dend[258](0), dend[257](1)
+connect dend[259](0), dend[258](1)
+connect dend[260](0), dend[259](1)
+connect dend[261](0), soma[0](0)
+connect dend[262](0), dend[261](1)
+connect dend[263](0), dend[262](1)
+connect dend[264](0), dend[263](1)
+connect dend[265](0), dend[264](1)
+connect dend[266](0), dend[265](1)
+connect dend[267](0), dend[266](1)
+connect dend[268](0), dend[267](1)
+connect dend[269](0), dend[268](1)
+connect dend[270](0), dend[269](1)
+connect dend[271](0), dend[270](1)
+connect dend[272](0), soma[0](0)
+connect dend[273](0), dend[272](1)
+connect dend[274](0), dend[273](1)
+connect dend[275](0), dend[274](1)
+connect dend[276](0), dend[275](1)
+connect dend[277](0), soma[0](0)
+connect dend[278](0), dend[277](1)
+connect dend[279](0), dend[278](1)
+connect dend[280](0), dend[279](1)
+connect dend[281](0), dend[280](1)
+connect dend[282](0), dend[281](1)
+connect dend[283](0), dend[281](1)
+connect dend[284](0), dend[280](1)
+connect dend[285](0), dend[277](1)
+connect dend[286](0), dend[285](1)
+connect dend[287](0), dend[286](1)
+
+connect initseg[0](0), soma[2](1)
+
+connect node[0](0), initseg[0](1)
+connect MYSA[0](0), node[0](1)
+connect FLUT[0](0), MYSA[0](1)
+connect STIN[0](0), FLUT[0](1)
+connect STIN[1](0), STIN[0](1)
+connect STIN[2](0), STIN[1](1)	
+connect FLUT[1](0), STIN[2](1)
+connect MYSA[1](0), FLUT[1](1)
+connect node[1](0), MYSA[1](1)
+for i=1, axonnodes-2 {
+	connect MYSA[2*i](0), node[i](1)
+	connect FLUT[2*i](0), MYSA[2*i](1)
+	connect STIN[3*i](0), FLUT[2*i](1)
+	connect STIN[3*i+1](0), STIN[3*i](1)
+	connect STIN[3*i+2](0), STIN[3*i+1](1)
+	connect FLUT[2*i+1](0), STIN[3*i+2](1)
+	connect MYSA[2*i+1](0), FLUT[2*i+1](1)
+	connect node[i+1](0), MYSA[2*i+1](1)	
+}
+
+
+//I made up coords for soma 
+//If changing them, make sure to change them at all dendrites and init seg. that connect to soma 
+
+//soma diam = 12.5um, length = 18.5um, area = 733  same as in n17_reduced2_axon4EX.hoc
+//soma {
+//   pt3dadd(-1708.151,-615.483,4.69,14.157)
+//   pt3dadd(-1690.786,-608.962,4.076,10.916)
+//}
+
+//area 518um^2
+soma[0]{
+    pt3dadd(-5023.31,6249.47,-1417.92,2) 
+    pt3dadd(-5023.35,6248.63,-1417.57,18) 
+}
+soma[1]{
+    pt3dadd(-5023.35,6248.63,-1417.57,18) 
+    pt3dadd(-5024.1,6233.19,-1411.3,18) 
+}
+soma[2]{
+    pt3dadd(-5024.1,6233.19,-1411.3,18) 
+    pt3dadd(-5024.14,6232.29,-1410.95,2) 
+}
+
+//dend0
+dend[0] {
+    pt3dadd(-5023.31,6249.47,-1417.92,2)
+    pt3dadd(-5021.41,6255.78,-1417.53,1.6)
+    pt3dadd(-5021.29,6263.8,-1419.79,1.6)
+}
+//dend1
+dend[1] {
+    pt3dadd(-5021.29,6263.8,-1419.79,1.6)
+    pt3dadd(-5023.64,6268.12,-1416.72,1.6)
+    pt3dadd(-5036.58,6272.4,-1415.16,1.6)
+    pt3dadd(-5043.75,6278.76,-1412.98,1.6)
+    pt3dadd(-5047.73,6282.13,-1410.61,1.6)
+    pt3dadd(-5048.94,6285.22,-1407.54,0.92)    //diam changed to match dend19(0)
+    //pt3dadd(-5048.74,6284.49,-1404.13,0.92)  //removed to match dend19(0)
+}
+//dend2
+dend[2] {
+    pt3dadd(-5048.94,6285.22,-1407.54,0.92)    //added to match dend1(1)
+    pt3dadd(-5048.74,6284.49,-1404.13,0.92)
+    pt3dadd(-5054.49,6290.84,-1397.08,0.92)
+}
+dend[3] {
+    pt3dadd(-5054.49,6290.84,-1397.08,0.92)
+    pt3dadd(-5059.89,6295.83,-1393.35,0.92)
+    pt3dadd(-5062.12,6298.08,-1388.92,0.92) //was 1.232
+    pt3dadd(-5068.03,6301.28,-1379.67,0.92) //was 1.232
+    pt3dadd(-5073.69,6300.31,-1375.03,0.92) //was 1.232
+}
+dend[4] {
+    pt3dadd(-5073.69,6300.31,-1375.03,0.92) //was 1.232
+    pt3dadd(-5076.17,6304.15,-1370.49,0.92) //was 1.232
+    pt3dadd(-5077.21,6304.44,-1363.86,0.92) //was 1.232
+    pt3dadd(-5077.04,6306.38,-1357.12,0.92)
+}
+dend[5] {
+    pt3dadd(-5077.04,6306.38,-1357.12,0.92)
+    pt3dadd(-5088.86,6309.87,-1349.63,0.92)
+    pt3dadd(-5088.58,6307.95,-1340.94,0.92)
+    pt3dadd(-5088.4,6310.44,-1333.88,0.92)
+    pt3dadd(-5099.9,6312.86,-1323.88,0.92)
+}
+dend[6] {
+    pt3dadd(-5099.9,6312.86,-1323.88,0.92)
+    pt3dadd(-5101.65,6316.83,-1319.2,0.92)
+    pt3dadd(-5110.02,6317.28,-1312.57,0.92)
+    pt3dadd(-5119.87,6320.77,-1302.31,0.92)
+}
+dend[7] {
+    pt3dadd(-5119.87,6320.77,-1302.31,0.92)
+    pt3dadd(-5127.6,6324.91,-1288.7,0.92)
+    pt3dadd(-5136.83,6327.35,-1283.53,0.92)
+    pt3dadd(-5145.55,6324.79,-1276.09,0.92)
+    pt3dadd(-5153.96,6329.22,-1267.99,0.92)
+}
+dend[8] {
+    pt3dadd(-5153.96,6329.22,-1267.99,0.92)
+    pt3dadd(-5161.38,6335.95,-1264.11,0.92)
+    pt3dadd(-5161.07,6336.43,-1247.98,0.92)
+    pt3dadd(-5169.05,6335.27,-1242.56,0.92)
+}
+dend[9] {
+    pt3dadd(-5169.05,6335.27,-1242.56,0.92)
+    pt3dadd(-5168.98,6337.78,-1241.5,0.92)
+    pt3dadd(-5168.71,6343.96,-1233.23,0.92)
+    pt3dadd(-5180.46,6349.98,-1225.03,0.92)
+    pt3dadd(-5190.57,6351.78,-1211.09,0.92)
+}
+dend[10] {
+    pt3dadd(-5190.57,6351.78,-1211.09,0.92)
+    pt3dadd(-5197.07,6356.32,-1202.75,0.92)
+    pt3dadd(-5204.87,6357.99,-1190.57,0.92)
+    pt3dadd(-5213.89,6362.49,-1183.91,0.92)
+}
+dend[11] {  
+    pt3dadd(-5213.89,6362.49,-1183.91,0.92)
+    pt3dadd(-5217.36,6362.54,-1180.9,0.92)
+    pt3dadd(-5226.09,6367.85,-1175.15,0.92)
+    pt3dadd(-5226.39,6371.09,-1163.22,0.92)
+    pt3dadd(-5240.58,6379.89,-1155.46,0.92)
+}
+dend[12] { 
+    pt3dadd(-5240.58,6379.89,-1155.46,0.92)
+    pt3dadd(-5265.5,6380.12,-1147.17,0.92)
+    pt3dadd(-5284.99,6380.19,-1138.51,0.92)
+    pt3dadd(-5284.94,6378.23,-1133.87,0.92)
+}
+dend[13] { 
+    pt3dadd(-5284.94,6378.23,-1133.87,0.92)
+    pt3dadd(-5298.05,6383.26,-1126.52,0.92)
+    pt3dadd(-5314.19,6387.17,-1115.86,0.92)
+    pt3dadd(-5328.63,6390,-1106.83,0.92)
+    pt3dadd(-5342.43,6395.24,-1097.76,0.92)
+}
+dend[14] {
+    pt3dadd(-5342.43,6395.24,-1097.76,0.92)
+    pt3dadd(-5352.57,6402.43,-1090.89,0.92)
+    pt3dadd(-5354.1,6412.17,-1081.55,0.92)
+    pt3dadd(-5353.74,6420.2,-1078.54,0.92)
+}
+dend[15] {
+    pt3dadd(-5353.74,6420.2,-1078.54,0.92)
+    pt3dadd(-5371.71,6428.31,-1075.89,0.92)
+    pt3dadd(-5384.63,6434.19,-1067.89,0.92)
+    pt3dadd(-5394.58,6438.41,-1063.12,0.92)
+    pt3dadd(-5410.27,6450.42,-1052.37,0.92)
+}
+dend[16] {
+    pt3dadd(-5410.27,6450.42,-1052.37,0.92)
+    pt3dadd(-5414.28,6457.5,-1046.98,0.616)
+    pt3dadd(-5425.34,6465.02,-1042.58,0.616)
+    pt3dadd(-5427.06,6470.48,-1038.82,0.616)
+}
+dend[17] {
+    pt3dadd(-5427.06,6470.48,-1038.82,0.616)
+    pt3dadd(-5425.21,6471.47,-1035.01,0.616)
+    pt3dadd(-5424.92,6473.43,-1029.35,0.616)
+    pt3dadd(-5443.12,6485.86,-1020.11,0.616)
+    pt3dadd(-5483.25,6510.33,-996.837,0.616) //was 0.624
+}
+dend[18] {
+    pt3dadd(-5483.25,6510.33,-996.837,0.616) //was 0.624
+    pt3dadd(-5502.07,6519.44,-993.577,0.616) //was 0.92
+    pt3dadd(-5514.03,6527.86,-991.007,0.616)
+    pt3dadd(-5536.55,6537.82,-982.887,0.616)
+    pt3dadd(-5546.71,6549.35,-974.257,0.616)
+    pt3dadd(-5546.38,6558.02,-966.307,0.616)
+}
+//dend3
+dend[19] {
+    pt3dadd(-5048.94,6285.22,-1407.54,0.92) //was 1.6
+    pt3dadd(-5056.26,6291.94,-1406.47,0.92) //was 1.6
+    pt3dadd(-5064.65,6297.22,-1405.86,0.92) //was 1.6
+    pt3dadd(-5065.8,6302.13,-1402.2,0.92) //was 1.6
+}
+//dend4
+dend[20] {
+    pt3dadd(-5065.8,6302.13,-1402.2,0.92) //was 1.6
+    pt3dadd(-5065.69,6302.27,-1396.46,0.92) //was 1.536
+    pt3dadd(-5074.04,6307.07,-1393.15,0.92) //was 1.232
+}
+dend[21]{ 
+    pt3dadd(-5074.04,6307.07,-1393.15,0.92) //was 1.232
+    pt3dadd(-5079.53,6307.68,-1389.63,0.92)
+    pt3dadd(-5080.64,6309.66,-1388.15,0.92)
+    pt3dadd(-5080.3,6313.57,-1382.37,0.92)
+    pt3dadd(-5104.64,6314.33,-1375.45,0.92)
+}
+dend[22]{
+    pt3dadd(-5104.64,6314.33,-1375.45,0.92)
+    pt3dadd(-5117.81,6313.97,-1365.36,0.92)
+    pt3dadd(-5128.25,6313.81,-1359.27,0.92)
+    pt3dadd(-5131.94,6315.87,-1354.67,0.92)
+}
+dend[23]{
+    pt3dadd(-5131.94,6315.87,-1354.67,0.92)
+    pt3dadd(-5131.9,6312.41,-1349.18,0.92)
+    pt3dadd(-5140.34,6314.02,-1339.44,0.92)
+    pt3dadd(-5151.81,6312.63,-1331.65,0.92)
+    pt3dadd(-5162.81,6317.4,-1329.04,0.92)
+}
+dend[24]{
+    pt3dadd(-5162.81,6317.4,-1329.04,0.92)
+    pt3dadd(-5171.59,6323.33,-1326.55,0.92)
+    pt3dadd(-5171.47,6325.97,-1323.05,0.92)
+    pt3dadd(-5171.37,6330.16,-1322.33,0.92)
+}
+dend[25]{
+    pt3dadd(-5171.37,6330.16,-1322.33,0.92)
+    pt3dadd(-5171.35,6334.56,-1325.74,0.92)
+    pt3dadd(-5182.97,6340.61,-1326.38,0.92)
+    pt3dadd(-5205.36,6346.1,-1322.1,0.92)
+    pt3dadd(-5219.92,6345.35,-1315.54,0.92)
+}
+dend[26]{
+    pt3dadd(-5219.92,6345.35,-1315.54,0.92)
+    pt3dadd(-5231.94,6347.43,-1309.88,0.92)
+    pt3dadd(-5234.71,6354.83,-1301.6,0.92)
+    pt3dadd(-5234.58,6352.33,-1299.35,0.92)
+}
+dend[27]{
+    pt3dadd(-5234.58,6352.33,-1299.35,0.92)
+    pt3dadd(-5239.92,6349.27,-1299.41,0.92)
+    pt3dadd(-5265.75,6350.76,-1294.19,0.92)
+    pt3dadd(-5289.88,6356.24,-1288.98,0.92)
+    pt3dadd(-5289.71,6361.67,-1285.71,0.92)
+}
+dend[28]{ 
+    pt3dadd(-5289.71,6361.67,-1285.71,0.92)
+    pt3dadd(-5289.48,6368.77,-1280.98,0.92) //was 1.232
+    pt3dadd(-5342.99,6383.07,-1272.37,0.92) //was 1.232
+    pt3dadd(-5352.64,6392.73,-1265.59,0.92) //was 1.232
+}
+dend[29]{
+    pt3dadd(-5352.64,6392.73,-1265.59,0.92) //was 1.232
+    pt3dadd(-5382.68,6402.05,-1258.64,0.92) //was 1.232
+    pt3dadd(-5400.61,6406.79,-1250.68,0.92) //was 1.232
+    pt3dadd(-5412.1,6414.64,-1245.98,0.92) //was 1.232
+    pt3dadd(-5435.78,6423.78,-1235.95,0.92) //was 1.232
+}
+dend[30]{
+    pt3dadd(-5435.78,6423.78,-1235.95,0.92) //was 1.232
+    pt3dadd(-5460.76,6436,-1228.27,0.92) //was 1.232
+    pt3dadd(-5465.8,6443.19,-1215.79,0.92) //was 1.232
+    pt3dadd(-5465.43,6452.6,-1213.73,0.92) //was 1.232
+}
+dend[31]{
+    pt3dadd(-5465.43,6452.6,-1213.73,0.92) //was 1.232
+    pt3dadd(-5502.33,6458.06,-1208.99,0.92) //was 1.232
+    pt3dadd(-5513.49,6462.15,-1206.48,0.92)
+    pt3dadd(-5523.82,6468.83,-1201.13,0.92)
+    pt3dadd(-5533.28,6476.29,-1197.99,0.92)
+}
+dend[32]{
+    pt3dadd(-5533.28,6476.29,-1197.99,0.92)
+    pt3dadd(-5533.14,6477.93,-1192.17,0.92)
+    pt3dadd(-5533.19,6480.14,-1189.39,0.92)
+    pt3dadd(-5551.95,6486.12,-1187.58,0.616)
+    pt3dadd(-5584.2,6489.45,-1182.54,0.616)
+    pt3dadd(-5594.23,6491.18,-1180.1,0.616)
+}
+//dend5
+dend[33] {
+    pt3dadd(-5065.8,6302.13,-1402.2,0.92) //was 1.6
+    pt3dadd(-5069.99,6306.83,-1403.86,0.92) //was 1.536
+    pt3dadd(-5069.84,6312.68,-1401.94,0.92) //was 1.536
+    pt3dadd(-5074.89,6317.52,-1402.73,0.92) //was 1.536
+}
+dend[34]{
+    pt3dadd(-5074.89,6317.52,-1402.73,0.92) //was 1.536
+    pt3dadd(-5074.75,6321.19,-1399.1,0.92) //was 1.536
+    pt3dadd(-5074.64,6326.55,-1399.37,0.92) //was 1.536
+    pt3dadd(-5074.29,6333.36,-1395.99,0.92) //was 1.536
+    pt3dadd(-5089.02,6345.44,-1396.59,0.92) //was 1.536
+}
+dend[35]{
+    pt3dadd(-5089.02,6345.44,-1396.59,0.92) //was 1.536
+    pt3dadd(-5101.99,6358.15,-1398.24,0.92) //was 1.536
+    pt3dadd(-5107.64,6367.86,-1396.78,0.92) //was 1.536
+    pt3dadd(-5111.81,6374.15,-1399.06,0.92) //was 1.232
+    pt3dadd(-5117.61,6383.58,-1398.07,0.92) //was 1.232
+    pt3dadd(-5127.66,6390.95,-1402.38,0.92) //was 1.232
+}
+dend[36]{
+    pt3dadd(-5127.66,6390.95,-1402.38,0.92) //was 1.232
+    pt3dadd(-5135.6,6397.76,-1403.27,0.92) //was 1.232
+    pt3dadd(-5141.04,6407.54,-1406.6,0.92) //was 1.232
+    pt3dadd(-5145.43,6417.84,-1409,0.92) //was 1.232
+    pt3dadd(-5147.38,6420.46,-1406.68,0.92) //was 1.232
+}
+dend[37]{
+    pt3dadd(-5147.38,6420.46,-1406.68,0.92) //was 1.232
+    pt3dadd(-5153.46,6424.91,-1407.82,0.92) //was 1.232
+    pt3dadd(-5153.51,6428.32,-1405.7,0.92) //was 1.232
+    pt3dadd(-5153.28,6438.25,-1412.31,0.92) //was 1.232
+    pt3dadd(-5154.35,6440.67,-1417.17,0.92) //was 1.232
+}
+dend[38]{ 
+    pt3dadd(-5154.35,6440.67,-1417.17,0.92) //was 1.232
+    pt3dadd(-5176.13,6458.47,-1416.86,0.92) //was 1.232
+    pt3dadd(-5190.79,6480.64,-1417.07,0.92) //was 1.232
+    pt3dadd(-5206.26,6502.15,-1412.39,0.92) //was 1.232
+    pt3dadd(-5206.19,6505.78,-1405.35,0.92)
+    pt3dadd(-5206.09,6509.83,-1404.12,0.92)
+}
+dend[39]{
+    pt3dadd(-5206.09,6509.83,-1404.12,0.92)
+    pt3dadd(-5213.31,6510.24,-1398.25,0.92)
+    pt3dadd(-5224.54,6519.27,-1396.57,0.92)
+    pt3dadd(-5233.49,6530.24,-1393.52,0.92)
+    pt3dadd(-5245.53,6538.72,-1395.23,0.92)
+    pt3dadd(-5247.72,6549.62,-1399.16,0.92)
+}
+//dend6
+dend[40]{
+    pt3dadd(-5021.29,6263.8,-1419.79,1.6)
+    pt3dadd(-5021.21,6272.17,-1424.15,1.6)
+}
+//dend7
+dend[41]{
+    pt3dadd(-5021.21,6272.17,-1424.15,1.6)
+    pt3dadd(-5011.59,6291.96,-1417.34,1.536)
+}
+dend[42]{
+    pt3dadd(-5011.59,6291.96,-1417.34,1.536)
+    pt3dadd(-5017.96,6301.06,-1414.9,1.536)
+}
+dend[43]{
+    pt3dadd(-5017.96,6301.06,-1414.9,1.536)
+    pt3dadd(-5034.76,6315.1,-1410.61,1.536)
+    pt3dadd(-5045.34,6329.82,-1404.11,1.536)
+}
+dend[44]{
+    pt3dadd(-5045.34,6329.82,-1404.11,1.536)
+    pt3dadd(-5051.13,6337.93,-1401.21,1.536)
+}
+dend[45]{
+    pt3dadd(-5051.13,6337.93,-1401.21,1.536)
+    pt3dadd(-5056.73,6360.35,-1394.95,1.536)
+    pt3dadd(-5066.8,6375.88,-1386.13,1.536)
+}
+dend[46]{
+    pt3dadd(-5066.8,6375.88,-1386.13,1.536)
+    pt3dadd(-5077.71,6391.5,-1382.18,1.536)
+    pt3dadd(-5077.6,6393.39,-1378.24,1.232)
+}
+dend[47]{ 
+    pt3dadd(-5077.6,6393.39,-1378.24,1.232)
+    pt3dadd(-5077.77,6398.37,-1377.32,1.232)
+    pt3dadd(-5076.93,6414.53,-1372.95,0.624)
+}
+dend[48]{
+    pt3dadd(-5076.93,6414.53,-1372.95,0.624)
+    pt3dadd(-5072.5,6569.67,-1302.5,0.624) //was 0.92
+    pt3dadd(-5080.21,6581.63,-1296.4,0.624) //was 0.92
+}
+dend[49]{
+    pt3dadd(-5080.21,6581.63,-1296.4,0.624) //was 0.92
+    pt3dadd(-5103.3,6598.5,-1294.8,0.624) //was 0.92
+    pt3dadd(-5134.23,6623.06,-1288.95,0.624) //was 0.92
+}
+//dend8
+dend[50]{
+    pt3dadd(-5021.21,6272.17,-1424.15,1.6)
+    pt3dadd(-5016.54,6273.18,-1426.54,1.6)
+    pt3dadd(-5010.6,6276.68,-1434,1.6)
+    pt3dadd(-5008.9,6280.16,-1441.03,1.6)
+    pt3dadd(-5009.09,6283.39,-1446.72,1.6)
+    pt3dadd(-5009.06,6287.23,-1449.37,1.6)
+}
+//dend9
+dend[51]{
+    pt3dadd(-5009.06,6287.23,-1449.37,1.6)
+    pt3dadd(-5013.16,6288.45,-1450.42,1.6)
+    pt3dadd(-5013.14,6290.84,-1452.14,1.6)
+    pt3dadd(-5013.07,6293.72,-1451.17,1.232)
+}
+dend[52]{
+    pt3dadd(-5013.07,6293.72,-1451.17,1.232)
+    pt3dadd(-5018.12,6304.27,-1458.23,1.232) //was 1.536
+    pt3dadd(-5024.28,6313.76,-1460.74,1.232) //was 1.536
+    pt3dadd(-5025.94,6320.73,-1463.32,1.232) //was 1.536
+    pt3dadd(-5026.03,6324.48,-1472.27,1.232) //was 1.536
+}
+dend[53]{
+    pt3dadd(-5026.03,6324.48,-1472.27,1.232) //was 1.536
+    pt3dadd(-5031.99,6330.67,-1475.86,1.232) //was 1.536
+    pt3dadd(-5037.78,6345.02,-1479.62,1.232) //was 1.536
+    pt3dadd(-5040.84,6365.88,-1484.95,1.232) //was 1.536
+    pt3dadd(-5055.65,6391.37,-1488.62,1.232) //was 1.536
+}
+dend[54]{
+    pt3dadd(-5055.65,6391.37,-1488.62,1.232) //was 1.536
+    pt3dadd(-5066.58,6412.76,-1492.46,1.232) //was 1.536
+    pt3dadd(-5075.1,6428.76,-1494.84,1.232) //was 1.536
+    pt3dadd(-5081.45,6437.13,-1498.37,1.232) //was 1.536
+    pt3dadd(-5081.28,6444.39,-1497.24,1.232) //was 1.536
+}
+dend[55]{
+    pt3dadd(-5081.28,6444.39,-1497.24,1.232) //was 1.536
+    pt3dadd(-5095.49,6455.65,-1500.86,1.232) //was 1.536
+    pt3dadd(-5102,6464.64,-1505.58,1.232)
+    pt3dadd(-5111.19,6476.17,-1507.6,1.232)
+    pt3dadd(-5117.28,6482.78,-1510.96,1.232)
+}
+dend[56]{
+    pt3dadd(-5117.28,6482.78,-1510.96,1.232)
+    pt3dadd(-5117.29,6490.77,-1520.04,1.232)
+    pt3dadd(-5121.38,6495.76,-1524.65,1.232)
+    pt3dadd(-5141.7,6506.83,-1525.44,0.92)
+    pt3dadd(-5144.95,6514.11,-1527.06,0.92)
+}
+dend[57]{
+    pt3dadd(-5144.95,6514.11,-1527.06,0.92)
+    pt3dadd(-5144.91,6517.78,-1528.89,0.92)
+    pt3dadd(-5144.8,6522.81,-1528.35,0.92)
+    pt3dadd(-5150.78,6530.13,-1534.33,0.92)
+    pt3dadd(-5154.47,6536.75,-1534.91,0.92)
+}
+dend[58]{
+    pt3dadd(-5154.47,6536.75,-1534.91,0.92)
+    pt3dadd(-5158.17,6545.28,-1538.21,0.92)
+    pt3dadd(-5161.52,6555.46,-1540.25,0.92)
+    pt3dadd(-5161.36,6563.96,-1540.8,0.92)
+    pt3dadd(-5162.02,6571.52,-1545.18,0.92)
+}
+dend[59]{
+    pt3dadd(-5162.02,6571.52,-1545.18,0.92)
+    pt3dadd(-5161.85,6579.15,-1543.96,0.92)
+    pt3dadd(-5161.76,6585.35,-1546.31,0.92)
+    pt3dadd(-5161.63,6590.56,-1544.92,0.92)
+    pt3dadd(-5161.13,6615.2,-1544.19,0.92)
+}
+dend[60]{
+    pt3dadd(-5161.13,6615.2,-1544.19,0.92)
+    pt3dadd(-5169.04,6644.31,-1543.57,0.92)
+    pt3dadd(-5171.9,6669.18,-1542.5,0.92)
+    pt3dadd(-5180.2,6696.22,-1545.49,0.92)
+    pt3dadd(-5174.24,6731.03,-1553.81,0.92)
+}
+dend[61]{
+    pt3dadd(-5174.24,6731.03,-1553.81,0.92)
+    pt3dadd(-5174.08,6749.76,-1565.7,0.92)
+    pt3dadd(-5169.73,6769.97,-1574.75,0.92)
+    pt3dadd(-5186.44,6795.16,-1577.69,0.92)
+    pt3dadd(-5192.83,6807.95,-1580.07,0.92)
+}
+//dend10
+dend[62]{
+    pt3dadd(-5009.06,6287.23,-1449.37,1.6)
+    pt3dadd(-5003.74,6298.5,-1451.19,1.536)
+    pt3dadd(-5003.56,6305.03,-1448.6,1.232)
+    pt3dadd(-5004.81,6312.05,-1445.26,0.92)
+}
+dend[63]{
+    pt3dadd(-5004.81,6312.05,-1445.26,0.92)
+    pt3dadd(-4998.62,6326.05,-1442.72,0.92)
+    pt3dadd(-5000.37,6336.57,-1437.71,0.92)
+    pt3dadd(-5005.36,6353.59,-1424.69,0.92)
+}
+dend[64]{
+    pt3dadd(-5005.36,6353.59,-1424.69,0.92)
+    pt3dadd(-4999.37,6369.63,-1419.56,0.92)
+    pt3dadd(-4998.86,6385.17,-1408.83,0.92)
+    pt3dadd(-4998.56,6397.6,-1398.16,0.92)
+    pt3dadd(-4998.67,6400.74,-1392.2,0.92)
+}
+dend[65]{
+    pt3dadd(-4998.67,6400.74,-1392.2,0.92)
+    pt3dadd(-4998.66,6408.47,-1391.59,0.92)
+    pt3dadd(-4998.31,6419.88,-1385.17,0.92)
+    pt3dadd(-4995.86,6423.41,-1375.36,0.92)
+    pt3dadd(-5005.81,6435.64,-1363.84,0.92)
+}
+dend[66]{       
+    pt3dadd(-5005.81,6435.64,-1363.84,0.92)
+    pt3dadd(-5007.32,6441.32,-1356.79,0.92)
+    pt3dadd(-5006.52,6469.19,-1336.17,0.92)
+    pt3dadd(-5006.4,6477.4,-1330.18,0.92)
+    pt3dadd(-5012.26,6492.5,-1322.79,0.92)
+}
+dend[67]{ 
+    pt3dadd(-5012.26,6492.5,-1322.79,0.92)
+    pt3dadd(-5018.86,6505.64,-1321.39,0.92)
+    pt3dadd(-5026.16,6514.55,-1313.68,0.92)
+    pt3dadd(-5035.94,6522.88,-1304.1,0.92)
+    pt3dadd(-5044.02,6533.35,-1300.76,0.92)
+}
+dend[68]{       
+    pt3dadd(-5044.02,6533.35,-1300.76,0.92)
+    pt3dadd(-5051.88,6546.71,-1288.22,0.92)
+    pt3dadd(-5054.53,6553.46,-1280.5,0.92)
+    pt3dadd(-5060.48,6566.4,-1283.28,0.92)
+    pt3dadd(-5061.4,6569.05,-1280.3,0.92)
+}
+//dend11
+dend[69]{
+    pt3dadd(-5061.4,6569.05,-1280.3,0.92)
+    pt3dadd(-5061.96,6567.63,-1277.09,0.616)
+    pt3dadd(-5063.13,6572.97,-1274.8,0.616)
+}
+//dend12
+dend[70]{
+    pt3dadd(-5061.4,6569.05,-1280.3,0.92)
+    pt3dadd(-5060,6577.87,-1277.64,0.92)
+}
+dend[71]{
+    pt3dadd(-5060,6577.87,-1277.64,0.92)
+    pt3dadd(-5063.63,6590.91,-1273.85,0.92)
+    pt3dadd(-5071.36,6610.56,-1269.75,0.92)
+}
+dend[72]{
+    pt3dadd(-5071.36,6610.56,-1269.75,0.92)
+    pt3dadd(-5071.02,6620.54,-1262.17,0.92)
+    pt3dadd(-5070.84,6632.26,-1265.41,0.92) //was 1.24
+}
+dend[73]{
+    pt3dadd(-5070.84,6632.26,-1265.41,0.92) //was 1.24
+    pt3dadd(-5087.52,6665.51,-1259.54,0.624)
+    pt3dadd(-5106.42,6706.2,-1255.54,0.624)
+}
+dend[74]{
+    pt3dadd(-5106.42,6706.2,-1255.54,0.624)
+    pt3dadd(-5117.65,6734.88,-1251.32,0.624)
+    pt3dadd(-5127.3,6749.59,-1234.5,0.624)
+}
+dend[75]{
+    pt3dadd(-5127.3,6749.59,-1234.5,0.624)
+    pt3dadd(-5139.47,6765.26,-1227.74,0.624)
+    pt3dadd(-5150.61,6803.47,-1205.36,0.624)
+}
+dend[76]{
+    pt3dadd(-5150.61,6803.47,-1205.36,0.624)
+    pt3dadd(-5150.01,6823.72,-1194.86,0.624)
+    pt3dadd(-5151.74,6842.01,-1190.14,0.624)
+}
+
+//-----------------------------------------------------------
+//dend13
+dend[77]{
+    pt3dadd(-5024.14,6232.29,-1410.95,2)
+    pt3dadd(-5021.81,6225.33,-1405.94,1.6)
+    pt3dadd(-5021.93,6218.03,-1404.67,1.6)
+}
+//dend14
+dend[78]{
+    pt3dadd(-5021.93,6218.03,-1404.67,1.6)
+    pt3dadd(-5021.92,6213.42,-1399.26,1.232)
+    pt3dadd(-5025.37,6207.41,-1396.72,1.232)
+    pt3dadd(-5026.16,6205.01,-1389.36,1.232)
+}
+dend[79]{
+    pt3dadd(-5026.16,6205.01,-1389.36,1.232)
+    pt3dadd(-5034.06,6206.05,-1382,1.232)
+    pt3dadd(-5040.68,6197.33,-1373.39,1.232)
+    pt3dadd(-5048.01,6190.06,-1365.51,1.232)
+    pt3dadd(-5051.15,6192.48,-1355.32,1.232)
+}
+dend[80]{
+    pt3dadd(-5051.15,6192.48,-1355.32,1.232)
+    pt3dadd(-5051.13,6190.67,-1352.25,1.232)
+    pt3dadd(-5055.49,6191.14,-1343.5,1.232)
+    pt3dadd(-5055.4,6191.04,-1338.24,1.232)
+    pt3dadd(-5055.42,6185.94,-1333.81,1.232)
+    pt3dadd(-5060.6,6183.46,-1325.59,1.232)
+}
+dend[81]{
+    pt3dadd(-5060.6,6183.46,-1325.59,1.232)
+    pt3dadd(-5067.52,6175.22,-1318.44,1.232)
+    pt3dadd(-5073.6,6172.93,-1312.2,1.232)
+    pt3dadd(-5074.93,6173.34,-1304.72,1.232)
+    pt3dadd(-5075.43,6166.69,-1293.06,1.232)
+}
+dend[82]{
+    pt3dadd(-5075.43,6166.69,-1293.06,1.232)
+    pt3dadd(-5075.06,6168.49,-1283.15,1.232)
+    pt3dadd(-5074.9,6173.1,-1279.53,1.232)
+    pt3dadd(-5074.89,6173.14,-1270.71,1.232)
+    pt3dadd(-5086.25,6169.33,-1262.77,1.232)
+}
+dend[83]{
+    pt3dadd(-5086.25,6169.33,-1262.77,1.232)
+    pt3dadd(-5096.57,6158.82,-1246.23,1.232)
+    pt3dadd(-5106.27,6153.4,-1233.93,0.92)
+    pt3dadd(-5112.71,6145.52,-1217.14,0.92)
+    pt3dadd(-5113.11,6137.98,-1206.73,0.92)
+    pt3dadd(-5120.44,6136.4,-1197.05,0.92)
+}
+dend[84]{
+    pt3dadd(-5120.44,6136.4,-1197.05,0.92)
+    pt3dadd(-5127.33,6132.06,-1192.11,0.92)
+    pt3dadd(-5129.33,6132.6,-1181.94,0.92)
+    pt3dadd(-5136.34,6125.8,-1173.65,0.92)
+    pt3dadd(-5146.26,6117.72,-1154.04,0.616)
+}
+dend[85]{
+    pt3dadd(-5146.26,6117.72,-1154.04,0.616)
+    pt3dadd(-5150.4,6118.38,-1148.61,0.616)
+    pt3dadd(-5155.09,6120.63,-1143.15,0.616)
+    pt3dadd(-5163.16,6117.64,-1132.63,0.616)
+    pt3dadd(-5171.14,6115.17,-1125.58,0.616)
+    pt3dadd(-5170.87,6113.05,-1116.15,0.616)
+}
+dend[86]{
+    pt3dadd(-5170.87,6113.05,-1116.15,0.616)
+    pt3dadd(-5170.81,6109.51,-1108.77,0.616)
+    pt3dadd(-5186.44,6111.81,-1100.45,0.616)
+    pt3dadd(-5203.19,6115.08,-1090.45,0.616)
+    pt3dadd(-5214.17,6126.1,-1085.15,0.616)
+}
+//dend15
+dend[87]{
+    pt3dadd(-5021.93,6218.03,-1404.67,1.6)
+    pt3dadd(-5024.52,6211.51,-1403.12,1.6)
+}
+//dend16
+dend[88]{
+    pt3dadd(-5024.52,6211.51,-1403.12,1.6)
+    pt3dadd(-5017.52,6197.48,-1405.36,1.536)
+    pt3dadd(-5002.2,6177.31,-1411.76,1.536)
+}
+dend[89]{
+    pt3dadd(-5002.2,6177.31,-1411.76,1.536)
+    pt3dadd(-5001.5,6174.78,-1418.39,1.232)
+    pt3dadd(-4971.21,6162.1,-1423.54,1.232)
+}
+dend[90]{
+    pt3dadd(-4971.21,6162.1,-1423.54,1.232)
+    pt3dadd(-4946.15,6144.6,-1421.16,1.232)
+    pt3dadd(-4937.43,6136.16,-1424.26,1.232)
+    pt3dadd(-4937.62,6130.26,-1428.06,1.232)
+}
+dend[91]{
+    pt3dadd(-4937.62,6130.26,-1428.06,1.232)
+    pt3dadd(-4937.82,6122.85,-1431.12,0.92)
+    pt3dadd(-4924.85,6107.77,-1434.89,0.92)
+    pt3dadd(-4909.92,6094.34,-1437.07,0.92)
+}
+dend[92]{
+    pt3dadd(-4909.92,6094.34,-1437.07,0.92)
+    pt3dadd(-4893.92,6080.85,-1445.37,0.92)
+    pt3dadd(-4883.47,6070.72,-1448.09,0.92)
+    pt3dadd(-4875.71,6062.87,-1447.86,0.92)
+}
+dend[93]{
+    pt3dadd(-4875.71,6062.87,-1447.86,0.92)
+    pt3dadd(-4866.96,6052.84,-1447.68,0.92)
+    pt3dadd(-4855.21,6048.34,-1441.77,0.92)
+}
+dend[94]{
+    pt3dadd(-4855.21,6048.34,-1441.77,0.92)
+    pt3dadd(-4844.74,6040.87,-1438.17,0.92)
+    pt3dadd(-4837.16,6032.86,-1440.23,0.92)
+    pt3dadd(-4827.23,6020.35,-1437.06,0.92)
+}
+dend[95]{
+    pt3dadd(-4827.23,6020.35,-1437.06,0.92)
+    pt3dadd(-4817.4,6011.57,-1434.56,0.92)
+    pt3dadd(-4804.03,6003.16,-1440.38,0.92)
+    pt3dadd(-4804.1,6003.24,-1443.94,0.92)
+}
+dend[96]{
+    pt3dadd(-4804.1,6003.24,-1443.94,0.92)
+    pt3dadd(-4804.52,5996.42,-1451.14,0.92)
+    pt3dadd(-4777.75,5993.81,-1459.73,0.92)
+    pt3dadd(-4763.07,5984.58,-1464.76,0.92)
+}
+dend[97]{
+    pt3dadd(-4763.07,5984.58,-1464.76,0.92)
+    pt3dadd(-4749.59,5980.72,-1468.73,0.92)
+    pt3dadd(-4745.02,5975.52,-1469.37,0.92)
+    pt3dadd(-4745.12,5974.13,-1473.55,0.92)
+}
+dend[98]{
+    pt3dadd(-4745.12,5974.13,-1473.55,0.92)
+    pt3dadd(-4745.57,5967.27,-1482.39,0.624)
+    pt3dadd(-4697.97,5956.27,-1496.75,0.624)
+    pt3dadd(-4687.51,5944.19,-1505.28,0.624)
+}
+//dend17
+dend[99]{
+    pt3dadd(-5024.52,6211.51,-1403.12,1.6)
+    pt3dadd(-5028.86,6203.33,-1398.83,1.536)
+    pt3dadd(-5032.61,6195.63,-1394.79,1.536)
+}
+dend[100]{
+    pt3dadd(-5032.61,6195.63,-1394.79,1.536)
+    pt3dadd(-5038.19,6192.34,-1391.75,1.536)
+    pt3dadd(-5044.68,6186.76,-1387.79,1.536)
+    pt3dadd(-5051.89,6182.17,-1384.33,1.536)
+    pt3dadd(-5064.85,6179.65,-1376.87,1.536)
+}
+dend[101]{
+    pt3dadd(-5064.85,6179.65,-1376.87,1.536)
+    pt3dadd(-5065.77,6179.94,-1371.46,1.536)
+    pt3dadd(-5070.17,6177.47,-1368.56,1.536)
+    pt3dadd(-5074.03,6178.66,-1364.46,1.232)
+    pt3dadd(-5073.99,6176.97,-1360.54,1.232)
+}
+dend[102]{      
+    pt3dadd(-5073.99,6176.97,-1360.54,1.232)
+    pt3dadd(-5074.05,6182.47,-1353.87,0.92)
+    pt3dadd(-5073.84,6190.65,-1351.7,0.92)
+    pt3dadd(-5073.7,6197.84,-1351.79,0.92)
+    pt3dadd(-5073.6,6197.46,-1345.89,0.92)
+}
+dend[103]{  
+    pt3dadd(-5073.6,6197.46,-1345.89,0.92)
+    pt3dadd(-5073.55,6192.1,-1337.71,0.92)
+    pt3dadd(-5124.02,6167.77,-1328.31,0.92)
+    pt3dadd(-5137.85,6147.27,-1324.77,0.92)
+    pt3dadd(-5137.98,6135.98,-1319.77,0.92)
+}
+dend[104]{     
+    pt3dadd(-5137.98,6135.98,-1319.77,0.92)
+    pt3dadd(-5148.72,6121.67,-1321.95,0.92)
+    pt3dadd(-5157.99,6106.2,-1322.84,0.92)
+    pt3dadd(-5165.72,6090.17,-1326.88,0.92)
+    pt3dadd(-5165.87,6083.98,-1328.39,0.92)
+}
+dend[105]{
+    pt3dadd(-5165.87,6083.98,-1328.39,0.92)
+    pt3dadd(-5175.62,6077.44,-1325.23,0.92)
+    pt3dadd(-5183.94,6074.59,-1320.05,0.92)
+    pt3dadd(-5193.05,6072.59,-1318.72,0.92)
+}
+//dend18
+dend[106]{
+    pt3dadd(-5193.05,6072.59,-1318.72,0.92)
+    pt3dadd(-5208.48,6063.16,-1310.43,0.92)
+    pt3dadd(-5218.17,6058.22,-1306.15,0.92)
+}
+dend[107]{
+    pt3dadd(-5218.17,6058.22,-1306.15,0.92)
+    pt3dadd(-5228.32,6052.95,-1302,0.92)
+    pt3dadd(-5226.45,6048.9,-1299.56,0.92)
+    pt3dadd(-5226.59,6037.27,-1302.47,0.92)
+}
+dend[108]{
+    pt3dadd(-5226.59,6037.27,-1302.47,0.92)
+    pt3dadd(-5251.74,6031.02,-1299.61,0.92)
+    pt3dadd(-5275.44,6027.26,-1293.19,0.92)
+    pt3dadd(-5275.43,6021.58,-1286.42,0.92)
+}
+dend[109]{
+    pt3dadd(-5275.43,6021.58,-1286.42,0.92)
+    pt3dadd(-5275.49,6016.84,-1284.4,0.92)
+    pt3dadd(-5290.43,6010.68,-1284.43,0.92)
+    pt3dadd(-5299.25,6004.63,-1279.55,0.92)
+}
+dend[110]{
+    pt3dadd(-5299.25,6004.63,-1279.55,0.92)
+    pt3dadd(-5310.9,5996.92,-1274.42,0.92)
+    pt3dadd(-5320.29,5985.55,-1270.65,0.92)
+    pt3dadd(-5325.31,5982.81,-1277.36,0.92)
+}
+dend[111]{
+    pt3dadd(-5325.31,5982.81,-1277.36,0.92)
+    pt3dadd(-5327.67,5978.6,-1273.53,0.92)
+    pt3dadd(-5327.7,5971.62,-1275.43,0.92)
+    pt3dadd(-5357.29,5967.17,-1276.92,0.616)
+}
+dend[112]{
+    pt3dadd(-5357.29,5967.17,-1276.92,0.616)
+    pt3dadd(-5366.74,5966.06,-1271.49,0.616)
+    pt3dadd(-5378.24,5956.79,-1264.86,0.616)
+    pt3dadd(-5387.51,5950.63,-1259.88,0.304)
+}
+//dend19
+dend[113]{
+    pt3dadd(-5193.05,6072.59,-1318.72,0.92)
+    pt3dadd(-5198.4,6066.72,-1324.15,0.92)
+    pt3dadd(-5212.74,6066.48,-1330.44,0.92)
+}
+dend[114]{
+    pt3dadd(-5212.74,6066.48,-1330.44,0.92)
+    pt3dadd(-5223.33,6068.22,-1333.79,0.92)
+    pt3dadd(-5224.03,6059.91,-1331.16,0.92)
+    pt3dadd(-5223.99,6059.05,-1335.88,0.92)
+}
+dend[115]{
+    pt3dadd(-5223.99,6059.05,-1335.88,0.92)
+    pt3dadd(-5276.18,6057.81,-1333.99,0.92)
+    pt3dadd(-5287.88,6052.1,-1333.95,0.92)
+    pt3dadd(-5309.65,6053.58,-1339.75,0.92)
+}
+dend[116]{
+    pt3dadd(-5309.65,6053.58,-1339.75,0.92)
+    pt3dadd(-5321.91,6046.81,-1344.97,0.92)
+    pt3dadd(-5336.44,6041.1,-1339.49,0.92)
+    pt3dadd(-5339.15,6032.08,-1333.7,0.92)
+}
+dend[117]{
+    pt3dadd(-5339.15,6032.08,-1333.7,0.92)
+    pt3dadd(-5339.17,6026.18,-1336.27,0.92)
+    pt3dadd(-5321.1,6021.51,-1344.84,0.616)
+    pt3dadd(-5356.78,6020.99,-1355.24,0.616)
+}
+dend[118]{
+    pt3dadd(-5356.78,6020.99,-1355.24,0.616)
+    pt3dadd(-5368.2,6029.99,-1363.22,0.616)
+    pt3dadd(-5368.22,6032.12,-1367.07,0.616)
+    pt3dadd(-5372.05,6038.51,-1374.58,0.616)
+}
+dend[119]{
+    pt3dadd(-5372.05,6038.51,-1374.58,0.616)
+    pt3dadd(-5372.1,6039.44,-1378.33,0.616)
+    pt3dadd(-5372.14,6040.28,-1381.71,0.304)
+}
+//-------------------------------------------------------
+//dend20
+dend[120]{
+    pt3dadd(-5024.14,6232.29,-1410.95,2)
+    pt3dadd(-5021.95,6234.95,-1423.92,1.6)
+    pt3dadd(-5022.07,6231.27,-1426.12,1.6)
+}
+//dend21
+dend[121]{
+    pt3dadd(-5022.07,6231.27,-1426.12,1.6)
+    pt3dadd(-5022.23,6226.87,-1430,1.6)
+    pt3dadd(-5023.03,6224.55,-1438.89,1.6)
+    pt3dadd(-5023.16,6223.8,-1445.24,1.6)
+}
+//dend22
+dend[122]{
+    pt3dadd(-5023.16,6223.8,-1445.24,1.6)
+    pt3dadd(-5015.2,6215.08,-1457.56,1.536)
+}
+dend[123]{
+    pt3dadd(-5015.2,6215.08,-1457.56,1.536)
+    pt3dadd(-5015.61,6211.99,-1468.21,1.232)
+    pt3dadd(-4973.44,6205.8,-1488.52,1.232)
+}
+dend[124]{
+    pt3dadd(-4973.44,6205.8,-1488.52,1.232)
+    pt3dadd(-4992.96,6202.03,-1508.74,1.232)
+    pt3dadd(-4993.16,6200.32,-1517.86,1.232)
+}
+//dend23
+dend[125]{
+    pt3dadd(-4993.16,6200.32,-1517.86,1.232)
+    pt3dadd(-4993.46,6196.92,-1529.98,1.232)
+}
+dend[126]{
+    pt3dadd(-4993.46,6196.92,-1529.98,1.232)
+    pt3dadd(-4981.8,6202.33,-1547.4,1.232)
+    pt3dadd(-4980.09,6202.42,-1558.57,0.92)
+    pt3dadd(-4966.54,6204,-1572.51,0.92)
+}
+dend[127]{
+    pt3dadd(-4966.54,6204,-1572.51,0.92)
+    pt3dadd(-4966.7,6212.32,-1590.23,0.92)
+    pt3dadd(-4960.92,6220.22,-1611.06,0.92)
+}
+dend[128]{
+    pt3dadd(-4960.92,6220.22,-1611.06,0.92)
+    pt3dadd(-4960.87,6228.18,-1624.84,0.92)
+    pt3dadd(-4961.01,6234.21,-1638.5,0.92)
+    pt3dadd(-4961.03,6238.44,-1644.04,0.92)
+}
+dend[129]{
+    pt3dadd(-4961.03,6238.44,-1644.04,0.92)
+    pt3dadd(-4956.33,6252.96,-1675.78,0.616)
+    pt3dadd(-4954.87,6260.48,-1691.72,0.616)
+}
+dend[130]{
+    pt3dadd(-4954.87,6260.48,-1691.72,0.616)
+    pt3dadd(-4958.63,6266.66,-1703.39,0.616)
+    pt3dadd(-4957.39,6279.34,-1721.43,0.616)
+    pt3dadd(-4945.92,6278.66,-1734.55,0.616)
+}
+dend[131]{
+    pt3dadd(-4945.92,6278.66,-1734.55,0.616)
+    pt3dadd(-4932.81,6286.01,-1747.39,0.616)
+    pt3dadd(-4933.62,6289.08,-1762.13,0.616)
+}
+//dend24
+dend[132]{
+    pt3dadd(-4993.16,6200.32,-1517.86,1.232)
+    pt3dadd(-4998.77,6208.94,-1528.78,0.92)
+    pt3dadd(-4983.78,6209.54,-1543.41,0.92)
+}
+dend[133]{        
+    pt3dadd(-4983.78,6209.54,-1543.41,0.92)
+    pt3dadd(-4975.14,6209.89,-1552.55,0.92)
+    pt3dadd(-4968.76,6208.35,-1570.46,0.92)
+    pt3dadd(-4954.7,6203.89,-1589.92,0.92)
+}
+dend[134]{     
+    pt3dadd(-4954.7,6203.89,-1589.92,0.92)
+    pt3dadd(-4941.28,6205.8,-1603.65,0.92)
+    pt3dadd(-4937.09,6208.33,-1617.85,0.92)
+    pt3dadd(-4933.72,6209.47,-1635.3,0.92)
+}
+dend[135]{
+    pt3dadd(-4933.72,6209.47,-1635.3,0.92)
+    pt3dadd(-4930.86,6212.36,-1641.76,0.92)
+    pt3dadd(-4931.03,6211.17,-1649.58,0.616)
+}
+dend[136]{
+    pt3dadd(-4931.03,6211.17,-1649.58,0.616)
+    pt3dadd(-4930.44,6214.81,-1661.14,0.616)
+    pt3dadd(-4930.81,6215.13,-1673.32,0.616)
+    pt3dadd(-4925.42,6204.22,-1687.6,0.616)
+}
+dend[137]{
+    pt3dadd(-4925.42,6204.22,-1687.6,0.616)
+    pt3dadd(-4919.11,6190.21,-1703.85,0.616)
+    pt3dadd(-4911.06,6184,-1721.4,0.616)
+}
+dend[138]{
+    pt3dadd(-4911.06,6184,-1721.4,0.616)
+    pt3dadd(-4905.27,6179.4,-1743.71,0.616)
+    pt3dadd(-4898.43,6177.88,-1760.9,0.616)
+    pt3dadd(-4890.05,6177.66,-1775.4,0.616)
+}
+dend[139]{ 
+    pt3dadd(-4890.05,6177.66,-1775.4,0.616)
+    pt3dadd(-4885.46,6174.13,-1792.24,0.616)
+    pt3dadd(-4885.48,6172.29,-1807.42,0.616)
+}
+dend[140]{
+    pt3dadd(-4885.48,6172.29,-1807.42,0.616)
+    pt3dadd(-4884.91,6175.81,-1812.14,0.616)
+    pt3dadd(-4885.25,6177.82,-1816.81,0.616)
+}
+//dend25
+dend[141]{
+    pt3dadd(-5023.16,6223.8,-1445.24,1.6)
+    pt3dadd(-5022.92,6225.48,-1450.39,1.536)
+    pt3dadd(-5027.14,6223.61,-1454.21,1.536)
+}
+dend[142]{
+    pt3dadd(-5027.14,6223.61,-1454.21,1.536)
+    pt3dadd(-5036.23,6228.76,-1459.33,1.536)
+    pt3dadd(-5043.88,6223.52,-1471.13,1.536)
+    pt3dadd(-5050.04,6222.16,-1477.61,1.536)
+}
+dend[143]{
+    pt3dadd(-5050.04,6222.16,-1477.61,1.536)
+    pt3dadd(-5049.92,6229.09,-1478.99,1.536)
+    pt3dadd(-5061.18,6229.54,-1485.63,1.536)
+    pt3dadd(-5071.93,6229.97,-1495.95,1.536)
+}
+dend[144]{
+    pt3dadd(-5071.93,6229.97,-1495.95,1.536)
+    pt3dadd(-5076.09,6239.65,-1501.67,1.232)
+    pt3dadd(-5082.02,6244.43,-1510.6,1.232)
+    pt3dadd(-5089.93,6249.2,-1514.64,1.232)
+}
+dend[145]{
+    pt3dadd(-5089.93,6249.2,-1514.64,1.232)
+    pt3dadd(-5089.98,6249.93,-1518.06,1.232)
+    pt3dadd(-5089.93,6261.14,-1527.94,1.232)
+    pt3dadd(-5067.93,6267.7,-1542.77,0.92)
+}
+dend[146]{
+    pt3dadd(-5067.93,6267.7,-1542.77,0.92)
+    pt3dadd(-5062.3,6276.63,-1549.35,0.92)
+    pt3dadd(-5050.46,6286.57,-1561.82,0.92)
+    pt3dadd(-5042.07,6299.78,-1582.34,0.92)
+}
+dend[147]{
+    pt3dadd(-5042.07,6299.78,-1582.34,0.92)
+    pt3dadd(-5032.11,6309.71,-1600.88,0.92)
+    pt3dadd(-5023.53,6311.83,-1615.38,0.92)
+    pt3dadd(-5023.36,6314.49,-1624.79,0.92)
+}
+dend[148]{
+    pt3dadd(-5023.36,6314.49,-1624.79,0.92)
+    pt3dadd(-5028.2,6318.41,-1637.05,0.616)
+    pt3dadd(-5020.35,6327.38,-1650.62,0.616)
+    pt3dadd(-5018.19,6332.76,-1658.66,0.616)
+}
+dend[149]{
+    pt3dadd(-5018.19,6332.76,-1658.66,0.616)
+    pt3dadd(-5026.47,6336.97,-1666.52,0.616)
+    pt3dadd(-5027.02,6332.59,-1683.37,0.616)
+    pt3dadd(-5017.33,6334.69,-1692.94,0.616)
+}
+dend[150]{ 
+    pt3dadd(-5017.33,6334.69,-1692.94,0.616)
+    pt3dadd(-5012.65,6347.1,-1715.04,0.616)
+    pt3dadd(-5006.31,6349.92,-1724,0.616)
+    pt3dadd(-5006.23,6353.13,-1738.74,0.616)
+}
+dend[151]{
+    pt3dadd(-5006.23,6353.13,-1738.74,0.616)
+    pt3dadd(-5002.48,6365.87,-1755.59,0.616)
+    pt3dadd(-5000.05,6379.28,-1773.43,0.616)
+    pt3dadd(-5000.06,6389.13,-1784.56,0.616)
+}
+dend[152]{
+    pt3dadd(-5000.06,6389.13,-1784.56,0.616)
+    pt3dadd(-4998.34,6405.48,-1812.42,0.616)
+    pt3dadd(-4995.85,6421.56,-1837.98,0.616)
+    pt3dadd(-4991.67,6433.45,-1854.64,0.616)
+}
+dend[153]{
+    pt3dadd(-4991.67,6433.45,-1854.64,0.616)
+    pt3dadd(-4991.65,6441.08,-1861.53,0.616)
+    pt3dadd(-4977.83,6453.4,-1880.59,0.616)
+    pt3dadd(-4974.87,6467.26,-1901.92,0.616)
+}
+dend[154]{
+    pt3dadd(-4974.87,6467.26,-1901.92,0.616)
+    pt3dadd(-4977.12,6484.64,-1907.99,0.616)
+    pt3dadd(-4972.63,6498.2,-1925.04,0.616)
+    pt3dadd(-4971.63,6506.26,-1935.42,0.616)
+}
+dend[155]{ 
+    pt3dadd(-4971.63,6506.26,-1935.42,0.616)
+    pt3dadd(-4969.09,6512.94,-1948.14,0.616)
+    pt3dadd(-4967.78,6528.75,-1957.83,0.616)
+    pt3dadd(-4967.75,6536.28,-1964.34,0.616)
+}
+//dend26
+dend[156]{
+    pt3dadd(-5022.07,6231.27,-1426.12,1.6)
+    pt3dadd(-5021.27,6222.93,-1421.52,1.6)
+    pt3dadd(-5021.45,6212.22,-1419.74,1.6)
+    pt3dadd(-5011.78,6201.04,-1415.78,1.6)
+}
+dend[157]{
+    pt3dadd(-5011.78,6201.04,-1415.78,1.6)
+    pt3dadd(-5009.04,6193.93,-1410.41,1.6)
+    pt3dadd(-5008.94,6191.83,-1403.05,1.536)
+    pt3dadd(-4999.97,6179.85,-1396.33,1.536)
+    pt3dadd(-4993.77,6167.53,-1388.91,1.536)
+}
+dend[158]{
+    pt3dadd(-4993.77,6167.53,-1388.91,1.536)
+    pt3dadd(-4988.58,6156.29,-1381.73,1.232)
+    pt3dadd(-4980.95,6145.21,-1377.17,1.232)
+    pt3dadd(-4979.42,6138.44,-1366.81,1.232)
+    pt3dadd(-4972.41,6126.61,-1355.02,1.232)
+}
+dend[159]{
+    pt3dadd(-4972.41,6126.61,-1355.02,1.232)
+    pt3dadd(-4965.15,6110.65,-1349.81,1.232)
+    pt3dadd(-4965.19,6105.54,-1346.56,1.232)
+    pt3dadd(-4954.74,6098.31,-1344.66,1.232)
+    pt3dadd(-4947,6093.21,-1332.87,1.232)
+}
+dend[160]{
+    pt3dadd(-4947,6093.21,-1332.87,1.232)
+    pt3dadd(-4941.1,6070.23,-1321.94,1.232)
+    pt3dadd(-4941.49,6054.42,-1317.85,1.232)
+    pt3dadd(-4929.55,6045.68,-1313.1,1.232)
+    pt3dadd(-4926.77,6039.12,-1313.84,1.232)
+}
+dend[161]{
+    pt3dadd(-4926.77,6039.12,-1313.84,1.232)
+    pt3dadd(-4923.39,6034.72,-1308.89,1.232)
+    pt3dadd(-4914.83,6024.95,-1311.36,1.232)
+    pt3dadd(-4902.89,6018.18,-1308.66,1.232)
+    pt3dadd(-4889.89,6005.66,-1305.29,1.232)
+}
+dend[162]{
+    pt3dadd(-4889.89,6005.66,-1305.29,1.232)
+    pt3dadd(-4880.3,5996.44,-1299.94,0.92)
+    pt3dadd(-4880.55,5990.85,-1299.56,0.92)
+    pt3dadd(-4862.65,5980.21,-1303.2,1.232)
+    pt3dadd(-4845.01,5970.04,-1305.53,1.232)
+}
+dend[163]{
+    pt3dadd(-4845.01,5970.04,-1305.53,1.232)
+    pt3dadd(-4829.54,5952.24,-1313.67,0.92)
+    pt3dadd(-4820.12,5945.42,-1312.69,0.92)
+    pt3dadd(-4816.19,5934.43,-1310.25,0.92)
+    pt3dadd(-4807.2,5924.53,-1312.8,0.92)
+}
+dend[164]{
+    pt3dadd(-4807.2,5924.53,-1312.8,0.92)
+    pt3dadd(-4805.2,5915.81,-1314.56,0.92)
+    pt3dadd(-4805.79,5899.25,-1320,0.92)
+    pt3dadd(-4797.84,5889.77,-1323.82,0.92)
+    pt3dadd(-4786.56,5881.63,-1331.72,0.92)
+}
+dend[165]{
+    pt3dadd(-4786.56,5881.63,-1331.72,0.92)
+    pt3dadd(-4770.71,5870.75,-1334.47,0.92)
+    pt3dadd(-4751.96,5857.38,-1337.31,0.92)
+    pt3dadd(-4743.7,5853.83,-1346.43,0.92)
+    pt3dadd(-4743.14,5847.16,-1348.36,0.92)
+}
+dend[166]{
+    pt3dadd(-4743.14,5847.16,-1348.36,0.92)
+    pt3dadd(-4743.28,5841.58,-1349.9,0.92)
+    pt3dadd(-4743.77,5834.75,-1353.04,0.624)
+    pt3dadd(-4716.9,5825.44,-1356.66,0.624)
+    pt3dadd(-4706.37,5817.54,-1365.36,0.624)
+}
+//---------------------------------------------------
+//dend27
+dend[167]{
+    pt3dadd(-5024.14,6232.29,-1410.95,2)
+    pt3dadd(-5021.91,6236.64,-1423.51,1.6)
+    pt3dadd(-5022.05,6232.38,-1426.54,1.6)
+}
+//dend28
+dend[168]{
+    pt3dadd(-5022.05,6232.38,-1426.54,1.6)
+    pt3dadd(-5022.22,6228.34,-1431.52,1.6)
+}
+//dend29
+dend[169]{
+    pt3dadd(-5022.22,6228.34,-1431.52,1.6)
+    pt3dadd(-5022.3,6231.61,-1439,1.536)
+    pt3dadd(-5022.4,6233.05,-1445.84,1.536)
+    pt3dadd(-5028.77,6244.35,-1453.87,1.536)
+}
+//dend30
+dend[170]{
+    pt3dadd(-5028.77,6244.35,-1453.87,1.536)
+    pt3dadd(-5028.84,6248.22,-1461.95,1.232)
+    pt3dadd(-5017.66,6255.41,-1467.47,1.232)
+}
+dend[171]{
+    pt3dadd(-5017.66,6255.41,-1467.47,1.232)
+    pt3dadd(-5012.82,6262.71,-1475.3,1.232)
+    pt3dadd(-5008.02,6267.21,-1482.02,1.232)
+    pt3dadd(-5008.1,6268.17,-1487.4,1.232)
+}
+dend[172]{
+    pt3dadd(-5008.1,6268.17,-1487.4,1.232)
+    pt3dadd(-5008.14,6272.23,-1493.65,0.92)
+    pt3dadd(-5007.19,6276.64,-1495.06,0.92)
+    pt3dadd(-4998.89,6281.27,-1503.16,0.92)
+}
+//dend31
+dend[173]{
+    pt3dadd(-4998.89,6281.27,-1503.16,0.92)
+    pt3dadd(-4994.88,6283.14,-1510.19,0.616)
+}
+//dend32
+dend[174]{
+    pt3dadd(-4994.88,6283.14,-1510.19,0.616)
+    pt3dadd(-4996.96,6291.7,-1521.27,0.616)
+}
+dend[175]{
+    pt3dadd(-4996.96,6291.7,-1521.27,0.616)
+    pt3dadd(-5007.49,6308.37,-1521.53,0.616)
+    pt3dadd(-5012.77,6311,-1524.88,0.616)
+}
+dend[176]{
+    pt3dadd(-5012.77,6311,-1524.88,0.616)
+    pt3dadd(-5009.62,6315.81,-1533.74,0.616)
+    pt3dadd(-4982.68,6315.97,-1544.19,0.616)
+    pt3dadd(-4961.19,6320.31,-1575.58,0.616)
+}
+//dend33
+dend[177]{
+    pt3dadd(-4994.88,6283.14,-1510.19,0.616)
+    pt3dadd(-4995.76,6281.86,-1516.81,0.616) //was 0.92
+}
+dend[178]{
+    pt3dadd(-4995.76,6281.86,-1516.81,0.616) //was 0.92
+    pt3dadd(-4974.67,6283.84,-1536.08,0.616) //was 0.92
+}
+dend[179]{
+    pt3dadd(-4974.67,6283.84,-1536.08,0.616) //was 0.92
+    pt3dadd(-4958.03,6285.49,-1550.1,0.616) //was 0.92
+    pt3dadd(-4946.59,6288.23,-1576.08,0.616) //was 0.92
+}
+//dend34
+dend[180]{
+    pt3dadd(-4998.89,6281.27,-1503.16,0.92)
+    pt3dadd(-5014.25,6292.93,-1514.08,0.92)
+    pt3dadd(-5013.49,6304.35,-1516.66,0.616)
+    pt3dadd(-5013.29,6307.72,-1517.79,0.616)
+}
+//dend35
+dend[181]{
+    pt3dadd(-5028.77,6244.35,-1453.87,1.536)
+    pt3dadd(-5033.2,6252.29,-1456.48,0.92)
+}
+dend[182]{
+    pt3dadd(-5033.2,6252.29,-1456.48,0.92)
+    pt3dadd(-5040.73,6260.95,-1460.06,0.92)
+    pt3dadd(-5050.72,6268.58,-1461.51,0.92)
+    pt3dadd(-5054.87,6278.62,-1467.11,0.92)
+}
+dend[183]{
+    pt3dadd(-5054.87,6278.62,-1467.11,0.92)
+    pt3dadd(-5056.92,6288.28,-1469.21,0.92)
+    pt3dadd(-5060.14,6295.38,-1477.02,0.92)
+    pt3dadd(-5062.2,6299.91,-1482.02,0.92)
+}
+dend[184]{
+    pt3dadd(-5062.2,6299.91,-1482.02,0.92)
+    pt3dadd(-5059.24,6318.1,-1484.63,0.92)
+    pt3dadd(-5059.16,6327.57,-1490.07,0.92)
+}
+dend[185]{
+    pt3dadd(-5059.16,6327.57,-1490.07,0.92)
+    pt3dadd(-5066.08,6338.15,-1503.2,0.92)
+    pt3dadd(-5073.68,6347.67,-1504.46,0.92)
+}
+dend[186]{
+    pt3dadd(-5073.68,6347.67,-1504.46,0.92)
+    pt3dadd(-5073.83,6357.41,-1506.96,0.92)
+    pt3dadd(-5073.23,6366.88,-1508.75,0.92)
+}
+dend[187]{ 
+    pt3dadd(-5073.23,6366.88,-1508.75,0.92)
+    pt3dadd(-5072.86,6375.33,-1506.09,0.92)
+    pt3dadd(-5055.3,6389.45,-1506.98,0.92)
+    pt3dadd(-5107.6,6415.81,-1517.28,0.92)
+}
+dend[188]{
+    pt3dadd(-5107.6,6415.81,-1517.28,0.92)
+    pt3dadd(-5118.14,6441.19,-1520.4,0.92)
+    pt3dadd(-5136.73,6458.42,-1529.57,0.92)
+    pt3dadd(-5142.16,6466.86,-1530.85,0.92)
+}
+dend[189]{  
+    pt3dadd(-5142.16,6466.86,-1530.85,0.92)
+    pt3dadd(-5148.82,6485.08,-1546.33,0.92)
+    pt3dadd(-5141.77,6502.88,-1564.5,0.92)
+    pt3dadd(-5146.18,6514.92,-1570.45,0.92)
+}
+//dend36
+dend[190]{
+    pt3dadd(-5022.22,6228.34,-1431.52,1.6)
+    pt3dadd(-5022.6,6218.16,-1440.95,1.232)
+    pt3dadd(-5017.27,6206.07,-1456.37,1.232)
+}
+dend[191]{
+    pt3dadd(-5017.27,6206.07,-1456.37,1.232)
+    pt3dadd(-5013.18,6199.59,-1474.01,1.232)
+    pt3dadd(-5013.55,6193.35,-1487.05,1.232)
+    pt3dadd(-5013.84,6189.42,-1498.51,0.92)
+}
+dend[192]{
+    pt3dadd(-5013.84,6189.42,-1498.51,0.92)
+    pt3dadd(-5016.58,6185.65,-1515.18,0.92)
+    pt3dadd(-5023.7,6183.78,-1533.61,0.92)
+}
+dend[193]{
+    pt3dadd(-5023.7,6183.78,-1533.61,0.92)
+    pt3dadd(-5026.92,6181.22,-1553.95,0.92)
+    pt3dadd(-5027.5,6190.06,-1570.98,0.92)
+    pt3dadd(-5031.84,6198.86,-1585.13,0.92)
+}
+dend[194]{
+    pt3dadd(-5031.84,6198.86,-1585.13,0.92)
+    pt3dadd(-5031.97,6206.74,-1600.46,0.92)
+    pt3dadd(-5024.42,6210.73,-1616.72,0.92)
+}
+//dend37
+dend[195]{
+    pt3dadd(-5022.05,6232.38,-1426.54,1.6)
+    pt3dadd(-5017.28,6228.84,-1418.38,1.6)
+    pt3dadd(-5004.8,6228.86,-1409.56,1.6)
+    pt3dadd(-5004.79,6228.04,-1400.88,1.6)
+    pt3dadd(-5004.55,6227.72,-1387.56,1.6)
+    pt3dadd(-5025.27,6243.64,-1375.16,1.6)
+    pt3dadd(-5030.12,6250.46,-1367.18,1.6)
+}
+//dend38
+dend[196]{
+    pt3dadd(-5030.12,6250.46,-1367.18,1.6)
+    pt3dadd(-5033.93,6256.02,-1365.3,1.6)
+    pt3dadd(-5041.98,6260.94,-1362.37,1.6)
+    pt3dadd(-5048.17,6265.45,-1360.81,1.6)
+    pt3dadd(-5048.01,6272.27,-1359.39,1.6)
+}
+///dend39
+dend[197]{
+    pt3dadd(-5048.01,6272.27,-1359.39,1.6)
+    pt3dadd(-5055.27,6276.18,-1359.65,1.536)
+    pt3dadd(-5072.05,6285.66,-1357.55,1.536)
+    pt3dadd(-5064.09,6288.18,-1358.46,1.536)
+}
+//dend40
+dend[198]{
+    pt3dadd(-5064.09,6288.18,-1358.46,1.536)
+    pt3dadd(-5070.75,6291.61,-1357.26,1.232)
+    pt3dadd(-5073.38,6297.51,-1355.28,1.232)
+    pt3dadd(-5071.27,6300.04,-1355.09,0.92)
+    pt3dadd(-5081.59,6304.06,-1354.29,0.92)
+}
+//dend41
+dend[199]{
+    pt3dadd(-5081.59,6304.06,-1354.29,0.92)
+    pt3dadd(-5090.69,6310.03,-1353.38,0.92)
+    pt3dadd(-5102.37,6317.33,-1351.29,0.92)
+    pt3dadd(-5115.52,6321.93,-1353.89,0.92)
+}
+dend[200]{
+    pt3dadd(-5115.52,6321.93,-1353.89,0.92)
+    pt3dadd(-5125.99,6329.83,-1349.64,0.92)
+    pt3dadd(-5136.9,6336.59,-1344.1,0.92)
+    pt3dadd(-5148.76,6339.94,-1339.05,0.92)
+    pt3dadd(-5154.97,6341.96,-1335.63,0.92)
+}
+dend[201]{
+    pt3dadd(-5154.97,6341.96,-1335.63,0.92)
+    pt3dadd(-5163.71,6348.34,-1331.82,0.92)
+    pt3dadd(-5163.73,6355.93,-1333.4,0.92)
+    pt3dadd(-5163.82,6357.02,-1331.52,0.92)
+}
+//dend42
+dend[202]{
+    pt3dadd(-5081.59,6304.06,-1354.29,0.92)
+    pt3dadd(-5081.8,6304.76,-1350.9,0.92)
+    pt3dadd(-5086.46,6304.26,-1348.57,0.92)
+}
+dend[203]{
+    pt3dadd(-5086.46,6304.26,-1348.57,0.92)
+    pt3dadd(-5107.05,6311.4,-1335.99,0.92)
+    pt3dadd(-5117.09,6317.74,-1322.96,0.92)
+    pt3dadd(-5135.13,6323.08,-1312.91,0.92)
+    pt3dadd(-5146.83,6329.99,-1303.31,0.92)
+}
+dend[204]{
+    pt3dadd(-5146.83,6329.99,-1303.31,0.92)
+    pt3dadd(-5156.5,6334.39,-1292.01,0.92)
+    pt3dadd(-5165.05,6337.49,-1281.87,0.92)
+    pt3dadd(-5164.83,6340.91,-1273.77,0.92)
+}
+dend[205]{
+    pt3dadd(-5164.83,6340.91,-1273.77,0.92)
+    pt3dadd(-5164.73,6344.07,-1271.56,0.616)
+    pt3dadd(-5188.79,6353.08,-1266.59,0.616)
+    pt3dadd(-5200.68,6358.48,-1256.97,0.616)
+    pt3dadd(-5209.15,6366.61,-1240.31,0.616)
+}
+dend[206]{
+    pt3dadd(-5209.15,6366.61,-1240.31,0.616)
+    pt3dadd(-5215.22,6365.8,-1235.13,0.616)
+    pt3dadd(-5221.42,6370.84,-1226.99,0.616)
+    pt3dadd(-5221.18,6379.97,-1223.88,0.616)
+    pt3dadd(-5230.77,6379.74,-1218.83,0.616)
+}
+//dend43
+dend[207]{
+    pt3dadd(-5064.09,6288.18,-1358.46,1.536)
+    pt3dadd(-5070.4,6294.18,-1349.08,0.92)
+    pt3dadd(-5070.16,6296.15,-1346.54,0.92)
+}
+dend[208]{
+    pt3dadd(-5070.16,6296.15,-1346.54,0.92)
+    pt3dadd(-5083.49,6304.42,-1338.96,0.92)
+    pt3dadd(-5103.63,6313.62,-1328.24,0.92)
+    pt3dadd(-5114.88,6322.98,-1320.4,0.92)
+}
+dend[209]{
+    pt3dadd(-5114.88,6322.98,-1320.4,0.92)
+    pt3dadd(-5124.38,6333.88,-1306.58,0.92)
+    pt3dadd(-5135.51,6346.44,-1295.88,0.92)
+    pt3dadd(-5145.7,6351.21,-1288.88,0.92)
+}
+dend[210]{
+    pt3dadd(-5145.7,6351.21,-1288.88,0.92)
+    pt3dadd(-5147.09,6352.14,-1286.22,0.92)
+    pt3dadd(-5155.35,6355.34,-1284.05,0.92)
+}
+dend[211]{
+    pt3dadd(-5155.35,6355.34,-1284.05,0.92)
+    pt3dadd(-5155.03,6362.59,-1283.02,0.92)
+    pt3dadd(-5154.8,6369.08,-1277.7,0.92)
+    pt3dadd(-5168.1,6373.62,-1271.81,0.92)
+}
+dend[212]{
+    pt3dadd(-5168.1,6373.62,-1271.81,0.92)
+    pt3dadd(-5177.44,6379.26,-1260.01,0.92)
+    pt3dadd(-5194.84,6384.35,-1255.11,0.92)
+    pt3dadd(-5203.51,6391.62,-1248.09,0.92)
+}
+dend[213]{
+    pt3dadd(-5203.51,6391.62,-1248.09,0.92)
+    pt3dadd(-5212.47,6395.64,-1237.42,0.92)
+    pt3dadd(-5215,6405.04,-1233.75,0.616)
+    pt3dadd(-5214.51,6411.14,-1222.26,0.616)
+}
+dend[214]{ 
+    pt3dadd(-5214.51,6411.14,-1222.26,0.616)
+    pt3dadd(-5228.32,6423.96,-1205.89,0.616)
+    pt3dadd(-5240.5,6432.17,-1199.45,0.616)
+    pt3dadd(-5252.49,6441.57,-1183.93,0.616)
+}
+dend[215]{
+    pt3dadd(-5252.49,6441.57,-1183.93,0.616)
+    pt3dadd(-5266.48,6461.77,-1177.62,0.616)
+    pt3dadd(-5278.34,6475.23,-1167.61,0.616)
+    pt3dadd(-5281.11,6482.19,-1158.45,0.616)
+}
+//dend44
+dend[216]{
+    pt3dadd(-5048.01,6272.27,-1359.39,1.6)
+    pt3dadd(-5042.34,6280.69,-1355.89,0.92)
+    pt3dadd(-5049.83,6293.27,-1354.1,0.92)
+}
+dend[217]{
+    pt3dadd(-5049.83,6293.27,-1354.1,0.92)
+    pt3dadd(-5060.41,6303.23,-1350.31,0.92)
+    pt3dadd(-5065.76,6310.68,-1338.03,0.92)
+    pt3dadd(-5069.66,6318.44,-1335.43,0.92)
+}
+dend[218]{
+    pt3dadd(-5069.66,6318.44,-1335.43,0.92)
+    pt3dadd(-5069.12,6327.45,-1332.07,0.92)
+    pt3dadd(-5071.14,6329.87,-1332.88,0.92)
+    pt3dadd(-5070.94,6334.54,-1335.12,0.92)
+}
+dend[219]{
+    pt3dadd(-5070.94,6334.54,-1335.12,0.92)
+    pt3dadd(-5088.73,6347.62,-1336.21,0.92)
+    pt3dadd(-5100.2,6361.77,-1329.9,0.92)
+    pt3dadd(-5113.27,6371.1,-1324.84,0.92)
+}
+dend[220]{
+    pt3dadd(-5113.27,6371.1,-1324.84,0.92)
+    pt3dadd(-5125.17,6381.66,-1321.47,0.92)
+    pt3dadd(-5130.5,6398.7,-1311.67,0.92)
+}
+//dend45
+dend[221]{
+    pt3dadd(-5130.5,6398.7,-1311.67,0.92)
+    pt3dadd(-5128.4,6405.99,-1309.35,0.92)
+    pt3dadd(-5128.28,6412.54,-1310.02,0.92)
+}
+dend[222]{
+    pt3dadd(-5128.28,6412.54,-1310.02,0.92)
+    pt3dadd(-5140.91,6423.08,-1306.24,0.92)
+    pt3dadd(-5152.07,6433.96,-1295.19,0.92)
+    pt3dadd(-5156.67,6450.42,-1284.75,0.92)
+}
+dend[223]{
+    pt3dadd(-5156.67,6450.42,-1284.75,0.92)
+    pt3dadd(-5156.23,6462.75,-1274.14,0.92)
+    pt3dadd(-5159.03,6497.86,-1249.48,0.92)
+    pt3dadd(-5167.56,6514.62,-1237.7,0.92)
+    pt3dadd(-5173.81,6524.94,-1230.4,0.92)
+}
+dend[224]{
+    pt3dadd(-5173.81,6524.94,-1230.4,0.92)
+    pt3dadd(-5182.27,6532.73,-1220.46,0.92)
+    pt3dadd(-5191.55,6543.8,-1211.03,0.92)
+    pt3dadd(-5200.38,6560.04,-1199.07,0.92)
+}
+dend[225]{
+    pt3dadd(-5200.38,6560.04,-1199.07,0.92)
+    pt3dadd(-5208.09,6565.59,-1185.49,0.92)
+    pt3dadd(-5217.47,6568.03,-1180.39,0.92)
+    pt3dadd(-5218.98,6570.91,-1177.35,0.92)
+}
+//dend46
+dend[226]{
+    pt3dadd(-5130.5,6398.7,-1311.67,0.92)
+    pt3dadd(-5131.74,6399.39,-1307.85,0.616)
+}
+dend[227]{ 
+    pt3dadd(-5131.74,6399.39,-1307.85,0.616)
+    pt3dadd(-5142.53,6403.04,-1301.13,0.616)
+    pt3dadd(-5153.78,6412.22,-1300.14,0.616)
+}
+dend[228]{ 
+    pt3dadd(-5153.78,6412.22,-1300.14,0.616)
+    pt3dadd(-5161.67,6422,-1294.24,0.616)
+    pt3dadd(-5162.07,6427.51,-1281.96,0.616)
+}
+dend[229]{
+    pt3dadd(-5162.07,6427.51,-1281.96,0.616)
+    pt3dadd(-5161.32,6442.68,-1274.07,0.616)
+    pt3dadd(-5160.55,6463.07,-1254.54,0.616)
+}
+dend[230]{
+    pt3dadd(-5160.55,6463.07,-1254.54,0.616)
+    pt3dadd(-5183.96,6466.18,-1239.44,0.616)
+    pt3dadd(-5194.32,6472.12,-1227.37,0.616)
+}
+dend[231]{
+    pt3dadd(-5194.32,6472.12,-1227.37,0.616)
+    pt3dadd(-5205.47,6473.95,-1213.87,0.616)
+    pt3dadd(-5215.76,6476.64,-1194.35,0.616)
+}
+dend[232]{
+    pt3dadd(-5215.76,6476.64,-1194.35,0.616)
+    pt3dadd(-5224.18,6477.63,-1174.93,0.616)
+    pt3dadd(-5223.86,6482.43,-1162.92,0.616)
+}
+//dend47
+dend[233]{
+    pt3dadd(-5030.12,6250.46,-1367.18,1.6)
+    pt3dadd(-5031.8,6250.33,-1362.7,0.92)
+    pt3dadd(-5041.56,6257.5,-1351.69,0.92)
+}
+dend[234]{
+    pt3dadd(-5041.56,6257.5,-1351.69,0.92)
+    pt3dadd(-5049.68,6262.47,-1336.53,0.92)
+    pt3dadd(-5061.19,6270.4,-1325.24,0.92)
+    pt3dadd(-5064.56,6271.47,-1318.34,0.92)
+}
+dend[235]{
+    pt3dadd(-5064.56,6271.47,-1318.34,0.92)
+    pt3dadd(-5070.92,6274.89,-1317.13,0.92)
+    pt3dadd(-5070.63,6280.88,-1308.25,0.92)
+    pt3dadd(-5070.47,6285.76,-1304.63,0.92)
+}
+dend[236]{
+    pt3dadd(-5070.47,6285.76,-1304.63,0.92)
+    pt3dadd(-5077.23,6290.69,-1295.07,0.92)
+    pt3dadd(-5093.07,6297.23,-1286.71,0.92)
+    pt3dadd(-5107.79,6310.59,-1280.16,0.92)
+}
+dend[237]{
+    pt3dadd(-5107.79,6310.59,-1280.16,0.92)
+    pt3dadd(-5120.92,6318.54,-1269.87,0.92)
+    pt3dadd(-5128.96,6334.57,-1269.5,0.92)
+    pt3dadd(-5137.63,6350.98,-1257.02,0.92)
+}
+dend[238]{
+    pt3dadd(-5137.63,6350.98,-1257.02,0.92)
+    pt3dadd(-5138.07,6355.67,-1246.16,0.616)
+    pt3dadd(-5151.67,6365.34,-1239,0.616)
+    pt3dadd(-5160.73,6374.62,-1223.61,0.616)
+}
+dend[239]{ 
+    pt3dadd(-5160.73,6374.62,-1223.61,0.616)
+    pt3dadd(-5160.42,6385.18,-1218.4,0.616)
+    pt3dadd(-5160.2,6390.88,-1212.89,0.616)
+}
+//---------------------------------------------------------
+//dend48
+dend[240]{
+    pt3dadd(-5024.14,6232.29,-1410.95,2)
+    pt3dadd(-5021.86,6240.39,-1424.73,1.6)
+    pt3dadd(-5021.98,6238.16,-1429.23,1.6)
+    pt3dadd(-5014.36,6233.4,-1432.15,1.6)
+    pt3dadd(-5005.85,6229.25,-1442.85,1.6)
+}
+dend[241]{
+    pt3dadd(-5005.85,6229.25,-1442.85,1.6)
+    pt3dadd(-4989,6222.74,-1452.31,1.6)
+    pt3dadd(-4977.33,6211.43,-1458.76,1.536)
+    pt3dadd(-4965.42,6196.54,-1472.69,1.536)
+    pt3dadd(-4954.14,6185.31,-1477.16,1.232)
+}
+dend[242]{
+    pt3dadd(-4954.14,6185.31,-1477.16,1.232)
+    pt3dadd(-4954.42,6175.17,-1473.1,0.92)
+    pt3dadd(-4947.12,6162.91,-1469.79,0.92)
+    pt3dadd(-4932,6153.45,-1474.4,0.92)
+    pt3dadd(-4922.72,6139.87,-1480.88,0.92)
+}
+dend[243]{
+    pt3dadd(-4922.72,6139.87,-1480.88,0.92)
+    pt3dadd(-4912.36,6126.97,-1485.01,0.92)
+    pt3dadd(-4900.28,6112.9,-1490.88,0.92)
+    pt3dadd(-4891.26,6103.97,-1493.24,0.92)
+    pt3dadd(-4885.51,6091.83,-1494.18,0.92)
+}
+dend[244]{ 
+    pt3dadd(-4885.51,6091.83,-1494.18,0.92)
+    pt3dadd(-4885.77,6081.12,-1496.64,0.92)
+    pt3dadd(-4867.48,6068.98,-1500.66,0.92)
+    pt3dadd(-4855.17,6053.7,-1500.97,0.92)
+    pt3dadd(-4848.66,6038.23,-1504.85,0.92)
+    pt3dadd(-4846.57,6032.87,-1504.19,0.92)
+}
+//dend49
+dend[245]{
+    pt3dadd(-4846.57,6032.87,-1504.19,0.92)
+    pt3dadd(-4846.06,6024.1,-1499.18,0.616)
+    pt3dadd(-4831.57,6015.97,-1499.77,0.616)
+}
+dend[246]{
+    pt3dadd(-4831.57,6015.97,-1499.77,0.616)
+    pt3dadd(-4821.97,6010.56,-1498.04,0.616)
+    pt3dadd(-4816.06,5998.67,-1498.64,0.616)
+}
+dend[247]{
+    pt3dadd(-4816.06,5998.67,-1498.64,0.616)
+    pt3dadd(-4816.23,5993.2,-1501.69,0.616)
+    pt3dadd(-4795.87,5979.04,-1495.41,0.616)
+    pt3dadd(-4788.2,5961.87,-1490.03,0.616)
+}
+dend[248]{
+    pt3dadd(-4788.2,5961.87,-1490.03,0.616)
+    pt3dadd(-4784.07,5947.78,-1489.68,0.616)
+    pt3dadd(-4784.54,5929.73,-1495.17,0.616)
+    pt3dadd(-4785.09,5909.16,-1502.76,0.616)
+}
+dend[249]{
+    pt3dadd(-4785.09,5909.16,-1502.76,0.616)
+    pt3dadd(-4785.54,5904.9,-1514.83,0.616) //was 0.624
+    pt3dadd(-4777.9,5900.36,-1516.52,0.616) //was 0.624
+    pt3dadd(-4773.01,5896.6,-1517.92,0.616) //was 0.624
+}
+//dend50
+dend[250]{
+    pt3dadd(-4846.57,6032.87,-1504.19,0.92)
+    pt3dadd(-4842.13,6021.67,-1505.8,0.616)
+    pt3dadd(-4827.55,6014.63,-1510.9,0.616)
+}
+//dend51
+dend[251]{
+    pt3dadd(-4827.55,6014.63,-1510.9,0.616)
+    pt3dadd(-4835.03,6007.22,-1510.62,0.616)
+    pt3dadd(-4834.87,6003.56,-1513.51,0.616)
+}
+dend[252]{ 
+    pt3dadd(-4834.87,6003.56,-1513.51,0.616)
+    pt3dadd(-4832.2,5998.65,-1514.75,0.304)
+    pt3dadd(-4818.87,5993.5,-1517.54,0.304)
+}
+dend[253]{
+    pt3dadd(-4818.87,5993.5,-1517.54,0.304)
+    pt3dadd(-4813.55,5993.62,-1524.1,0.304)
+    pt3dadd(-4813.61,5996.02,-1529.82,0.304)
+}
+//dend52
+dend[254]{
+    pt3dadd(-4827.55,6014.63,-1510.9,0.616)
+    pt3dadd(-4834.02,6007.1,-1511.86,0.616)
+}
+dend[255]{
+    pt3dadd(-4834.02,6007.1,-1511.86,0.616)
+    pt3dadd(-4816.18,6004.57,-1519.49,0.616)
+    pt3dadd(-4817.31,5998.8,-1518.5,0.616)
+}
+dend[256]{
+    pt3dadd(-4817.31,5998.8,-1518.5,0.616)
+    pt3dadd(-4817.48,5994.39,-1523.16,0.616)
+    pt3dadd(-4817.81,5990.98,-1529.08,0.304)
+}
+dend[257]{
+    pt3dadd(-4817.81,5990.98,-1529.08,0.304)
+    pt3dadd(-4791.26,5975.81,-1535.5,0.304)
+    pt3dadd(-4777.37,5957.73,-1541.99,0.304)
+}
+dend[258]{
+    pt3dadd(-4777.37,5957.73,-1541.99,0.304)
+    pt3dadd(-4765,5938.87,-1550.78,0.304)
+    pt3dadd(-4756.09,5928.42,-1556.58,0.304)
+}
+dend[259]{
+    pt3dadd(-4756.09,5928.42,-1556.58,0.304)
+    pt3dadd(-4756.35,5919.37,-1560.97,0.304)
+    pt3dadd(-4756.55,5911.41,-1563.15,0.304) //was 0.624
+}
+dend[260]{
+    pt3dadd(-4756.55,5911.41,-1563.15,0.304) //was 0.624
+    pt3dadd(-4756.56,5906.4,-1558.33,0.304) //was 0.624
+    pt3dadd(-4756.91,5883.7,-1552.38,0.304) //was 0.624
+}
+//-----------------------------------------------------
+//dend53
+dend[261]{
+    pt3dadd(-5023.31,6249.47,-1417.92,2)
+    pt3dadd(-5021.4,6247.15,-1407.45,1.536)
+    pt3dadd(-5021.23,6252.52,-1404.06,1.232)
+    pt3dadd(-5032.23,6255.31,-1399.35,1.232)
+    pt3dadd(-5044.71,6255.25,-1384.57,1.232)
+}
+dend[262]{
+    pt3dadd(-5044.71,6255.25,-1384.57,1.232)
+    pt3dadd(-5050.27,6252.36,-1372.83,1.232)
+    pt3dadd(-5061.45,6236.81,-1357.87,1.232)
+    pt3dadd(-5065.56,6239.33,-1352.91,1.232)
+    pt3dadd(-5065.65,6233.41,-1343.46,1.232)
+}
+dend[263]{ 
+    pt3dadd(-5065.65,6233.41,-1343.46,1.232)
+    pt3dadd(-5065.45,6235.96,-1335.58,1.232)
+    pt3dadd(-5065.31,6239.73,-1331.79,1.232)
+    pt3dadd(-5067.23,6238.99,-1324.35,1.232)
+    pt3dadd(-5073.31,6233.83,-1314.84,1.232)
+}
+dend[264]{
+    pt3dadd(-5073.31,6233.83,-1314.84,1.232)
+    pt3dadd(-5083.7,6229.05,-1300.37,1.232)
+    pt3dadd(-5092.83,6217.75,-1282.44,1.232)
+    pt3dadd(-5102.91,6215.52,-1270.1,1.232)
+    pt3dadd(-5112.88,6219.56,-1258.89,1.232)
+}
+dend[265]{
+    pt3dadd(-5112.88,6219.56,-1258.89,1.232)
+    pt3dadd(-5118.79,6218.71,-1244.63,1.232)
+    pt3dadd(-5128.64,6215.85,-1234.46,1.232)
+    pt3dadd(-5138.22,6210.46,-1223.76,1.232)
+    pt3dadd(-5146.45,6210.9,-1217.13,1.232)
+}
+dend[266]{
+    pt3dadd(-5146.45,6210.9,-1217.13,1.232)
+    pt3dadd(-5147.25,6206.3,-1208.74,1.232)
+    pt3dadd(-5154.71,6206.94,-1199.65,1.232)
+    pt3dadd(-5154.46,6208.94,-1188.53,1.232)
+    pt3dadd(-5165.49,6204.71,-1178.03,1.232)
+}
+dend[267]{
+    pt3dadd(-5165.49,6204.71,-1178.03,1.232)
+    pt3dadd(-5178.61,6206.04,-1167.64,1.232)
+    pt3dadd(-5186.73,6205.53,-1154.3,1.232)
+    pt3dadd(-5191.79,6202.48,-1139.14,1.232)
+    pt3dadd(-5191.78,6195.82,-1131.49,1.232)
+}
+dend[268]{
+    pt3dadd(-5191.78,6195.82,-1131.49,1.232)
+    pt3dadd(-5200.01,6196.15,-1124.94,1.232)
+    pt3dadd(-5206.25,6191.13,-1108.09,0.92)
+    pt3dadd(-5212.58,6188.48,-1098.64,0.92)
+    pt3dadd(-5218.81,6189.67,-1088.38,0.92)
+}
+dend[269]{
+    pt3dadd(-5218.81,6189.67,-1088.38,0.92)
+    pt3dadd(-5218.82,6187.69,-1086.71,0.92)
+    pt3dadd(-5218.89,6181.84,-1084.28,0.92)
+    pt3dadd(-5250.23,6183.39,-1076.15,0.92)
+    pt3dadd(-5261.6,6188.6,-1061.88,0.92)
+}
+dend[270]{
+    pt3dadd(-5261.6,6188.6,-1061.88,0.92)
+    pt3dadd(-5266.85,6184.05,-1047.84,0.92)
+    pt3dadd(-5275.7,6185.6,-1036.34,0.92)
+    pt3dadd(-5277.72,6183.04,-1023.76,0.92)
+    pt3dadd(-5277.73,6176.06,-1025.26,0.304)
+}
+dend[271]{
+    pt3dadd(-5277.73,6176.06,-1025.26,0.304)
+    pt3dadd(-5282.35,6171.75,-1024.32,0.304)
+    pt3dadd(-5290.33,6169.25,-1016.91,0.304)
+    pt3dadd(-5290.32,6163.7,-1010.7,0.304)
+    pt3dadd(-5290.52,6154.6,-1011.56,0.304)
+    pt3dadd(-5290.39,6156.38,-1006.39,0.304)
+}
+//------------------------------------------------
+//dend54
+dend[272]{
+    pt3dadd(-5023.31,6249.47,-1417.92,2)
+    pt3dadd(-5024.46,6254.67,-1422.33,1.232)
+    pt3dadd(-5037.92,6262.37,-1421.26,1.232)
+}
+dend[273]{
+    pt3dadd(-5037.92,6262.37,-1421.26,1.232)
+    pt3dadd(-5054.57,6265.4,-1413.15,1.232)
+    pt3dadd(-5066.25,6271.86,-1409.67,1.232)
+}
+dend[274]{
+    pt3dadd(-5066.25,6271.86,-1409.67,1.232)
+    pt3dadd(-5069.65,6273.04,-1404.36,1.232)
+    pt3dadd(-5069.26,6279.6,-1390.6,0.624)
+}
+dend[275]{
+    pt3dadd(-5069.26,6279.6,-1390.6,0.624)
+    pt3dadd(-5088.12,6295.78,-1381.29,0.624)
+    pt3dadd(-5097.31,6311.53,-1380.06,0.624)
+    pt3dadd(-5110.82,6329.41,-1376.83,0.624)
+}
+dend[276]{ 
+    pt3dadd(-5110.82,6329.41,-1376.83,0.624)
+    pt3dadd(-5124.34,6351.85,-1363.38,0.624)
+    pt3dadd(-5132.06,6366.8,-1352.86,0.624)
+}
+
+//-----------------------------------------------
+//dend55
+dend[277]{
+    pt3dadd(-5023.31,6249.47,-1417.92,2)
+    pt3dadd(-5002.93,6250.92,-1411.73,1.232)
+    pt3dadd(-5017.39,6254.02,-1404.02,1.232)
+    pt3dadd(-5016.32,6257.68,-1397.95,1.232)
+}
+//dend56
+dend[278]{
+    pt3dadd(-5016.32,6257.68,-1397.95,1.232)
+    pt3dadd(-5023.5,6264.91,-1389.79,1.232)
+}
+dend[279]{
+    pt3dadd(-5023.5,6264.91,-1389.79,1.232)
+    pt3dadd(-5036.06,6269.93,-1384.33,0.92)
+    pt3dadd(-5049.23,6276.44,-1374.72,0.92)
+}
+dend[280]{
+    pt3dadd(-5049.23,6276.44,-1374.72,0.92)
+    pt3dadd(-5058.05,6282.49,-1366.52,0.92)
+    pt3dadd(-5066.21,6289.23,-1362.99,0.92)
+}
+//dend57
+dend[281]{
+    pt3dadd(-5066.21,6289.23,-1362.99,0.92)
+    pt3dadd(-5064.57,6301.03,-1358.32,0.92)
+    pt3dadd(-5064.43,6308.53,-1358.92,0.304)
+    pt3dadd(-5060.48,6315.74,-1359.45,0.304)
+    pt3dadd(-5056.89,6317.73,-1365.77,0.304)
+}
+//dend58
+dend[282]{
+    pt3dadd(-5056.89,6317.73,-1365.77,0.304)
+    pt3dadd(-5055.68,6320.91,-1367.34,0.304)
+    pt3dadd(-5055.76,6322.49,-1373.32,0.304)
+}
+//dend59
+dend[283]{
+    pt3dadd(-5056.89,6317.73,-1365.77,0.304)
+    pt3dadd(-5056.9,6314.73,-1370.97,0.304)
+    pt3dadd(-5057.1,6309.3,-1376.01,0.304)
+    pt3dadd(-5057.28,6305.19,-1381.5,0.304)
+}
+//dend60
+dend[284]{
+    pt3dadd(-5066.21,6289.23,-1362.99,0.92)
+    pt3dadd(-5061.78,6291.97,-1356.85,0.616)
+    pt3dadd(-5066.92,6295.74,-1353.11,0.92)
+}
+//dend61
+dend[285]{
+    pt3dadd(-5016.32,6257.68,-1397.95,1.232)
+    pt3dadd(-5028.46,6260.99,-1392.24,0.92)
+}
+dend[286]{
+    pt3dadd(-5028.46,6260.99,-1392.24,0.92)
+    pt3dadd(-5056.08,6268.89,-1379.55,0.92)
+    pt3dadd(-5061.69,6274.14,-1371.65,0.616)
+}
+dend[287]{
+    pt3dadd(-5061.69,6274.14,-1371.65,0.616)
+    pt3dadd(-5070.19,6274.33,-1364.16,0.616)
+    pt3dadd(-5070.06,6275.08,-1357.81,0.616)
+}
+
+
+
+//length of axon 3267.7 um
+initseg[0]{
+    pt3dadd(-5024.14,6232.29,-1410.95,2) 
+    pt3dadd(-5021.32,6240.61,-1400.3,2) 
+    pt3dadd(-5015.300000,6236.200000,-1397.600000,1.400000)
+}
+
+
+node[0]{
+	 pt3dadd(-5015.300000,6236.200000,-1397.600000,1.400000)
+	 pt3dadd(-5015.060334,6235.856899,-1396.691792,1.400000)
+}
+MYSA[0]{
+	 pt3dadd(-5015.060334,6235.856899,-1396.691792,1.400000)
+	 pt3dadd(-5014.700835,6235.342248,-1395.329480,1.400000)
+}
+FLUT[0]{
+	 pt3dadd(-5014.700835,6235.342248,-1395.329480,1.600000)
+	 pt3dadd(-5013.502505,6233.626744,-1390.788439,1.600000)
+}
+STIN[0]{
+	 pt3dadd(-5013.502505,6233.626744,-1390.788439,1.600000)
+	 pt3dadd(-5006.552190,6223.676819,-1364.450403,1.600000)
+}
+STIN[1]{
+	 pt3dadd(-5006.552190,6223.676819,-1364.450403,1.600000)
+	 pt3dadd(-4999.601875,6213.726894,-1338.112368,1.600000)
+}
+STIN[2]{
+	 pt3dadd(-4999.601875,6213.726894,-1338.112368,1.600000)
+	 pt3dadd(-4996.300000,6209.000000,-1325.600000,1.600000)
+	 pt3dadd(-4981.812788,6204.450297,-1326.677561,1.600000)
+}
+FLUT[1]{
+	 pt3dadd(-4981.812788,6204.450297,-1326.677561,1.600000)
+	 pt3dadd(-4977.054463,6202.955947,-1327.031486,1.600000)
+}
+MYSA[1]{
+	 pt3dadd(-4977.054463,6202.955947,-1327.031486,1.400000)
+	 pt3dadd(-4975.626966,6202.507642,-1327.137664,1.400000)
+}
+node[1]{
+	 pt3dadd(-4975.626966,6202.507642,-1327.137664,1.400000)
+	 pt3dadd(-4974.675301,6202.208772,-1327.208449,1.400000)
+}
+MYSA[2]{
+	 pt3dadd(-4974.675301,6202.208772,-1327.208449,1.400000)
+	 pt3dadd(-4973.247803,6201.760467,-1327.314626,1.400000)
+}
+FLUT[2]{
+	 pt3dadd(-4973.247803,6201.760467,-1327.314626,1.600000)
+	 pt3dadd(-4972.100000,6201.400000,-1327.400000,1.600000)
+	 pt3dadd(-4969.261785,6199.160963,-1328.551054,1.600000)
+}
+STIN[3]{
+	 pt3dadd(-4969.261785,6199.160963,-1328.551054,1.600000)
+	 pt3dadd(-4954.100000,6187.200000,-1334.700000,1.600000)
+	 pt3dadd(-4947.134028,6182.761116,-1337.534733,1.600000)
+}
+STIN[4]{
+	 pt3dadd(-4947.134028,6182.761116,-1337.534733,1.600000)
+	 pt3dadd(-4924.001695,6168.020638,-1346.948206,1.600000)
+}
+STIN[5]{
+	 pt3dadd(-4924.001695,6168.020638,-1346.948206,1.600000)
+	 pt3dadd(-4922.400000,6167.000000,-1347.600000,1.600000)
+	 pt3dadd(-4897.236003,6168.336837,-1337.927589,1.600000)
+}
+FLUT[3]{
+	 pt3dadd(-4897.236003,6168.336837,-1337.927589,1.600000)
+	 pt3dadd(-4892.574627,6168.584473,-1336.135872,1.600000)
+}
+MYSA[3]{
+	 pt3dadd(-4892.574627,6168.584473,-1336.135872,1.400000)
+	 pt3dadd(-4891.176214,6168.658764,-1335.598357,1.400000)
+}
+node[2]{
+	 pt3dadd(-4891.176214,6168.658764,-1335.598357,1.400000)
+	 pt3dadd(-4890.400000,6168.700000,-1335.300000,1.400000)
+	 pt3dadd(-4890.283144,6168.704110,-1335.180208,1.400000)
+}
+MYSA[4]{
+	 pt3dadd(-4890.283144,6168.704110,-1335.180208,1.400000)
+	 pt3dadd(-4889.236040,6168.740943,-1334.106795,1.400000)
+}
+FLUT[4]{
+	 pt3dadd(-4889.236040,6168.740943,-1334.106795,1.600000)
+	 pt3dadd(-4885.745693,6168.863719,-1330.528751,1.600000)
+}
+STIN[6]{
+	 pt3dadd(-4885.745693,6168.863719,-1330.528751,1.600000)
+	 pt3dadd(-4870.500000,6169.400000,-1314.900000,1.600000)
+	 pt3dadd(-4868.115551,6172.301830,-1308.803908,1.600000)
+}
+STIN[7]{
+	 pt3dadd(-4868.115551,6172.301830,-1308.803908,1.600000)
+	 pt3dadd(-4859.900000,6182.300000,-1287.800000,1.600000)
+	 pt3dadd(-4857.149271,6184.394982,-1285.194046,1.600000)
+}
+STIN[8]{
+	 pt3dadd(-4857.149271,6184.394982,-1285.194046,1.600000)
+	 pt3dadd(-4838.725174,6198.426957,-1267.739639,1.600000)
+}
+FLUT[5]{
+	 pt3dadd(-4838.725174,6198.426957,-1267.739639,1.600000)
+	 pt3dadd(-4835.548606,6200.846263,-1264.730258,1.600000)
+}
+MYSA[5]{
+	 pt3dadd(-4835.548606,6200.846263,-1264.730258,1.400000)
+	 pt3dadd(-4834.595635,6201.572055,-1263.827444,1.400000)
+}
+node[3]{
+	 pt3dadd(-4834.595635,6201.572055,-1263.827444,1.400000)
+	 pt3dadd(-4833.960322,6202.055916,-1263.225568,1.400000)
+}
+MYSA[6]{
+	 pt3dadd(-4833.960322,6202.055916,-1263.225568,1.400000)
+	 pt3dadd(-4832.054381,6203.507500,-1261.419940,1.400000)
+}
+FLUT[6]{
+	 pt3dadd(-4832.054381,6203.507500,-1261.419940,1.600000)
+	 pt3dadd(-4827.600000,6206.900000,-1257.200000,1.600000)
+	 pt3dadd(-4825.477858,6208.940521,-1256.685161,1.600000)
+}
+STIN[9]{
+	 pt3dadd(-4825.477858,6208.940521,-1256.685161,1.600000)
+	 pt3dadd(-4793.800000,6239.400000,-1249.000000,1.600000)
+	 pt3dadd(-4781.257467,6242.820691,-1252.192645,1.600000)
+}
+STIN[10]{
+	 pt3dadd(-4781.257467,6242.820691,-1252.192645,1.600000)
+	 pt3dadd(-4760.800000,6248.400000,-1257.400000,1.600000)
+	 pt3dadd(-4738.938283,6267.631736,-1278.850783,1.600000)
+}
+STIN[11]{
+	 pt3dadd(-4738.938283,6267.631736,-1278.850783,1.600000)
+	 pt3dadd(-4734.200000,6271.800000,-1283.500000,1.600000)
+	 pt3dadd(-4699.800000,6284.400000,-1307.900000,1.600000)
+	 pt3dadd(-4696.938998,6286.155959,-1313.046776,1.600000)
+}
+FLUT[7]{
+	 pt3dadd(-4696.938998,6286.155959,-1313.046776,1.600000)
+	 pt3dadd(-4692.282992,6289.013613,-1321.422659,1.600000)
+}
+MYSA[7]{
+	 pt3dadd(-4692.282992,6289.013613,-1321.422659,1.400000)
+	 pt3dadd(-4690.886191,6289.870909,-1323.935424,1.400000)
+}
+node[4]{
+	 pt3dadd(-4690.886191,6289.870909,-1323.935424,1.400000)
+	 pt3dadd(-4690.420590,6290.156675,-1324.773013,1.400000)
+}
+MYSA[8]{
+	 pt3dadd(-4690.420590,6290.156675,-1324.773013,1.400000)
+	 pt3dadd(-4689.023788,6291.013971,-1327.285778,1.400000)
+}
+FLUT[8]{
+	 pt3dadd(-4689.023788,6291.013971,-1327.285778,1.600000)
+	 pt3dadd(-4684.367783,6293.871626,-1335.661661,1.600000)
+}
+STIN[12]{
+	 pt3dadd(-4684.367783,6293.871626,-1335.661661,1.600000)
+	 pt3dadd(-4680.900000,6296.000000,-1341.900000,1.600000)
+	 pt3dadd(-4647.903347,6305.171275,-1379.083539,1.600000)
+}
+STIN[13]{
+	 pt3dadd(-4647.903347,6305.171275,-1379.083539,1.600000)
+	 pt3dadd(-4647.800000,6305.200000,-1379.200000,1.600000)
+	 pt3dadd(-4612.600000,6315.400000,-1399.700000,1.600000)
+	 pt3dadd(-4597.728737,6315.339425,-1405.182074,1.600000)
+}
+STIN[14]{
+	 pt3dadd(-4597.728737,6315.339425,-1405.182074,1.600000)
+	 pt3dadd(-4563.500000,6315.200000,-1417.800000,1.600000)
+	 pt3dadd(-4545.785997,6311.632597,-1429.486321,1.600000)
+}
+FLUT[9]{
+	 pt3dadd(-4545.785997,6311.632597,-1429.486321,1.600000)
+	 pt3dadd(-4537.554334,6309.974831,-1434.916932,1.600000)
+}
+MYSA[9]{
+	 pt3dadd(-4537.554334,6309.974831,-1434.916932,1.400000)
+	 pt3dadd(-4535.084835,6309.477502,-1436.546116,1.400000)
+}
+node[5]{
+	 pt3dadd(-4535.084835,6309.477502,-1436.546116,1.400000)
+	 pt3dadd(-4534.700000,6309.400000,-1436.800000,1.400000)
+	 pt3dadd(-4534.235565,6309.173840,-1436.929234,1.400000)
+}
+MYSA[10]{
+	 pt3dadd(-4534.235565,6309.173840,-1436.929234,1.400000)
+	 pt3dadd(-4531.618999,6307.899686,-1437.657322,1.400000)
+}
+FLUT[10]{
+	 pt3dadd(-4531.618999,6307.899686,-1437.657322,1.600000)
+	 pt3dadd(-4522.897111,6303.652506,-1440.084282,1.600000)
+}
+STIN[15]{
+	 pt3dadd(-4522.897111,6303.652506,-1440.084282,1.600000)
+	 pt3dadd(-4500.200000,6292.600000,-1446.400000,1.600000)
+	 pt3dadd(-4476.386690,6272.372478,-1453.203803,1.600000)
+}
+STIN[16]{
+	 pt3dadd(-4476.386690,6272.372478,-1453.203803,1.600000)
+	 pt3dadd(-4474.300000,6270.600000,-1453.800000,1.600000)
+	 pt3dadd(-4450.100000,6249.700000,-1470.800000,1.600000)
+	 pt3dadd(-4435.341249,6240.956136,-1478.931236,1.600000)
+}
+STIN[17]{
+	 pt3dadd(-4435.341249,6240.956136,-1478.931236,1.600000)
+	 pt3dadd(-4423.600000,6234.000000,-1485.400000,1.600000)
+	 pt3dadd(-4408.800000,6211.700000,-1517.600000,1.600000)
+	 pt3dadd(-4408.358531,6211.034293,-1518.244685,1.600000)
+}
+FLUT[11]{
+	 pt3dadd(-4408.358531,6211.034293,-1518.244685,1.600000)
+	 pt3dadd(-4404.057764,6204.549009,-1524.525170,1.600000)
+}
+MYSA[11]{
+	 pt3dadd(-4404.057764,6204.549009,-1524.525170,1.400000)
+	 pt3dadd(-4402.767534,6202.603424,-1526.409316,1.400000)
+}
+node[6]{
+	 pt3dadd(-4402.767534,6202.603424,-1526.409316,1.400000)
+	 pt3dadd(-4402.337457,6201.954895,-1527.037365,1.400000)
+}
+MYSA[12]{
+	 pt3dadd(-4402.337457,6201.954895,-1527.037365,1.400000)
+	 pt3dadd(-4401.047227,6200.009310,-1528.921510,1.400000)
+}
+FLUT[12]{
+	 pt3dadd(-4401.047227,6200.009310,-1528.921510,1.600000)
+	 pt3dadd(-4396.746460,6193.524026,-1535.201995,1.600000)
+}
+STIN[18]{
+	 pt3dadd(-4396.746460,6193.524026,-1535.201995,1.600000)
+	 pt3dadd(-4396.200000,6192.700000,-1536.000000,1.600000)
+	 pt3dadd(-4378.100000,6173.500000,-1553.800000,1.600000)
+	 pt3dadd(-4365.657192,6159.501840,-1570.208954,1.600000)
+}
+STIN[19]{
+	 pt3dadd(-4365.657192,6159.501840,-1570.208954,1.600000)
+	 pt3dadd(-4362.100000,6155.500000,-1574.900000,1.600000)
+	 pt3dadd(-4347.700000,6133.600000,-1608.500000,1.600000)
+	 pt3dadd(-4343.415610,6130.393618,-1614.802200,1.600000)
+}
+STIN[20]{
+	 pt3dadd(-4343.415610,6130.393618,-1614.802200,1.600000)
+	 pt3dadd(-4332.200000,6122.000000,-1631.300000,1.600000)
+	 pt3dadd(-4309.541221,6109.836846,-1656.999567,1.600000)
+}
+FLUT[13]{
+	 pt3dadd(-4309.541221,6109.836846,-1656.999567,1.600000)
+	 pt3dadd(-4309.100000,6109.600000,-1657.500000,1.600000)
+	 pt3dadd(-4306.126115,6105.441033,-1665.258933,1.600000)
+}
+MYSA[13]{
+	 pt3dadd(-4306.126115,6105.441033,-1665.258933,1.400000)
+	 pt3dadd(-4305.165976,6104.098282,-1667.763958,1.400000)
+}
+node[7]{
+	 pt3dadd(-4305.165976,6104.098282,-1667.763958,1.400000)
+	 pt3dadd(-4304.845929,6103.650698,-1668.598966,1.400000)
+}
+MYSA[14]{
+	 pt3dadd(-4304.845929,6103.650698,-1668.598966,1.400000)
+	 pt3dadd(-4303.885790,6102.307947,-1671.103992,1.400000)
+}
+FLUT[14]{
+	 pt3dadd(-4303.885790,6102.307947,-1671.103992,1.600000)
+	 pt3dadd(-4300.685325,6097.832109,-1679.454076,1.600000)
+}
+STIN[21]{
+	 pt3dadd(-4300.685325,6097.832109,-1679.454076,1.600000)
+	 pt3dadd(-4295.800000,6091.000000,-1692.200000,1.600000)
+	 pt3dadd(-4276.700000,6072.300000,-1711.700000,1.600000)
+	 pt3dadd(-4269.926945,6066.413139,-1715.244777,1.600000)
+}
+STIN[22]{
+	 pt3dadd(-4269.926945,6066.413139,-1715.244777,1.600000)
+	 pt3dadd(-4255.300000,6053.700000,-1722.900000,1.600000)
+	 pt3dadd(-4236.000000,6034.200000,-1736.800000,1.600000)
+	 pt3dadd(-4231.671807,6030.494932,-1739.730372,1.600000)
+}
+STIN[23]{
+	 pt3dadd(-4231.671807,6030.494932,-1739.730372,1.600000)
+	 pt3dadd(-4210.300000,6012.200000,-1754.200000,1.600000)
+	 pt3dadd(-4190.006302,5998.001582,-1763.235357,1.600000)
+}
+FLUT[15]{
+	 pt3dadd(-4190.006302,5998.001582,-1763.235357,1.600000)
+	 pt3dadd(-4182.308834,5992.616075,-1766.662498,1.600000)
+}
+MYSA[15]{
+	 pt3dadd(-4182.308834,5992.616075,-1766.662498,1.400000)
+	 pt3dadd(-4182.000000,5992.400000,-1766.800000,1.400000)
+	 pt3dadd(-4179.990103,5990.961261,-1767.602513,1.400000)
+}
+node[8]{
+	 pt3dadd(-4179.990103,5990.961261,-1767.602513,1.400000)
+	 pt3dadd(-4179.216705,5990.407641,-1767.911316,1.400000)
+}
+MYSA[16]{
+	 pt3dadd(-4179.216705,5990.407641,-1767.911316,1.400000)
+	 pt3dadd(-4176.896508,5988.746781,-1768.837725,1.400000)
+}
+FLUT[16]{
+	 pt3dadd(-4176.896508,5988.746781,-1768.837725,1.600000)
+	 pt3dadd(-4169.162521,5983.210582,-1771.925756,1.600000)
+}
+STIN[24]{
+	 pt3dadd(-4169.162521,5983.210582,-1771.925756,1.600000)
+	 pt3dadd(-4154.200000,5972.500000,-1777.900000,1.600000)
+	 pt3dadd(-4129.737337,5945.054085,-1789.833007,1.600000)
+}
+STIN[25]{
+	 pt3dadd(-4129.737337,5945.054085,-1789.833007,1.600000)
+	 pt3dadd(-4129.600000,5944.900000,-1789.900000,1.600000)
+	 pt3dadd(-4107.400000,5925.100000,-1792.800000,1.600000)
+	 pt3dadd(-4083.968577,5910.143772,-1795.126524,1.600000)
+}
+STIN[26]{
+	 pt3dadd(-4083.968577,5910.143772,-1795.126524,1.600000)
+	 pt3dadd(-4079.200000,5907.100000,-1795.600000,1.600000)
+	 pt3dadd(-4060.300000,5886.600000,-1801.100000,1.600000)
+	 pt3dadd(-4045.247887,5868.771284,-1806.287864,1.600000)
+}
+FLUT[17]{
+	 pt3dadd(-4045.247887,5868.771284,-1806.287864,1.600000)
+	 pt3dadd(-4039.700000,5862.200000,-1808.200000,1.600000)
+	 pt3dadd(-4038.757354,5861.488044,-1808.343187,1.600000)
+}
+MYSA[17]{
+	 pt3dadd(-4038.757354,5861.488044,-1808.343187,1.400000)
+	 pt3dadd(-4036.380823,5859.693111,-1808.704179,1.400000)
+}
+node[9]{
+	 pt3dadd(-4036.380823,5859.693111,-1808.704179,1.400000)
+	 pt3dadd(-4035.588646,5859.094800,-1808.824510,1.400000)
+}
+MYSA[18]{
+	 pt3dadd(-4035.588646,5859.094800,-1808.824510,1.400000)
+	 pt3dadd(-4033.212114,5857.299867,-1809.185502,1.400000)
+}
+FLUT[18]{
+	 pt3dadd(-4033.212114,5857.299867,-1809.185502,1.600000)
+	 pt3dadd(-4025.290344,5851.316757,-1810.388809,1.600000)
+}
+STIN[27]{
+	 pt3dadd(-4025.290344,5851.316757,-1810.388809,1.600000)
+	 pt3dadd(-4016.000000,5844.300000,-1811.800000,1.600000)
+	 pt3dadd(-3989.000000,5815.000000,-1817.700000,1.600000)
+	 pt3dadd(-3983.860694,5815.748443,-1820.693770,1.600000)
+}
+STIN[28]{
+	 pt3dadd(-3983.860694,5815.748443,-1820.693770,1.600000)
+	 pt3dadd(-3968.400000,5818.000000,-1829.700000,1.600000)
+	 pt3dadd(-3985.000000,5835.000000,-1846.300000,1.600000)
+	 pt3dadd(-3993.432368,5840.695408,-1850.429171,1.600000)
+}
+STIN[29]{
+	 pt3dadd(-3993.432368,5840.695408,-1850.429171,1.600000)
+	 pt3dadd(-4037.968993,5870.776430,-1872.237912,1.600000)
+}
+FLUT[19]{
+	 pt3dadd(-4037.968993,5870.776430,-1872.237912,1.600000)
+	 pt3dadd(-4038.300000,5871.000000,-1872.400000,1.600000)
+	 pt3dadd(-4045.268567,5877.537925,-1872.908940,1.600000)
+}
+MYSA[19]{
+	 pt3dadd(-4045.268567,5877.537925,-1872.908940,1.400000)
+	 pt3dadd(-4047.453315,5879.587661,-1873.068501,1.400000)
+}
+node[10]{
+	 pt3dadd(-4047.453315,5879.587661,-1873.068501,1.400000)
+	 pt3dadd(-4048.181565,5880.270906,-1873.121687,1.400000)
+}
+MYSA[20]{
+	 pt3dadd(-4048.181565,5880.270906,-1873.121687,1.400000)
+	 pt3dadd(-4050.366313,5882.320642,-1873.281248,1.400000)
+}
+FLUT[20]{
+	 pt3dadd(-4050.366313,5882.320642,-1873.281248,1.600000)
+	 pt3dadd(-4057.648807,5889.153094,-1873.813115,1.600000)
+}
+STIN[30]{
+	 pt3dadd(-4057.648807,5889.153094,-1873.813115,1.600000)
+	 pt3dadd(-4073.900000,5904.400000,-1875.000000,1.600000)
+	 pt3dadd(-4101.006728,5927.583386,-1873.929998,1.600000)
+}
+STIN[31]{
+	 pt3dadd(-4101.006728,5927.583386,-1873.929998,1.600000)
+	 pt3dadd(-4119.500000,5943.400000,-1873.200000,1.600000)
+	 pt3dadd(-4137.493546,5971.619386,-1876.739714,1.600000)
+}
+STIN[32]{
+	 pt3dadd(-4137.493546,5971.619386,-1876.739714,1.600000)
+	 pt3dadd(-4137.800000,5972.100000,-1876.800000,1.600000)
+	 pt3dadd(-4173.900000,6002.900000,-1863.200000,1.600000)
+	 pt3dadd(-4180.231508,6007.271219,-1860.789070,1.600000)
+}
+FLUT[21]{
+	 pt3dadd(-4180.231508,6007.271219,-1860.789070,1.600000)
+	 pt3dadd(-4188.084285,6012.692710,-1857.798866,1.600000)
+}
+MYSA[21]{
+	 pt3dadd(-4188.084285,6012.692710,-1857.798866,1.400000)
+	 pt3dadd(-4190.440119,6014.319157,-1856.901805,1.400000)
+}
+node[11]{
+	 pt3dadd(-4190.440119,6014.319157,-1856.901805,1.400000)
+	 pt3dadd(-4191.225397,6014.861306,-1856.602785,1.400000)
+}
+MYSA[22]{
+	 pt3dadd(-4191.225397,6014.861306,-1856.602785,1.400000)
+	 pt3dadd(-4193.581230,6016.487753,-1855.705724,1.400000)
+}
+FLUT[22]{
+	 pt3dadd(-4193.581230,6016.487753,-1855.705724,1.600000)
+	 pt3dadd(-4201.434008,6021.909244,-1852.715520,1.600000)
+}
+STIN[33]{
+	 pt3dadd(-4201.434008,6021.909244,-1852.715520,1.600000)
+	 pt3dadd(-4202.000000,6022.300000,-1852.500000,1.600000)
+	 pt3dadd(-4234.388873,6065.712797,-1833.866642,1.600000)
+}
+STIN[34]{
+	 pt3dadd(-4234.388873,6065.712797,-1833.866642,1.600000)
+	 pt3dadd(-4235.200000,6066.800000,-1833.400000,1.600000)
+	 pt3dadd(-4271.600000,6099.300000,-1814.700000,1.600000)
+	 pt3dadd(-4274.557957,6102.163244,-1813.432304,1.600000)
+}
+STIN[35]{
+	 pt3dadd(-4274.557957,6102.163244,-1813.432304,1.600000)
+	 pt3dadd(-4312.200000,6138.600000,-1797.300000,1.600000)
+	 pt3dadd(-4314.161758,6140.888717,-1796.275261,1.600000)
+}
+FLUT[23]{
+	 pt3dadd(-4314.161758,6140.888717,-1796.275261,1.600000)
+	 pt3dadd(-4320.323375,6148.077271,-1793.056692,1.600000)
+}
+MYSA[23]{
+	 pt3dadd(-4320.323375,6148.077271,-1793.056692,1.400000)
+	 pt3dadd(-4322.171860,6150.233836,-1792.091122,1.400000)
+}
+node[12]{
+	 pt3dadd(-4322.171860,6150.233836,-1792.091122,1.400000)
+	 pt3dadd(-4322.788022,6150.952692,-1791.769265,1.400000)
+}
+MYSA[24]{
+	 pt3dadd(-4322.788022,6150.952692,-1791.769265,1.400000)
+	 pt3dadd(-4324.636507,6153.109258,-1790.803695,1.400000)
+}
+FLUT[24]{
+	 pt3dadd(-4324.636507,6153.109258,-1790.803695,1.600000)
+	 pt3dadd(-4330.798124,6160.297811,-1787.585127,1.600000)
+}
+STIN[36]{
+	 pt3dadd(-4330.798124,6160.297811,-1787.585127,1.600000)
+	 pt3dadd(-4361.400000,6196.000000,-1771.600000,1.600000)
+	 pt3dadd(-4366.977349,6201.719628,-1769.223935,1.600000)
+}
+STIN[37]{
+	 pt3dadd(-4366.977349,6201.719628,-1769.223935,1.600000)
+	 pt3dadd(-4400.600000,6236.200000,-1754.900000,1.600000)
+	 pt3dadd(-4404.965751,6242.098408,-1752.392016,1.600000)
+}
+STIN[38]{
+	 pt3dadd(-4404.965751,6242.098408,-1752.392016,1.600000)
+	 pt3dadd(-4437.617141,6286.212520,-1733.634834,1.600000)
+}
+FLUT[25]{
+	 pt3dadd(-4437.617141,6286.212520,-1733.634834,1.600000)
+	 pt3dadd(-4438.200000,6287.000000,-1733.300000,1.600000)
+	 pt3dadd(-4442.839304,6293.828359,-1729.804975,1.600000)
+}
+MYSA[25]{
+	 pt3dadd(-4442.839304,6293.828359,-1729.804975,1.400000)
+	 pt3dadd(-4444.391838,6296.113456,-1728.635372,1.400000)
+}
+node[13]{
+	 pt3dadd(-4444.391838,6296.113456,-1728.635372,1.400000)
+	 pt3dadd(-4444.909349,6296.875155,-1728.245504,1.400000)
+}
+MYSA[26]{
+	 pt3dadd(-4444.909349,6296.875155,-1728.245504,1.400000)
+	 pt3dadd(-4446.461883,6299.160251,-1727.075901,1.400000)
+}
+FLUT[26]{
+	 pt3dadd(-4446.461883,6299.160251,-1727.075901,1.600000)
+	 pt3dadd(-4451.636996,6306.777240,-1723.177223,1.600000)
+}
+STIN[39]{
+	 pt3dadd(-4451.636996,6306.777240,-1723.177223,1.600000)
+	 pt3dadd(-4475.500000,6341.900000,-1705.200000,1.600000)
+	 pt3dadd(-4484.575711,6348.585666,-1701.421145,1.600000)
+}
+STIN[40]{
+	 pt3dadd(-4484.575711,6348.585666,-1701.421145,1.600000)
+	 pt3dadd(-4503.600000,6362.600000,-1693.500000,1.600000)
+	 pt3dadd(-4531.302088,6379.988387,-1688.556243,1.600000)
+}
+STIN[41]{
+	 pt3dadd(-4531.302088,6379.988387,-1688.556243,1.600000)
+	 pt3dadd(-4536.100000,6383.000000,-1687.700000,1.600000)
+	 pt3dadd(-4556.600000,6407.800000,-1681.600000,1.600000)
+	 pt3dadd(-4562.580477,6425.509178,-1675.967901,1.600000)
+}
+FLUT[27]{
+	 pt3dadd(-4562.580477,6425.509178,-1675.967901,1.600000)
+	 pt3dadd(-4565.643959,6434.580655,-1673.082874,1.600000)
+}
+MYSA[27]{
+	 pt3dadd(-4565.643959,6434.580655,-1673.082874,1.400000)
+	 pt3dadd(-4566.563004,6437.302098,-1672.217365,1.400000)
+}
+node[14]{
+	 pt3dadd(-4566.563004,6437.302098,-1672.217365,1.400000)
+	 pt3dadd(-4566.869352,6438.209246,-1671.928863,1.400000)
+}
+MYSA[28]{
+	 pt3dadd(-4566.869352,6438.209246,-1671.928863,1.400000)
+	 pt3dadd(-4566.900000,6438.300000,-1671.900000,1.400000)
+	 pt3dadd(-4569.064803,6440.025891,-1671.037054,1.400000)
+}
+FLUT[28]{
+	 pt3dadd(-4569.064803,6440.025891,-1671.037054,1.600000)
+	 pt3dadd(-4576.529754,6445.977329,-1668.061335,1.600000)
+}
+STIN[42]{
+	 pt3dadd(-4576.529754,6445.977329,-1668.061335,1.600000)
+	 pt3dadd(-4596.000000,6461.500000,-1660.300000,1.600000)
+	 pt3dadd(-4619.877156,6481.233187,-1652.604057,1.600000)
+}
+STIN[43]{
+	 pt3dadd(-4619.877156,6481.233187,-1652.604057,1.600000)
+	 pt3dadd(-4620.200000,6481.500000,-1652.500000,1.600000)
+	 pt3dadd(-4643.800000,6508.000000,-1640.200000,1.600000)
+	 pt3dadd(-4659.609273,6519.444026,-1635.775763,1.600000)
+}
+STIN[44]{
+	 pt3dadd(-4659.609273,6519.444026,-1635.775763,1.600000)
+	 pt3dadd(-4670.600000,6527.400000,-1632.700000,1.600000)
+	 pt3dadd(-4689.600000,6561.400000,-1617.100000,1.600000)
+	 pt3dadd(-4691.153702,6562.750813,-1616.550064,1.600000)
+}
+FLUT[29]{
+	 pt3dadd(-4691.153702,6562.750813,-1616.550064,1.600000)
+	 pt3dadd(-4698.444692,6569.089715,-1613.969405,1.600000)
+}
+MYSA[29]{
+	 pt3dadd(-4698.444692,6569.089715,-1613.969405,1.400000)
+	 pt3dadd(-4700.631989,6570.991385,-1613.195207,1.400000)
+}
+node[15]{
+	 pt3dadd(-4700.631989,6570.991385,-1613.195207,1.400000)
+	 pt3dadd(-4701.361088,6571.625275,-1612.937141,1.400000)
+}
+MYSA[30]{
+	 pt3dadd(-4701.361088,6571.625275,-1612.937141,1.400000)
+	 pt3dadd(-4703.548384,6573.526946,-1612.162943,1.400000)
+}
+FLUT[30]{
+	 pt3dadd(-4703.548384,6573.526946,-1612.162943,1.600000)
+	 pt3dadd(-4710.839374,6579.865847,-1609.582284,1.600000)
+}
+STIN[45]{
+	 pt3dadd(-4710.839374,6579.865847,-1609.582284,1.600000)
+	 pt3dadd(-4718.700000,6586.700000,-1606.800000,1.600000)
+	 pt3dadd(-4745.400000,6612.400000,-1603.600000,1.600000)
+	 pt3dadd(-4752.292942,6618.778543,-1600.102089,1.600000)
+}
+STIN[46]{
+	 pt3dadd(-4752.292942,6618.778543,-1600.102089,1.600000)
+	 pt3dadd(-4778.900000,6643.400000,-1586.600000,1.600000)
+	 pt3dadd(-4793.909619,6654.612005,-1581.898192,1.600000)
+}
+STIN[47]{
+	 pt3dadd(-4793.909619,6654.612005,-1581.898192,1.600000)
+	 pt3dadd(-4812.100000,6668.200000,-1576.200000,1.600000)
+	 pt3dadd(-4833.147083,6692.951369,-1564.329445,1.600000)
+}
+FLUT[31]{
+	 pt3dadd(-4833.147083,6692.951369,-1564.329445,1.600000)
+	 pt3dadd(-4837.100000,6697.600000,-1562.100000,1.600000)
+	 pt3dadd(-4839.538383,6699.978702,-1561.281522,1.600000)
+}
+MYSA[31]{
+	 pt3dadd(-4839.538383,6699.978702,-1561.281522,1.400000)
+	 pt3dadd(-4841.626395,6702.015609,-1560.580651,1.400000)
+}
+node[16]{
+	 pt3dadd(-4841.626395,6702.015609,-1560.580651,1.400000)
+	 pt3dadd(-4842.322399,6702.694578,-1560.347027,1.400000)
+}
+MYSA[32]{
+	 pt3dadd(-4842.322399,6702.694578,-1560.347027,1.400000)
+	 pt3dadd(-4844.410410,6704.731484,-1559.646156,1.400000)
+}
+FLUT[32]{
+	 pt3dadd(-4844.410410,6704.731484,-1559.646156,1.600000)
+	 pt3dadd(-4851.370449,6711.521172,-1557.309919,1.600000)
+}
+STIN[48]{
+	 pt3dadd(-4851.370449,6711.521172,-1557.309919,1.600000)
+	 pt3dadd(-4865.700000,6725.500000,-1552.500000,1.600000)
+	 pt3dadd(-4895.243339,6739.538324,-1534.340974,1.600000)
+}
+STIN[49]{
+	 pt3dadd(-4895.243339,6739.538324,-1534.340974,1.600000)
+	 pt3dadd(-4908.000000,6745.600000,-1526.500000,1.600000)
+	 pt3dadd(-4936.978451,6758.694865,-1499.299864,1.600000)
+}
+STIN[50]{
+	 pt3dadd(-4936.978451,6758.694865,-1499.299864,1.600000)
+	 pt3dadd(-4977.143747,6776.844873,-1461.599384,1.600000)
+}
+FLUT[33]{
+	 pt3dadd(-4977.143747,6776.844873,-1461.599384,1.600000)
+	 pt3dadd(-4979.700000,6778.000000,-1459.200000,1.600000)
+	 pt3dadd(-4984.485151,6779.453209,-1455.354216,1.600000)
+}
+MYSA[33]{
+	 pt3dadd(-4984.485151,6779.453209,-1455.354216,1.400000)
+	 pt3dadd(-4986.760656,6780.144260,-1453.525412,1.400000)
+}
+node[17]{
+	 pt3dadd(-4986.760656,6780.144260,-1453.525412,1.400000)
+	 pt3dadd(-4987.519158,6780.374610,-1452.915811,1.400000)
+}
+MYSA[34]{
+	 pt3dadd(-4987.519158,6780.374610,-1452.915811,1.400000)
+	 pt3dadd(-4989.794664,6781.065661,-1451.087007,1.400000)
+}
+FLUT[34]{
+	 pt3dadd(-4989.794664,6781.065661,-1451.087007,1.600000)
+	 pt3dadd(-4997.379682,6783.369165,-1444.990994,1.600000)
+}
+STIN[51]{
+	 pt3dadd(-4997.379682,6783.369165,-1444.990994,1.600000)
+	 pt3dadd(-5039.300000,6796.100000,-1411.300000,1.600000)
+	 pt3dadd(-5041.483514,6796.314932,-1409.670913,1.600000)
+}
+STIN[52]{
+	 pt3dadd(-5041.483514,6796.314932,-1409.670913,1.600000)
+	 pt3dadd(-5087.826719,6800.876679,-1375.094942,1.600000)
+}
+STIN[53]{
+	 pt3dadd(-5087.826719,6800.876679,-1375.094942,1.600000)
+	 pt3dadd(-5128.700000,6804.900000,-1344.600000,1.600000)
+	 pt3dadd(-5134.953686,6803.751049,-1342.063054,1.600000)
+}
+FLUT[35]{
+	 pt3dadd(-5134.953686,6803.751049,-1342.063054,1.600000)
+	 pt3dadd(-5144.088777,6802.072716,-1338.357204,1.600000)
+}
+MYSA[35]{
+	 pt3dadd(-5144.088777,6802.072716,-1338.357204,1.400000)
+	 pt3dadd(-5146.829304,6801.569216,-1337.245449,1.400000)
+}
+node[18]{
+	 pt3dadd(-5146.829304,6801.569216,-1337.245449,1.400000)
+	 pt3dadd(-5147.742813,6801.401382,-1336.874864,1.400000)
+}
+MYSA[36]{
+	 pt3dadd(-5147.742813,6801.401382,-1336.874864,1.400000)
+	 pt3dadd(-5150.483340,6800.897882,-1335.763109,1.400000)
+}
+FLUT[36]{
+	 pt3dadd(-5150.483340,6800.897882,-1335.763109,1.600000)
+	 pt3dadd(-5159.618430,6799.219549,-1332.057259,1.600000)
+}
+STIN[54]{
+	 pt3dadd(-5159.618430,6799.219549,-1332.057259,1.600000)
+	 pt3dadd(-5209.800000,6790.000000,-1311.700000,1.600000)
+	 pt3dadd(-5212.548086,6788.843793,-1310.979465,1.600000)
+}
+STIN[55]{
+	 pt3dadd(-5212.548086,6788.843793,-1310.979465,1.600000)
+	 pt3dadd(-5259.000000,6769.300000,-1298.800000,1.600000)
+	 pt3dadd(-5263.928339,6765.615642,-1298.786405,1.600000)
+}
+STIN[56]{
+	 pt3dadd(-5263.928339,6765.615642,-1298.786405,1.600000)
+	 pt3dadd(-5310.381992,6730.887532,-1298.658257,1.600000)
+}
+FLUT[37]{
+	 pt3dadd(-5310.381992,6730.887532,-1298.658257,1.600000)
+	 pt3dadd(-5318.391243,6724.899926,-1298.636162,1.600000)
+}
+MYSA[37]{
+	 pt3dadd(-5318.391243,6724.899926,-1298.636162,1.400000)
+	 pt3dadd(-5320.794018,6723.103645,-1298.629534,1.400000)
+}
+node[19]{
+	 pt3dadd(-5320.794018,6723.103645,-1298.629534,1.400000)
+	 pt3dadd(-5321.594943,6722.504884,-1298.627324,1.400000)
+}
+MYSA[38]{
+	 pt3dadd(-5321.594943,6722.504884,-1298.627324,1.400000)
+	 pt3dadd(-5323.997718,6720.708603,-1298.620696,1.400000)
+}
+FLUT[38]{
+	 pt3dadd(-5323.997718,6720.708603,-1298.620696,1.600000)
+	 pt3dadd(-5331.500000,6715.100000,-1298.600000,1.600000)
+	 pt3dadd(-5331.813886,6714.598533,-1298.374903,1.600000)
+}
+STIN[57]{
+	 pt3dadd(-5331.813886,6714.598533,-1298.374903,1.600000)
+	 pt3dadd(-5360.575315,6668.648999,-1277.749177,1.600000)
+}
+STIN[58]{
+	 pt3dadd(-5360.575315,6668.648999,-1277.749177,1.600000)
+	 pt3dadd(-5381.700000,6634.900000,-1262.600000,1.600000)
+	 pt3dadd(-5385.048779,6621.959658,-1254.951555,1.600000)
+}
+STIN[59]{
+	 pt3dadd(-5385.048779,6621.959658,-1254.951555,1.600000)
+	 pt3dadd(-5397.660916,6573.223868,-1226.146056,1.600000)
+}
+FLUT[39]{
+	 pt3dadd(-5397.660916,6573.223868,-1226.146056,1.600000)
+	 pt3dadd(-5397.900000,6572.300000,-1225.600000,1.600000)
+	 pt3dadd(-5400.791333,6564.928486,-1221.535506,1.600000)
+}
+MYSA[39]{
+	 pt3dadd(-5400.791333,6564.928486,-1221.535506,1.400000)
+	 pt3dadd(-5401.765884,6562.443849,-1220.165531,1.400000)
+}
+node[20]{
+	 pt3dadd(-5401.765884,6562.443849,-1220.165531,1.400000)
+	 pt3dadd(-5402.090734,6561.615637,-1219.708873,1.400000)
+}
+MYSA[40]{
+	 pt3dadd(-5402.090734,6561.615637,-1219.708873,1.400000)
+	 pt3dadd(-5403.065284,6559.131000,-1218.338897,1.400000)
+}
+FLUT[40]{
+	 pt3dadd(-5403.065284,6559.131000,-1218.338897,1.600000)
+	 pt3dadd(-5406.313786,6550.848878,-1213.772314,1.600000)
+}
+STIN[60]{
+	 pt3dadd(-5406.313786,6550.848878,-1213.772314,1.600000)
+	 pt3dadd(-5425.155095,6502.812569,-1187.286128,1.600000)
+}
+STIN[61]{
+	 pt3dadd(-5425.155095,6502.812569,-1187.286128,1.600000)
+	 pt3dadd(-5429.200000,6492.500000,-1181.600000,1.600000)
+	 pt3dadd(-5450.195553,6461.027879,-1156.235676,1.600000)
+}
+STIN[62]{
+	 pt3dadd(-5450.195553,6461.027879,-1156.235676,1.600000)
+	 pt3dadd(-5476.930676,6420.952199,-1123.937486,1.600000)
+}
+FLUT[41]{
+	 pt3dadd(-5476.930676,6420.952199,-1123.937486,1.600000)
+	 pt3dadd(-5478.700000,6418.300000,-1121.800000,1.600000)
+	 pt3dadd(-5482.041814,6414.942643,-1117.859768,1.600000)
+}
+MYSA[41]{
+	 pt3dadd(-5482.041814,6414.942643,-1117.859768,1.400000)
+	 pt3dadd(-5483.668905,6413.307984,-1115.941314,1.400000)
+}
+node[21]{
+	 pt3dadd(-5483.668905,6413.307984,-1115.941314,1.400000)
+	 pt3dadd(-5484.211269,6412.763097,-1115.301830,1.400000)
+}
+MYSA[42]{
+	 pt3dadd(-5484.211269,6412.763097,-1115.301830,1.400000)
+	 pt3dadd(-5485.838360,6411.128438,-1113.383376,1.400000)
+}
+FLUT[42]{
+	 pt3dadd(-5485.838360,6411.128438,-1113.383376,1.600000)
+	 pt3dadd(-5491.261997,6405.679575,-1106.988530,1.600000)
+}
+STIN[63]{
+	 pt3dadd(-5491.261997,6405.679575,-1106.988530,1.600000)
+	 pt3dadd(-5521.700000,6375.100000,-1071.100000,1.600000)
+	 pt3dadd(-5523.015225,6374.075733,-1070.233040,1.600000)
+}
+STIN[64]{
+	 pt3dadd(-5523.015225,6374.075733,-1070.233040,1.600000)
+	 pt3dadd(-5563.613377,6342.458827,-1043.471848,1.600000)
+}
+STIN[65]{
+	 pt3dadd(-5563.613377,6342.458827,-1043.471848,1.600000)
+	 pt3dadd(-5604.211528,6310.841922,-1016.710656,1.600000)
+}
+FLUT[43]{
+	 pt3dadd(-5604.211528,6310.841922,-1016.710656,1.600000)
+	 pt3dadd(-5611.211209,6305.390731,-1012.096658,1.600000)
+}
+MYSA[43]{
+	 pt3dadd(-5611.211209,6305.390731,-1012.096658,1.400000)
+	 pt3dadd(-5613.311114,6303.755374,-1010.712458,1.400000)
+}
+node[22]{
+	 pt3dadd(-5613.311114,6303.755374,-1010.712458,1.400000)
+	 pt3dadd(-5614.011082,6303.210255,-1010.251058,1.400000)
+}
+MYSA[44]{
+	 pt3dadd(-5614.011082,6303.210255,-1010.251058,1.400000)
+	 pt3dadd(-5616.110986,6301.574897,-1008.866859,1.400000)
+}
+FLUT[44]{
+	 pt3dadd(-5616.110986,6301.574897,-1008.866859,1.600000)
+	 pt3dadd(-5623.110668,6296.123707,-1004.252860,1.600000)
+}
+STIN[66]{
+	 pt3dadd(-5623.110668,6296.123707,-1004.252860,1.600000)
+	 pt3dadd(-5632.900000,6288.500000,-997.800000,1.600000)
+	 pt3dadd(-5658.224934,6253.186057,-990.810124,1.600000)
+}
+STIN[67]{
+	 pt3dadd(-5658.224934,6253.186057,-990.810124,1.600000)
+	 pt3dadd(-5691.596726,6206.651302,-981.599253,1.600000)
+}
+STIN[68]{
+	 pt3dadd(-5691.596726,6206.651302,-981.599253,1.600000)
+	 pt3dadd(-5724.968518,6160.116548,-972.388382,1.600000)
+}
+FLUT[45]{
+	 pt3dadd(-5724.968518,6160.116548,-972.388382,1.600000)
+	 pt3dadd(-5730.722275,6152.093315,-970.800301,1.600000)
+}
+MYSA[45]{
+	 pt3dadd(-5730.722275,6152.093315,-970.800301,1.400000)
+	 pt3dadd(-5732.448402,6149.686345,-970.323877,1.400000)
+}
+node[23]{
+	 pt3dadd(-5732.448402,6149.686345,-970.323877,1.400000)
+	 pt3dadd(-5733.023778,6148.884021,-970.165069,1.400000)
+}
+MYSA[46]{
+	 pt3dadd(-5733.023778,6148.884021,-970.165069,1.400000)
+	 pt3dadd(-5734.749905,6146.477051,-969.688644,1.400000)
+}
+FLUT[46]{
+	 pt3dadd(-5734.749905,6146.477051,-969.688644,1.600000)
+	 pt3dadd(-5737.100000,6143.200000,-969.040000,1.600000)
+	 pt3dadd(-5739.266959,6137.717004,-969.524512,1.600000)
+}
+STIN[69]{
+	 pt3dadd(-5739.266959,6137.717004,-969.524512,1.600000)
+	 pt3dadd(-5760.513284,6083.958037,-974.274995,1.600000)
+}
+STIN[70]{
+	 pt3dadd(-5760.513284,6083.958037,-974.274995,1.600000)
+	 pt3dadd(-5781.759609,6030.199069,-979.025478,1.600000)
+}
+STIN[71]{
+	 pt3dadd(-5781.759609,6030.199069,-979.025478,1.600000)
+	 pt3dadd(-5785.000000,6022.000000,-979.750000,1.600000)
+	 pt3dadd(-5796.849018,5976.925928,-995.372264,1.600000)
+}
+FLUT[47]{
+	 pt3dadd(-5796.849018,5976.925928,-995.372264,1.600000)
+	 pt3dadd(-5799.259603,5967.755977,-998.550485,1.600000)
+}
+MYSA[47]{
+	 pt3dadd(-5799.259603,5967.755977,-998.550485,1.400000)
+	 pt3dadd(-5799.982779,5965.004992,-999.503952,1.400000)
+}
+node[24]{
+	 pt3dadd(-5799.982779,5965.004992,-999.503952,1.400000)
+	 pt3dadd(-5800.223837,5964.087997,-999.821774,1.400000)
+}
+MYSA[48]{
+	 pt3dadd(-5800.223837,5964.087997,-999.821774,1.400000)
+	 pt3dadd(-5800.947013,5961.337012,-1000.775240,1.400000)
+}
+FLUT[48]{
+	 pt3dadd(-5800.947013,5961.337012,-1000.775240,1.600000)
+	 pt3dadd(-5803.357598,5952.167062,-1003.953461,1.600000)
+}
+STIN[72]{
+	 pt3dadd(-5803.357598,5952.167062,-1003.953461,1.600000)
+	 pt3dadd(-5817.338993,5898.981351,-1022.387145,1.600000)
+}
+STIN[73]{
+	 pt3dadd(-5817.338993,5898.981351,-1022.387145,1.600000)
+	 pt3dadd(-5819.700000,5890.000000,-1025.500000,1.600000)
+	 pt3dadd(-5827.208058,5847.928219,-1047.802042,1.600000)
+}
+STIN[74]{
+	 pt3dadd(-5827.208058,5847.928219,-1047.802042,1.600000)
+	 pt3dadd(-5836.241588,5797.308381,-1074.635367,1.600000)
+}
+FLUT[49]{
+	 pt3dadd(-5836.241588,5797.308381,-1074.635367,1.600000)
+	 pt3dadd(-5836.600000,5795.300000,-1075.700000,1.600000)
+	 pt3dadd(-5837.533033,5788.846523,-1079.793126,1.600000)
+}
+MYSA[49]{
+	 pt3dadd(-5837.533033,5788.846523,-1079.793126,1.400000)
+	 pt3dadd(-5837.896609,5786.331791,-1081.388098,1.400000)
+}
+node[25]{
+	 pt3dadd(-5837.896609,5786.331791,-1081.388098,1.400000)
+	 pt3dadd(-5838.017800,5785.493547,-1081.919756,1.400000)
+}
+MYSA[50]{
+	 pt3dadd(-5838.017800,5785.493547,-1081.919756,1.400000)
+	 pt3dadd(-5838.381376,5782.978815,-1083.514728,1.400000)
+}
+FLUT[50]{
+	 pt3dadd(-5838.381376,5782.978815,-1083.514728,1.600000)
+	 pt3dadd(-5839.593295,5774.596375,-1088.831301,1.600000)
+}
+STIN[75]{
+	 pt3dadd(-5839.593295,5774.596375,-1088.831301,1.600000)
+	 pt3dadd(-5846.622426,5725.978223,-1119.667427,1.600000)
+}
+STIN[76]{
+	 pt3dadd(-5846.622426,5725.978223,-1119.667427,1.600000)
+	 pt3dadd(-5853.400000,5679.100000,-1149.400000,1.600000)
+	 pt3dadd(-5853.651848,5677.419164,-1150.591563,1.600000)
+}
+STIN[77]{
+	 pt3dadd(-5853.651848,5677.419164,-1150.591563,1.600000)
+	 pt3dadd(-5860.689140,5630.452216,-1183.886944,1.600000)
+}
+FLUT[51]{
+	 pt3dadd(-5860.689140,5630.452216,-1183.886944,1.600000)
+	 pt3dadd(-5861.902466,5622.354467,-1189.627526,1.600000)
+}
+MYSA[51]{
+	 pt3dadd(-5861.902466,5622.354467,-1189.627526,1.400000)
+	 pt3dadd(-5862.266464,5619.925142,-1191.349701,1.400000)
+}
+node[26]{
+	 pt3dadd(-5862.266464,5619.925142,-1191.349701,1.400000)
+	 pt3dadd(-5862.387796,5619.115367,-1191.923760,1.400000)
+}
+MYSA[52]{
+	 pt3dadd(-5862.387796,5619.115367,-1191.923760,1.400000)
+	 pt3dadd(-5862.751794,5616.686042,-1193.645934,1.400000)
+}
+FLUT[52]{
+	 pt3dadd(-5862.751794,5616.686042,-1193.645934,1.600000)
+	 pt3dadd(-5863.965121,5608.588293,-1199.386517,1.600000)
+}
+STIN[78]{
+	 pt3dadd(-5863.965121,5608.588293,-1199.386517,1.600000)
+	 pt3dadd(-5871.002412,5561.621345,-1232.681898,1.600000)
+}
+STIN[79]{
+	 pt3dadd(-5871.002412,5561.621345,-1232.681898,1.600000)
+	 pt3dadd(-5876.100000,5527.600000,-1256.800000,1.600000)
+	 pt3dadd(-5878.647596,5514.962102,-1266.253402,1.600000)
+}
+STIN[80]{
+	 pt3dadd(-5878.647596,5514.962102,-1266.253402,1.600000)
+	 pt3dadd(-5887.890335,5469.111515,-1300.550566,1.600000)
+}
+FLUT[53]{
+	 pt3dadd(-5887.890335,5469.111515,-1300.550566,1.600000)
+	 pt3dadd(-5889.483911,5461.206242,-1306.463870,1.600000)
+}
+MYSA[53]{
+	 pt3dadd(-5889.483911,5461.206242,-1306.463870,1.400000)
+	 pt3dadd(-5889.961984,5458.834659,-1308.237861,1.400000)
+}
+node[27]{
+	 pt3dadd(-5889.961984,5458.834659,-1308.237861,1.400000)
+	 pt3dadd(-5890.121341,5458.044132,-1308.829191,1.400000)
+}
+MYSA[54]{
+	 pt3dadd(-5890.121341,5458.044132,-1308.829191,1.400000)
+	 pt3dadd(-5890.599414,5455.672550,-1310.603183,1.400000)
+}
+FLUT[54]{
+	 pt3dadd(-5890.599414,5455.672550,-1310.603183,1.600000)
+	 pt3dadd(-5892.192990,5447.767276,-1316.516487,1.600000)
+}
+STIN[81]{
+	 pt3dadd(-5892.192990,5447.767276,-1316.516487,1.600000)
+	 pt3dadd(-5901.435729,5401.916689,-1350.813650,1.600000)
+}
+STIN[82]{
+	 pt3dadd(-5901.435729,5401.916689,-1350.813650,1.600000)
+	 pt3dadd(-5904.100000,5388.700000,-1360.700000,1.600000)
+	 pt3dadd(-5914.182685,5356.686871,-1384.734026,1.600000)
+}
+STIN[83]{
+	 pt3dadd(-5914.182685,5356.686871,-1384.734026,1.600000)
+	 pt3dadd(-5928.348845,5311.708464,-1418.501803,1.600000)
+}
+FLUT[55]{
+	 pt3dadd(-5928.348845,5311.708464,-1418.501803,1.600000)
+	 pt3dadd(-5930.791286,5303.953566,-1424.323834,1.600000)
+}
+MYSA[55]{
+	 pt3dadd(-5930.791286,5303.953566,-1424.323834,1.400000)
+	 pt3dadd(-5931.524019,5301.627096,-1426.070443,1.400000)
+}
+node[28]{
+	 pt3dadd(-5931.524019,5301.627096,-1426.070443,1.400000)
+	 pt3dadd(-5931.768263,5300.851607,-1426.652646,1.400000)
+}
+MYSA[56]{
+	 pt3dadd(-5931.768263,5300.851607,-1426.652646,1.400000)
+	 pt3dadd(-5932.500995,5298.525137,-1428.399255,1.400000)
+}
+FLUT[56]{
+	 pt3dadd(-5932.500995,5298.525137,-1428.399255,1.600000)
+	 pt3dadd(-5934.943437,5290.770239,-1434.221286,1.600000)
+}
+STIN[84]{
+	 pt3dadd(-5934.943437,5290.770239,-1434.221286,1.600000)
+	 pt3dadd(-5945.800000,5256.300000,-1460.100000,1.600000)
+	 pt3dadd(-5951.128908,5246.179143,-1467.365213,1.600000)
+}
+STIN[85]{
+	 pt3dadd(-5951.128908,5246.179143,-1467.365213,1.600000)
+	 pt3dadd(-5973.938383,5202.858553,-1498.462711,1.600000)
+}
+STIN[86]{
+	 pt3dadd(-5973.938383,5202.858553,-1498.462711,1.600000)
+	 pt3dadd(-5996.747857,5159.537963,-1529.560208,1.600000)
+}
+FLUT[57]{
+	 pt3dadd(-5996.747857,5159.537963,-1529.560208,1.600000)
+	 pt3dadd(-6000.680525,5152.068896,-1534.921846,1.600000)
+}
+MYSA[57]{
+	 pt3dadd(-6000.680525,5152.068896,-1534.921846,1.400000)
+	 pt3dadd(-6001.860326,5149.828175,-1536.530337,1.400000)
+}
+node[29]{
+	 pt3dadd(-6001.860326,5149.828175,-1536.530337,1.400000)
+	 pt3dadd(-6002.253592,5149.081269,-1537.066501,1.400000)
+}
+MYSA[58]{
+	 pt3dadd(-6002.253592,5149.081269,-1537.066501,1.400000)
+	 pt3dadd(-6003.433393,5146.840549,-1538.674992,1.400000)
+}
+FLUT[58]{
+	 pt3dadd(-6003.433393,5146.840549,-1538.674992,1.600000)
+	 pt3dadd(-6007.366061,5139.371481,-1544.036630,1.600000)
+}
+STIN[87]{
+	 pt3dadd(-6007.366061,5139.371481,-1544.036630,1.600000)
+	 pt3dadd(-6011.300000,5131.900000,-1549.400000,1.600000)
+	 pt3dadd(-6037.973711,5096.821702,-1568.418830,1.600000)
+}
+STIN[88]{
+	 pt3dadd(-6037.973711,5096.821702,-1568.418830,1.600000)
+	 pt3dadd(-6070.206616,5054.432571,-1591.401463,1.600000)
+}
+STIN[89]{
+	 pt3dadd(-6070.206616,5054.432571,-1591.401463,1.600000)
+	 pt3dadd(-6078.900000,5043.000000,-1597.600000,1.600000)
+	 pt3dadd(-6108.691767,5017.653904,-1613.852679,1.600000)
+}
+FLUT[59]{
+	 pt3dadd(-6108.691767,5017.653904,-1613.852679,1.600000)
+	 pt3dadd(-6115.725244,5011.669996,-1617.689741,1.600000)
+}
+MYSA[59]{
+	 pt3dadd(-6115.725244,5011.669996,-1617.689741,1.400000)
+	 pt3dadd(-6117.835287,5009.874824,-1618.840859,1.400000)
+}
+node[30]{
+	 pt3dadd(-6117.835287,5009.874824,-1618.840859,1.400000)
+	 pt3dadd(-6118.538635,5009.276433,-1619.224565,1.400000)
+}
+MYSA[60]{
+	 pt3dadd(-6118.538635,5009.276433,-1619.224565,1.400000)
+	 pt3dadd(-6120.648678,5007.481260,-1620.375684,1.400000)
+}
+FLUT[60]{
+	 pt3dadd(-6120.648678,5007.481260,-1620.375684,1.600000)
+	 pt3dadd(-6127.682155,5001.497352,-1624.212746,1.600000)
+}
+STIN[90]{
+	 pt3dadd(-6127.682155,5001.497352,-1624.212746,1.600000)
+	 pt3dadd(-6168.476323,4966.790686,-1646.467704,1.600000)
+}
+STIN[91]{
+	 pt3dadd(-6168.476323,4966.790686,-1646.467704,1.600000)
+	 pt3dadd(-6182.100000,4955.200000,-1653.900000,1.600000)
+	 pt3dadd(-6215.765155,4938.974002,-1663.681092,1.600000)
+}
+STIN[92]{
+	 pt3dadd(-6215.765155,4938.974002,-1663.681092,1.600000)
+	 pt3dadd(-6266.310505,4914.612054,-1678.366566,1.600000)
+}
+FLUT[61]{
+	 pt3dadd(-6266.310505,4914.612054,-1678.366566,1.600000)
+	 pt3dadd(-6275.025220,4910.411718,-1680.898544,1.600000)
+}
+MYSA[61]{
+	 pt3dadd(-6275.025220,4910.411718,-1680.898544,1.400000)
+	 pt3dadd(-6277.639635,4909.151617,-1681.658137,1.400000)
+}
+node[31]{
+	 pt3dadd(-6277.639635,4909.151617,-1681.658137,1.400000)
+	 pt3dadd(-6278.511106,4908.731584,-1681.911335,1.400000)
+}
+MYSA[62]{
+	 pt3dadd(-6278.511106,4908.731584,-1681.911335,1.400000)
+	 pt3dadd(-6281.125521,4907.471483,-1682.670928,1.400000)
+}
+FLUT[62]{
+	 pt3dadd(-6281.125521,4907.471483,-1682.670928,1.600000)
+	 pt3dadd(-6289.840237,4903.271147,-1685.202907,1.600000)
+}
+STIN[93]{
+	 pt3dadd(-6289.840237,4903.271147,-1685.202907,1.600000)
+	 pt3dadd(-6315.300000,4891.000000,-1692.600000,1.600000)
+	 pt3dadd(-6343.489092,4886.033801,-1695.650665,1.600000)
+}
+STIN[94]{
+	 pt3dadd(-6343.489092,4886.033801,-1695.650665,1.600000)
+	 pt3dadd(-6400.287744,4876.027327,-1701.797499,1.600000)
+}
+STIN[95]{
+	 pt3dadd(-6400.287744,4876.027327,-1701.797499,1.600000)
+	 pt3dadd(-6434.500000,4870.000000,-1705.500000,1.600000)
+	 pt3dadd(-6457.314879,4873.309028,-1704.803362,1.600000)
+}
+FLUT[63]{
+	 pt3dadd(-6457.314879,4873.309028,-1704.803362,1.600000)
+	 pt3dadd(-6467.206814,4874.743736,-1704.501319,1.600000)
+}
+MYSA[63]{
+	 pt3dadd(-6467.206814,4874.743736,-1704.501319,1.400000)
+	 pt3dadd(-6470.174395,4875.174149,-1704.410706,1.400000)
+}
+node[32]{
+	 pt3dadd(-6470.174395,4875.174149,-1704.410706,1.400000)
+	 pt3dadd(-6471.163588,4875.317620,-1704.380501,1.400000)
+}
+MYSA[64]{
+	 pt3dadd(-6471.163588,4875.317620,-1704.380501,1.400000)
+	 pt3dadd(-6474.131169,4875.748032,-1704.289888,1.400000)
+}
+FLUT[64]{
+	 pt3dadd(-6474.131169,4875.748032,-1704.289888,1.600000)
+	 pt3dadd(-6484.023104,4877.182740,-1703.987844,1.600000)
+}
+STIN[96]{
+	 pt3dadd(-6484.023104,4877.182740,-1703.987844,1.600000)
+	 pt3dadd(-6539.300000,4885.200000,-1702.300000,1.600000)
+	 pt3dadd(-6541.374822,4885.410358,-1701.923172,1.600000)
+}
+STIN[97]{
+	 pt3dadd(-6541.374822,4885.410358,-1701.923172,1.600000)
+	 pt3dadd(-6598.159445,4891.167515,-1691.609991,1.600000)
+}
+STIN[98]{
+	 pt3dadd(-6598.159445,4891.167515,-1691.609991,1.600000)
+	 pt3dadd(-6654.944068,4896.924672,-1681.296810,1.600000)
+}
+FLUT[65]{
+	 pt3dadd(-6654.944068,4896.924672,-1681.296810,1.600000)
+	 pt3dadd(-6664.734520,4897.917285,-1679.518676,1.600000)
+}
+MYSA[65]{
+	 pt3dadd(-6664.734520,4897.917285,-1679.518676,1.400000)
+	 pt3dadd(-6667.671656,4898.215069,-1678.985235,1.400000)
+}
+node[33]{
+	 pt3dadd(-6667.671656,4898.215069,-1678.985235,1.400000)
+	 pt3dadd(-6668.650701,4898.314331,-1678.807422,1.400000)
+}
+MYSA[66]{
+	 pt3dadd(-6668.650701,4898.314331,-1678.807422,1.400000)
+	 pt3dadd(-6671.587837,4898.612115,-1678.273981,1.400000)
+}
+FLUT[66]{
+	 pt3dadd(-6671.587837,4898.612115,-1678.273981,1.600000)
+	 pt3dadd(-6676.400000,4899.100000,-1677.400000,1.600000)
+	 pt3dadd(-6680.627035,4896.512796,-1676.262391,1.600000)
+}
+STIN[99]{
+	 pt3dadd(-6680.627035,4896.512796,-1676.262391,1.600000)
+	 pt3dadd(-6728.842515,4867.001971,-1663.286308,1.600000)
+}
+STIN[100]{
+	 pt3dadd(-6728.842515,4867.001971,-1663.286308,1.600000)
+	 pt3dadd(-6777.057995,4837.491146,-1650.310225,1.600000)
+}
+STIN[101]{
+	 pt3dadd(-6777.057995,4837.491146,-1650.310225,1.600000)
+	 pt3dadd(-6787.500000,4831.100000,-1647.500000,1.600000)
+	 pt3dadd(-6815.341944,4796.056938,-1639.657199,1.600000)
+}
+FLUT[67]{
+	 pt3dadd(-6815.341944,4796.056938,-1639.657199,1.600000)
+	 pt3dadd(-6821.469272,4788.344821,-1637.931191,1.600000)
+}
+MYSA[67]{
+	 pt3dadd(-6821.469272,4788.344821,-1637.931191,1.400000)
+	 pt3dadd(-6823.307471,4786.031186,-1637.413389,1.400000)
+}
+node[34]{
+	 pt3dadd(-6823.307471,4786.031186,-1637.413389,1.400000)
+	 pt3dadd(-6823.920204,4785.259974,-1637.240788,1.400000)
+}
+MYSA[68]{
+	 pt3dadd(-6823.920204,4785.259974,-1637.240788,1.400000)
+	 pt3dadd(-6825.758402,4782.946339,-1636.722985,1.400000)
+}
+FLUT[68]{
+	 pt3dadd(-6825.758402,4782.946339,-1636.722985,1.600000)
+	 pt3dadd(-6831.885730,4775.234222,-1634.996977,1.600000)
+}
+STIN[102]{
+	 pt3dadd(-6831.885730,4775.234222,-1634.996977,1.600000)
+	 pt3dadd(-6865.600000,4732.800000,-1625.500000,1.600000)
+	 pt3dadd(-6867.352303,4730.431957,-1625.069226,1.600000)
+}
+STIN[103]{
+	 pt3dadd(-6867.352303,4730.431957,-1625.069226,1.600000)
+	 pt3dadd(-6901.489529,4684.299290,-1616.677158,1.600000)
+}
+STIN[104]{
+	 pt3dadd(-6901.489529,4684.299290,-1616.677158,1.600000)
+	 pt3dadd(-6935.626754,4638.166622,-1608.285090,1.600000)
+}
+FLUT[69]{
+	 pt3dadd(-6935.626754,4638.166622,-1608.285090,1.600000)
+	 pt3dadd(-6937.600000,4635.500000,-1607.800000,1.600000)
+	 pt3dadd(-6942.242485,4630.842426,-1606.829253,1.600000)
+}
+MYSA[69]{
+	 pt3dadd(-6942.242485,4630.842426,-1606.829253,1.400000)
+	 pt3dadd(-6944.337656,4628.740445,-1606.391151,1.400000)
+}
+node[35]{
+	 pt3dadd(-6944.337656,4628.740445,-1606.391151,1.400000)
+	 pt3dadd(-6945.036046,4628.039784,-1606.245117,1.400000)
+}
+MYSA[70]{
+	 pt3dadd(-6945.036046,4628.039784,-1606.245117,1.400000)
+	 pt3dadd(-6947.131218,4625.937803,-1605.807015,1.400000)
+}
+FLUT[70]{
+	 pt3dadd(-6947.131218,4625.937803,-1605.807015,1.600000)
+	 pt3dadd(-6954.115122,4618.931200,-1604.346676,1.600000)
+}
+STIN[105]{
+	 pt3dadd(-6954.115122,4618.931200,-1604.346676,1.600000)
+	 pt3dadd(-6994.621765,4578.292899,-1595.876706,1.600000)
+}
+STIN[106]{
+	 pt3dadd(-6994.621765,4578.292899,-1595.876706,1.600000)
+	 pt3dadd(-7029.900000,4542.900000,-1588.500000,1.600000)
+	 pt3dadd(-7035.837850,4538.558609,-1587.107171,1.600000)
+}
+STIN[107]{
+	 pt3dadd(-7035.837850,4538.558609,-1587.107171,1.600000)
+	 pt3dadd(-7081.840836,4504.924053,-1576.316347,1.600000)
+}
+FLUT[71]{
+	 pt3dadd(-7081.840836,4504.924053,-1576.316347,1.600000)
+	 pt3dadd(-7089.772385,4499.124991,-1574.455860,1.600000)
+}
+MYSA[71]{
+	 pt3dadd(-7089.772385,4499.124991,-1574.455860,1.400000)
+	 pt3dadd(-7092.151850,4497.385273,-1573.897714,1.400000)
+}
+node[36]{
+	 pt3dadd(-7092.151850,4497.385273,-1573.897714,1.400000)
+	 pt3dadd(-7092.945005,4496.805367,-1573.711665,1.400000)
+}
+MYSA[72]{
+	 pt3dadd(-7092.945005,4496.805367,-1573.711665,1.400000)
+	 pt3dadd(-7095.324470,4495.065648,-1573.153519,1.400000)
+}
+FLUT[72]{
+	 pt3dadd(-7095.324470,4495.065648,-1573.153519,1.600000)
+	 pt3dadd(-7102.800000,4489.600000,-1571.400000,1.600000)
+	 pt3dadd(-7103.292151,4489.343922,-1571.249097,1.600000)
+}
+STIN[108]{
+	 pt3dadd(-7103.292151,4489.343922,-1571.249097,1.600000)
+	 pt3dadd(-7152.940037,4463.510875,-1556.026051,1.600000)
+}
+STIN[109]{
+	 pt3dadd(-7152.940037,4463.510875,-1556.026051,1.600000)
+	 pt3dadd(-7188.900000,4444.800000,-1545.000000,1.600000)
+	 pt3dadd(-7203.047714,4440.902160,-1538.647965,1.600000)
+}
+STIN[110]{
+	 pt3dadd(-7203.047714,4440.902160,-1538.647965,1.600000)
+	 pt3dadd(-7254.363323,4426.764187,-1515.608304,1.600000)
+}
+FLUT[73]{
+	 pt3dadd(-7254.363323,4426.764187,-1515.608304,1.600000)
+	 pt3dadd(-7263.210842,4424.326605,-1511.635949,1.600000)
+}
+MYSA[73]{
+	 pt3dadd(-7263.210842,4424.326605,-1511.635949,1.400000)
+	 pt3dadd(-7265.865097,4423.595330,-1510.444242,1.400000)
+}
+node[37]{
+	 pt3dadd(-7265.865097,4423.595330,-1510.444242,1.400000)
+	 pt3dadd(-7266.749849,4423.351572,-1510.047006,1.400000)
+}
+MYSA[74]{
+	 pt3dadd(-7266.749849,4423.351572,-1510.047006,1.400000)
+	 pt3dadd(-7267.300000,4423.200000,-1509.800000,1.400000)
+	 pt3dadd(-7269.229655,4423.391482,-1508.423216,1.400000)
+}
+FLUT[74]{
+	 pt3dadd(-7269.229655,4423.391482,-1508.423216,1.600000)
+	 pt3dadd(-7277.343635,4424.196643,-1502.633997,1.600000)
+}
+STIN[111]{
+	 pt3dadd(-7277.343635,4424.196643,-1502.633997,1.600000)
+	 pt3dadd(-7324.404713,4428.866575,-1469.056525,1.600000)
+}
+STIN[112]{
+	 pt3dadd(-7324.404713,4428.866575,-1469.056525,1.600000)
+	 pt3dadd(-7371.465792,4433.536508,-1435.479054,1.600000)
+}
+STIN[113]{
+	 pt3dadd(-7371.465792,4433.536508,-1435.479054,1.600000)
+	 pt3dadd(-7410.400000,4437.400000,-1407.700000,1.600000)
+	 pt3dadd(-7417.402880,4440.277547,-1401.142758,1.600000)
+}
+FLUT[75]{
+	 pt3dadd(-7417.402880,4440.277547,-1401.142758,1.600000)
+	 pt3dadd(-7424.394651,4443.150529,-1394.595918,1.600000)
+}
+MYSA[75]{
+	 pt3dadd(-7424.394651,4443.150529,-1394.595918,1.400000)
+	 pt3dadd(-7426.492182,4444.012424,-1392.631866,1.400000)
+}
+node[38]{
+	 pt3dadd(-7426.492182,4444.012424,-1392.631866,1.400000)
+	 pt3dadd(-7427.191359,4444.299722,-1391.977182,1.400000)
+}
+MYSA[76]{
+	 pt3dadd(-7427.191359,4444.299722,-1391.977182,1.400000)
+	 pt3dadd(-7429.288890,4445.161617,-1390.013130,1.400000)
+}
+FLUT[76]{
+	 pt3dadd(-7429.288890,4445.161617,-1390.013130,1.600000)
+	 pt3dadd(-7436.280661,4448.034599,-1383.466290,1.600000)
+}
+STIN[114]{
+	 pt3dadd(-7436.280661,4448.034599,-1383.466290,1.600000)
+	 pt3dadd(-7476.832932,4464.697896,-1345.494618,1.600000)
+}
+STIN[115]{
+	 pt3dadd(-7476.832932,4464.697896,-1345.494618,1.600000)
+	 pt3dadd(-7517.385203,4481.361193,-1307.522946,1.600000)
+}
+STIN[116]{
+	 pt3dadd(-7517.385203,4481.361193,-1307.522946,1.600000)
+	 pt3dadd(-7520.400000,4482.600000,-1304.700000,1.600000)
+	 pt3dadd(-7559.644486,4499.068668,-1271.972901,1.600000)
+}
+FLUT[77]{
+	 pt3dadd(-7559.644486,4499.068668,-1271.972901,1.600000)
+	 pt3dadd(-7566.954207,4502.136141,-1265.877116,1.600000)
+}
+MYSA[77]{
+	 pt3dadd(-7566.954207,4502.136141,-1265.877116,1.400000)
+	 pt3dadd(-7569.147124,4503.056382,-1264.048381,1.400000)
+}
+node[39]{
+	 pt3dadd(-7569.147124,4503.056382,-1264.048381,1.400000)
+	 pt3dadd(-7569.878096,4503.363129,-1263.438802,1.400000)
+}
+MYSA[78]{
+	 pt3dadd(-7569.878096,4503.363129,-1263.438802,1.400000)
+	 pt3dadd(-7572.071012,4504.283371,-1261.610067,1.400000)
+}
+FLUT[78]{
+	 pt3dadd(-7572.071012,4504.283371,-1261.610067,1.600000)
+	 pt3dadd(-7579.380733,4507.350843,-1255.514282,1.600000)
+}
+STIN[117]{
+	 pt3dadd(-7579.380733,4507.350843,-1255.514282,1.600000)
+	 pt3dadd(-7621.777114,4525.142182,-1220.158728,1.600000)
+}
+STIN[118]{
+	 pt3dadd(-7621.777114,4525.142182,-1220.158728,1.600000)
+	 pt3dadd(-7632.400000,4529.600000,-1211.300000,1.600000)
+	 pt3dadd(-7665.727372,4543.120973,-1186.889162,1.600000)
+}
+STIN[119]{
+	 pt3dadd(-7665.727372,4543.120973,-1186.889162,1.600000)
+	 pt3dadd(-7710.197141,4561.162436,-1154.317007,1.600000)
+}
+FLUT[79]{
+	 pt3dadd(-7710.197141,4561.162436,-1154.317007,1.600000)
+	 pt3dadd(-7717.864342,4564.273034,-1148.701118,1.600000)
+}
+MYSA[79]{
+	 pt3dadd(-7717.864342,4564.273034,-1148.701118,1.400000)
+	 pt3dadd(-7720.164503,4565.206213,-1147.016351,1.400000)
+}
+node[40]{
+	 pt3dadd(-7720.164503,4565.206213,-1147.016351,1.400000)
+	 pt3dadd(-7720.931223,4565.517272,-1146.454762,1.400000)
+}
+MYSA[80]{
+	 pt3dadd(-7720.931223,4565.517272,-1146.454762,1.400000)
+	 pt3dadd(-7723.231383,4566.450451,-1144.769996,1.400000)
+}
+FLUT[80]{
+	 pt3dadd(-7723.231383,4566.450451,-1144.769996,1.600000)
+	 pt3dadd(-7723.600000,4566.600000,-1144.500000,1.600000)
+	 pt3dadd(-7731.222369,4569.576354,-1139.636203,1.600000)
+}
+STIN[120]{
+	 pt3dadd(-7731.222369,4569.576354,-1139.636203,1.600000)
+	 pt3dadd(-7777.664935,4587.711070,-1110.001423,1.600000)
+}
+STIN[121]{
+	 pt3dadd(-7777.664935,4587.711070,-1110.001423,1.600000)
+	 pt3dadd(-7824.107500,4605.845786,-1080.366643,1.600000)
+}
+STIN[122]{
+	 pt3dadd(-7824.107500,4605.845786,-1080.366643,1.600000)
+	 pt3dadd(-7849.600000,4615.800000,-1064.100000,1.600000)
+	 pt3dadd(-7871.482408,4623.917389,-1052.276246,1.600000)
+}
+FLUT[81]{
+	 pt3dadd(-7871.482408,4623.917389,-1052.276246,1.600000)
+	 pt3dadd(-7879.846098,4627.019942,-1047.757081,1.600000)
+}
+MYSA[81]{
+	 pt3dadd(-7879.846098,4627.019942,-1047.757081,1.400000)
+	 pt3dadd(-7882.355205,4627.950708,-1046.401331,1.400000)
+}
+node[41]{
+	 pt3dadd(-7882.355205,4627.950708,-1046.401331,1.400000)
+	 pt3dadd(-7883.191574,4628.260963,-1045.949415,1.400000)
+}
+MYSA[82]{
+	 pt3dadd(-7883.191574,4628.260963,-1045.949415,1.400000)
+	 pt3dadd(-7885.700681,4629.191729,-1044.593665,1.400000)
+}
+FLUT[82]{
+	 pt3dadd(-7885.700681,4629.191729,-1044.593665,1.600000)
+	 pt3dadd(-7894.064372,4632.294281,-1040.074500,1.600000)
+}
+STIN[123]{
+	 pt3dadd(-7894.064372,4632.294281,-1040.074500,1.600000)
+	 pt3dadd(-7942.573774,4650.289088,-1013.863342,1.600000)
+}
+STIN[124]{
+	 pt3dadd(-7942.573774,4650.289088,-1013.863342,1.600000)
+	 pt3dadd(-7976.300000,4662.800000,-995.640000,1.600000)
+	 pt3dadd(-7991.632898,4668.159562,-988.668777,1.600000)
+}
+STIN[125]{
+	 pt3dadd(-7991.632898,4668.159562,-988.668777,1.600000)
+	 pt3dadd(-8041.946151,4685.746388,-965.793460,1.600000)
+}
+FLUT[83]{
+	 pt3dadd(-8041.946151,4685.746388,-965.793460,1.600000)
+	 pt3dadd(-8050.620850,4688.778599,-961.849440,1.600000)
+}
+MYSA[83]{
+	 pt3dadd(-8050.620850,4688.778599,-961.849440,1.400000)
+	 pt3dadd(-8053.223260,4689.688262,-960.666234,1.400000)
+}
+node[42]{
+	 pt3dadd(-8053.223260,4689.688262,-960.666234,1.400000)
+	 pt3dadd(-8054.090730,4689.991483,-960.271832,1.400000)
+}
+MYSA[84]{
+	 pt3dadd(-8054.090730,4689.991483,-960.271832,1.400000)
+	 pt3dadd(-8056.693139,4690.901147,-959.088626,1.400000)
+}
+FLUT[84]{
+	 pt3dadd(-8056.693139,4690.901147,-959.088626,1.600000)
+	 pt3dadd(-8065.367838,4693.933358,-955.144606,1.600000)
+}
+STIN[126]{
+	 pt3dadd(-8065.367838,4693.933358,-955.144606,1.600000)
+	 pt3dadd(-8097.600000,4705.200000,-940.490000,1.600000)
+	 pt3dadd(-8116.327418,4711.152563,-933.540072,1.600000)
+}
+STIN[127]{
+	 pt3dadd(-8116.327418,4711.152563,-933.540072,1.600000)
+	 pt3dadd(-8168.439167,4727.716430,-914.200893,1.600000)
+}
+STIN[128]{
+	 pt3dadd(-8168.439167,4727.716430,-914.200893,1.600000)
+	 pt3dadd(-8220.550917,4744.280297,-894.861713,1.600000)
+}
+FLUT[85]{
+	 pt3dadd(-8220.550917,4744.280297,-894.861713,1.600000)
+	 pt3dadd(-8229.535701,4747.136137,-891.527372,1.600000)
+}
+MYSA[85]{
+	 pt3dadd(-8229.535701,4747.136137,-891.527372,1.400000)
+	 pt3dadd(-8232.231136,4747.992888,-890.527070,1.400000)
+}
+node[43]{
+	 pt3dadd(-8232.231136,4747.992888,-890.527070,1.400000)
+	 pt3dadd(-8233.129615,4748.278472,-890.193636,1.400000)
+}
+MYSA[86]{
+	 pt3dadd(-8233.129615,4748.278472,-890.193636,1.400000)
+	 pt3dadd(-8235.825050,4749.135224,-889.193333,1.400000)
+}
+FLUT[86]{
+	 pt3dadd(-8235.825050,4749.135224,-889.193333,1.600000)
+	 pt3dadd(-8244.809835,4751.991063,-885.858992,1.600000)
+}
+STIN[129]{
+	 pt3dadd(-8244.809835,4751.991063,-885.858992,1.600000)
+	 pt3dadd(-8263.400000,4757.900000,-878.960000,1.600000)
+	 pt3dadd(-8298.333121,4768.656062,-871.478918,1.600000)
+}
+STIN[130]{
+	 pt3dadd(-8298.333121,4768.656062,-871.478918,1.600000)
+	 pt3dadd(-8352.639208,4785.377146,-859.849030,1.600000)
+}
+STIN[131]{
+	 pt3dadd(-8352.639208,4785.377146,-859.849030,1.600000)
+	 pt3dadd(-8372.200000,4791.400000,-855.660000,1.600000)
+	 pt3dadd(-8407.234415,4800.105378,-847.065805,1.600000)
+}
+FLUT[87]{
+	 pt3dadd(-8407.234415,4800.105378,-847.065805,1.600000)
+	 pt3dadd(-8416.675445,4802.451292,-844.749852,1.600000)
+}
+MYSA[87]{
+	 pt3dadd(-8416.675445,4802.451292,-844.749852,1.400000)
+	 pt3dadd(-8419.507754,4803.155066,-844.055066,1.400000)
+}
+node[44]{
+	 pt3dadd(-8419.507754,4803.155066,-844.055066,1.400000)
+	 pt3dadd(-8420.451857,4803.389658,-843.823471,1.400000)
+}
+MYSA[88]{
+	 pt3dadd(-8420.451857,4803.389658,-843.823471,1.400000)
+	 pt3dadd(-8423.284166,4804.093432,-843.128685,1.400000)
+}
+FLUT[88]{
+	 pt3dadd(-8423.284166,4804.093432,-843.128685,1.600000)
+	 pt3dadd(-8432.725196,4806.439346,-840.812732,1.600000)
+}
+STIN[132]{
+	 pt3dadd(-8432.725196,4806.439346,-840.812732,1.600000)
+	 pt3dadd(-8487.483170,4820.045649,-827.380206,1.600000)
+}
+STIN[133]{
+	 pt3dadd(-8487.483170,4820.045649,-827.380206,1.600000)
+	 pt3dadd(-8520.300000,4828.200000,-819.330000,1.600000)
+	 pt3dadd(-8542.697381,4832.710911,-815.073712,1.600000)
+}
+STIN[134]{
+	 pt3dadd(-8542.697381,4832.710911,-815.073712,1.600000)
+	 pt3dadd(-8598.593973,4843.968681,-804.451398,1.600000)
+}
+FLUT[89]{
+	 pt3dadd(-8598.593973,4843.968681,-804.451398,1.600000)
+	 pt3dadd(-8608.231317,4845.909676,-802.619964,1.600000)
+}
+MYSA[89]{
+	 pt3dadd(-8608.231317,4845.909676,-802.619964,1.400000)
+	 pt3dadd(-8611.122520,4846.491974,-802.070534,1.400000)
+}
+node[45]{
+	 pt3dadd(-8611.122520,4846.491974,-802.070534,1.400000)
+	 pt3dadd(-8612.086254,4846.686074,-801.887391,1.400000)
+}
+MYSA[90]{
+	 pt3dadd(-8612.086254,4846.686074,-801.887391,1.400000)
+	 pt3dadd(-8614.977457,4847.268372,-801.337961,1.400000)
+}
+FLUT[90]{
+	 pt3dadd(-8614.977457,4847.268372,-801.337961,1.600000)
+	 pt3dadd(-8624.614801,4849.209367,-799.506528,1.600000)
+}
+STIN[135]{
+	 pt3dadd(-8624.614801,4849.209367,-799.506528,1.600000)
+	 pt3dadd(-8662.800000,4856.900000,-792.250000,1.600000)
+	 pt3dadd(-8680.799225,4859.543329,-789.644784,1.600000)
+}
+STIN[136]{
+	 pt3dadd(-8680.799225,4859.543329,-789.644784,1.600000)
+	 pt3dadd(-8737.604205,4867.885590,-781.422807,1.600000)
+}
+STIN[137]{
+	 pt3dadd(-8737.604205,4867.885590,-781.422807,1.600000)
+	 pt3dadd(-8794.409185,4876.227852,-773.200829,1.600000)
+}
+FLUT[91]{
+	 pt3dadd(-8794.409185,4876.227852,-773.200829,1.600000)
+	 pt3dadd(-8804.203147,4877.666173,-771.783247,1.600000)
+}
+MYSA[91]{
+	 pt3dadd(-8804.203147,4877.666173,-771.783247,1.400000)
+	 pt3dadd(-8807.141336,4878.097669,-771.357972,1.400000)
+}
+node[46]{
+	 pt3dadd(-8807.141336,4878.097669,-771.357972,1.400000)
+	 pt3dadd(-8808.120732,4878.241501,-771.216214,1.400000)
+}
+MYSA[92]{
+	 pt3dadd(-8808.120732,4878.241501,-771.216214,1.400000)
+	 pt3dadd(-8809.200000,4878.400000,-771.060000,1.400000)
+	 pt3dadd(-8811.080643,4878.553630,-770.854851,1.400000)
+}
+FLUT[92]{
+	 pt3dadd(-8811.080643,4878.553630,-770.854851,1.600000)
+	 pt3dadd(-8820.989054,4879.363049,-769.773997,1.600000)
+}
+STIN[138]{
+	 pt3dadd(-8820.989054,4879.363049,-769.773997,1.600000)
+	 pt3dadd(-8878.457833,4884.057682,-763.505043,1.600000)
+}
+STIN[139]{
+	 pt3dadd(-8878.457833,4884.057682,-763.505043,1.600000)
+	 pt3dadd(-8935.926613,4888.752315,-757.236090,1.600000)
+}
+STIN[140]{
+	 pt3dadd(-8935.926613,4888.752315,-757.236090,1.600000)
+	 pt3dadd(-8951.200000,4890.000000,-755.570000,1.600000)
+	 pt3dadd(-8993.634260,4890.089524,-751.986066,1.600000)
+}
+FLUT[93]{
+	 pt3dadd(-8993.634260,4890.089524,-751.986066,1.600000)
+	 pt3dadd(-9003.598761,4890.110546,-751.144479,1.600000)
+}
+MYSA[93]{
+	 pt3dadd(-9003.598761,4890.110546,-751.144479,1.400000)
+	 pt3dadd(-9006.588112,4890.116853,-750.892003,1.400000)
+}
+node[47]{
+	 pt3dadd(-9006.588112,4890.116853,-750.892003,1.400000)
+	 pt3dadd(-9007.584562,4890.118955,-750.807844,1.400000)
+}
+MYSA[94]{
+	 pt3dadd(-9007.584562,4890.118955,-750.807844,1.400000)
+	 pt3dadd(-9010.573912,4890.125261,-750.555368,1.400000)
+}
+FLUT[94]{
+	 pt3dadd(-9010.573912,4890.125261,-750.555368,1.600000)
+	 pt3dadd(-9020.538414,4890.146284,-749.713781,1.600000)
+}
+STIN[141]{
+	 pt3dadd(-9020.538414,4890.146284,-749.713781,1.600000)
+	 pt3dadd(-9078.332522,4890.268212,-744.832577,1.600000)
+}
+STIN[142]{
+	 pt3dadd(-9078.332522,4890.268212,-744.832577,1.600000)
+	 pt3dadd(-9093.400000,4890.300000,-743.560000,1.600000)
+	 pt3dadd(-9136.071907,4889.944401,-739.367485,1.600000)
+}
+STIN[143]{
+	 pt3dadd(-9136.071907,4889.944401,-739.367485,1.600000)
+	 pt3dadd(-9193.791994,4889.463400,-733.696487,1.600000)
+}
+FLUT[95]{
+	 pt3dadd(-9193.791994,4889.463400,-733.696487,1.600000)
+	 pt3dadd(-9203.743733,4889.380469,-732.718728,1.600000)
+}
+MYSA[95]{
+	 pt3dadd(-9203.743733,4889.380469,-732.718728,1.400000)
+	 pt3dadd(-9206.729255,4889.355590,-732.425401,1.400000)
+}
+node[48]{
+	 pt3dadd(-9206.729255,4889.355590,-732.425401,1.400000)
+	 pt3dadd(-9207.724429,4889.347296,-732.327625,1.400000)
+}
+
+//change dendrites'  conductances so they linearly decrease or increase with increasing 
+//distance from the soma (see Gillies 2005 for more detailed explanation)
+
+initcell()  //IF NOT CALLED HERE, MUST CALL IT IN STN_multi.hoc !!!
+
+
+access soma[1]
+my_ind = int(n3d()/2)
+xsoma=x3d(my_ind)  //get coordinates for soma location
+ysoma=y3d(my_ind)
+zsoma=z3d(my_ind)
+//print "soma coords ", xsoma, ysoma, zsoma
+max_dist = 734.15 // Maximum dendrite-soma distance ; set to zero when calculating for the first time
+
+kdr_prox = -0.05 //Proximity for KDR channel (from Gillies 2005)
+kfr_prox = 0.8 //Proximity for Kv31 channel (from Gillies 2005)
+kca_prox = -0.52 //Proximity for KCa channel (from Gillies 2005)
+hcn_prox = -0.39 //Proximity for HCN channel (from Gillies 2005)
+cat_prox = -0.01 //Proximity for CaT channel (from Gillies 2005)
+can_prox = 0.5 //Proximity for CaN channel (from Gillies 2005)
+cal_prox = -0.57 //Proximity for CaL channel (from Gillies 2005)
+
+for i=0,dendelements-1 {
+	access	dend[i]
+	my_ind = int(n3d()/2)
+	xdend=x3d(my_ind)  //get coordinates for dendrite
+	ydend=y3d(my_ind)
+	zdend=z3d(my_ind)
+	//print "		dend coords ", xdend, ydend, zdend
+	app_dist = sqrt((xsoma-xdend)^2 + (ysoma-ydend)^2 + (zsoma-zdend)^2) //distance from soma to dend
+	pd = app_dist/max_dist   //parametrized distance (from 0 to 1)
+	//if (max_dist < app_dist) max_dist = app_dist	//for calculating maximum dendrite-soma distance
+	
+	//set up KDR conductance
+	if (kdr_prox == 0) { 
+		f = 1   
+  	} else {
+		if (kdr_prox > 0) { 
+			f = (1-kdr_prox-pd)/(1-kdr_prox)
+    		} else { 
+			f = (kdr_prox+pd)/(1+kdr_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gk_KDR   = 4.22e-5 + f*9.32e-5  //Basal conductance * f*Tree_Conductance 
+
+
+	//set up CaT conductance
+	if (cat_prox == 0) { 
+		f = 1   
+  	} else {
+		if (cat_prox > 0) { 
+			f = (1-cat_prox-pd)/(1-cat_prox)
+    		} else { 
+			f = (cat_prox+pd)/(1+cat_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gcaT_CaT   = 1.17e-3 + f*1.67e-3  //Basal conductance * f*Tree_Conductance 
+
+	//set up CaL conductance
+	if (cal_prox == 0) { 
+		f = 1   
+  	} else {
+		if (cal_prox > 0) { 
+			f = (1-cal_prox-pd)/(1-cal_prox)
+    		} else { 
+			f = (cal_prox+pd)/(1+cal_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gcaL_HVA   = 1.21e-4 + f*1.87e-3  //Basal conductance * f*Tree_Conductance 
+	
+	//set up CaN conductance
+	if (can_prox == 0) { 
+		f = 1   
+  	} else {
+		if (can_prox > 0) { 
+			f = (1-can_prox-pd)/(1-can_prox)
+    		} else { 
+			f = (can_prox+pd)/(1+can_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gcaN_HVA   = 0 + f*4.79e-4  //Basal conductance * f*Tree_Conductance 
+
+	//set up KCa conductance
+	if (kca_prox == 0) { 
+		f = 1   
+  	} else {
+		if (kca_prox > 0) { 
+			f = (1-kca_prox-pd)/(1-kca_prox)
+    		} else { 
+			f = (kca_prox+pd)/(1+kca_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gk_sKCa   = 0 + 1.8*f*3.92e-5  //Basal conductance * f*Tree_Conductance 
+	
+	//set up Kv31 (KFR) conductance
+	if (kfr_prox == 0) { 
+		f = 1   
+  	} else {
+		if (kfr_prox > 0) { 
+			f = (1-kfr_prox-pd)/(1-kfr_prox)
+    		} else { 
+			f = (kfr_prox+pd)/(1+kfr_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gk_Kv31   = 8.91e-4 + f*1.0e-3  //Basal conductance * f*Tree_Conductance 
+
+
+	//set up HCN conductance
+	if (hcn_prox == 0) { 
+		f = 1   
+  	} else {
+		if (hcn_prox > 0) { 
+			f = (1-hcn_prox-pd)/(1-hcn_prox)
+    		} else { 
+			f = (hcn_prox+pd)/(1+hcn_prox) 
+    		}
+	} 
+   	if (f < 0) f = 0
+    	gk_Ih   = 0 + f*5.1e-4  //Basal conductance * f*Tree_Conductance  		
+	
+				
+	//print "Dend=", i, " dist = ", app_dist, " pd = ", pd, " f= ", f, " new cond. =", ghcnbar_hcn
+	//print i,",", app_dist, ",", pd, ",", f, ",", ghcnbar_hcn
+
+} 
+//print "Max = ", max_dist //max dist is 734

@@ -1,0 +1,1150 @@
+// Mapping to original GENESIS variable names.
+// Model available at https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=127728
+//
+// - main script in /runs/runsample/setup.g loads following scripts:
+//
+//   + /common/CIPfuncs.g
+//       + /common/simdefaults.g        -> sets param variables
+//
+//   + /runs/runsample/readGPparams.g
+//       + /common/GP<i>_default.g       -> sets param variables
+//       + /common/actpars.g             -> sets param variables
+//
+//   + /common/make_GP_libary.g          -> uses param variables
+//       + /common.GPchans.g             -> defines mechanisms using parameters
+//       + /common.GPcomps.g             -> defines compartments using parameters
+//
+// GENESIS uses SI units
+//   - Cm : F/m^2
+//   - Rm : Ohm*m^2
+//   - Ra : Ohm*m
+//   - gbar : S/m^2
+//   - E : V
+//
+// NEURON uses following units:
+//   - Cm : uF/cm^2  == 1e-6/1e-4 * F/m^2 == 1e-2 * F/m^2    => x 1e2
+//   - Rm : 1/gbar                                           => x 1e4
+//   - Ra : Ohm*cm   == 1e-2 * Ohm*m                         => x 1e2
+//   - gbar : S/cm^2 == 1/1e-4 * S/m^2 == 1e4 * S/m^2        => x 1e-4
+//   - E : mV == V*1e-3                                      => x 1e3
+//
+// VALUE SPECIFICATION:
+// - "value" evaluated using str.format(**genesis_params) must be a
+//   valid Python expression that can be evaluated safely with eval()
+[
+// #############################################################################
+// # Parameters from GP1_axonless.p
+// #############################################################################
+// NOTE: - original source: overwritten in GPcomps.g
+//       - set below on per-region basis
+// #############################################################################
+// # Parameters from GPchans.g
+// #############################################################################
+// NOTE: reversal potentials and default conductances are set in this script
+// NOTE: parameters that don't have soma/dend/axon specific value are already
+//       set in the .mod file itself
+    {
+        "param_name": "ena",
+        "sectionlist": "all",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ENa}"
+    },
+    {
+        "param_name": "ek",
+        "sectionlist": "all",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{EK}"
+    },
+    {
+        "param_name": "ek",
+        "sectionlist": "all",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{EK}"
+    },
+// #############################################################################
+// # Parameters from GPcomps.g
+// #############################################################################
+// see setfield statements in GPcomps.g
+// =============================================================================
+// SOMATIC parameters
+// =============================================================================
+// somatic passive parameters
+// -----------------------------------------------------------------------------
+    {
+        "param_name": "Ra",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "Ohm*m",
+        "value": "{RA}"
+    },
+    {
+        "param_name": "g_pas",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "1.0/{RM_sd}"
+    },
+    {
+        "param_name": "cm",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "F/m^2",
+        "value": "{CM}" // CM_my not used in axonless model
+    },
+    {
+        "param_name": "e_pas",
+        "sectionlist": "somatic",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ELEAK_sd}"
+    },
+    // { // ERROR WHEN GHK USED AND ASSIGNED BEFORE MECHANISM INSERTED
+    //     "param_name": "eca",
+    //     "sectionlist": "somatic",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{ECa}"
+    // },
+    // NOTE: set to correct values in .mod files
+    // {
+    //     "param_name": "eh_HCN",
+    //     "sectionlist": "somatic",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{Eh}"
+    // },
+    // {
+    //     "param_name": "eh_HCN2",
+    //     "sectionlist": "somatic",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{Eh}"
+    // },
+// -----------------------------------------------------------------------------
+// somatic Ca buffering
+// -----------------------------------------------------------------------------
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "B",
+    //     "sectionlist": "somatic",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units" : "1/C",
+    //     "value": "{B_Ca_GP_conc}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "tau",
+    //     "sectionlist": "somatic",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "seconds",
+    //     "value": "{tau_CaClearance}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "shell_vol",
+    //     "sectionlist": "somatic",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units" : "m^3",
+    //     "value": "{soma_shell_vol}"
+    // },
+// -----------------------------------------------------------------------------
+// somatic conductances
+// -----------------------------------------------------------------------------
+    {
+        "param_name": "gmax_NaF",
+        "sectionlist": "somatic",
+        "mech": "NaF",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Na_fast_GP}*{G_mult_Na_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_NaP",
+        "sectionlist": "somatic",
+        "mech": "NaP",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Na_slow_GP}*{G_mult_Na_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv2",
+        "sectionlist": "somatic",
+        "mech": "Kv2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv2_GP}*{G_mult_Kdr_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv3",
+        "sectionlist": "somatic",
+        "mech": "Kv3",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv3_GP}*{G_mult_Kdr_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv4f",
+        "sectionlist": "somatic",
+        "mech": "Kv4f",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4_fast_GP}*{G_mult_KA_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv4s",
+        "sectionlist": "somatic",
+        "mech": "Kv4s",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4_slow_GP}*{G_mult_KA_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_KCNQ",
+        "sectionlist": "somatic",
+        "mech": "KCNQ",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_KCNQ_GP}*{G_mult_KCNQ_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "sectionlist": "somatic",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_SK",
+        "sectionlist": "somatic",
+        "mech": "SK",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_K_ahp_GP}*{G_mult_SK_soma}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_HCN",
+        "sectionlist": "somatic",
+        "mech": "HCN",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_h_HCN_GP}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_HCN2",
+        "sectionlist": "somatic",
+        "mech": "HCN2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_h_HCN2_GP}*{G_mult}"
+    },
+// =============================================================================
+// AXON STUB
+// =============================================================================
+// SOURCE FILE: Hendrickson (2011) model GPcomps.g/"GP_ax"
+// SECTIONLIST NAME in cell prototype: "basal"
+// NOTE: these are parameters for equivalent axon stub in axonless morphology,
+//       used in Hendrickson (2011) paper but not in Gunay (2008)
+// -----------------------------------------------------------------------------
+// axon stub passive parameters
+// -----------------------------------------------------------------------------
+    {
+        "param_name": "Ra",
+        "sectionlist": "axonal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "Ohm*m",
+        "value": "{RA}"
+    },
+    {
+        "param_name": "g_pas",
+        "sectionlist": "axonal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "1.0/{RM_sd}"
+    },
+    {
+        "param_name": "cm",
+        "sectionlist": "axonal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "F/m^2",
+        "value": "{CM}" // CM_my not used in axonless model
+    },
+    {
+        "param_name": "e_pas",
+        "sectionlist": "axonal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ELEAK_sd}"
+    },
+// -----------------------------------------------------------------------------
+// axon stub conductances
+// -----------------------------------------------------------------------------
+    {
+        "param_name": "gmax_NaF",
+        "sectionlist": "axonal",
+        "mech": "NaF",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_NaF_axon}"
+    },
+    {
+        "param_name": "gmax_NaP",
+        "sectionlist": "axonal",
+        "mech": "NaP",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_NaP_axon}"
+    },
+    {
+        "param_name": "gmax_Kv2",
+        "sectionlist": "axonal",
+        "mech": "Kv2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv2_axon}"
+    },
+    {
+        "param_name": "gmax_Kv3",
+        "sectionlist": "axonal",
+        "mech": "Kv3",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv3_axon}"
+    },
+    {
+        "param_name": "gmax_Kv4f",
+        "sectionlist": "axonal",
+        "mech": "Kv4f",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4f_axon}"
+    },
+    {
+        "param_name": "gmax_Kv4s",
+        "sectionlist": "axonal",
+        "mech": "Kv4s",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4s_axon}"
+    },
+    {
+        "param_name": "gmax_KCNQ",
+        "sectionlist": "axonal",
+        "mech": "KCNQ",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_KCNQ_axon}"
+    },
+// =============================================================================
+// AXON HILLOCK
+// =============================================================================
+// SOURCE FILE: GPcomps.g/"make axon hillock prototype"
+// NOTE: only use in full morphology with full axon instead of stub
+// NOTE: hillock is extension of soma so gets same parameters
+// -----------------------------------------------------------------------------
+// hillock passive parameters
+// -----------------------------------------------------------------------------
+    // {
+    //     "param_name": "Ra",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "Ohm*m",
+    //     "value": "{RA}"
+    // },
+    // {
+    //     "param_name": "g_pas",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "1.0/{RM_sd}"
+    // },
+    // {
+    //     "param_name": "cm",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "F/m^2",
+    //     "value": "{CM}" // CM_my not used in axonless model
+    // },
+    // {
+    //     "param_name": "e_pas",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{ELEAK_sd}"
+    // },
+// -----------------------------------------------------------------------------
+// hillock Ca buffering
+// -----------------------------------------------------------------------------
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "B",
+    //     "sectionlist": "axonal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "value": "{B_Ca_GP_conc}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "tau",
+    //     "sectionlist": "axonal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "seconds",
+    //     "value": "{tau_CaClearance}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "shell_vol",
+    //     "sectionlist": "axonal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "value": "{soma_shell_vol}"
+    // },
+// -----------------------------------------------------------------------------
+// hillock conductances
+// -----------------------------------------------------------------------------
+    // {
+    //     "param_name": "gmax_NaF",
+    //     "sectionlist": "axonal",
+    //     "mech": "NaF",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Na_fast_GP}*{G_mult_Na_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_NaP",
+    //     "sectionlist": "axonal",
+    //     "mech": "NaP",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Na_slow_GP}*{G_mult_Na_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv2",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv2",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv2_GP}*{G_mult_Kdr_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv3",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv3",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv3_GP}*{G_mult_Kdr_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv4f",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv4f",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv4_fast_GP}*{G_mult_KA_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv4s",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv4s",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv4_slow_GP}*{G_mult_KA_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_KCNQ",
+    //     "sectionlist": "axonal",
+    //     "mech": "KCNQ",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_KCNQ_GP}*{G_mult_KCNQ_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_CaHVA",
+    //     "sectionlist": "axonal",
+    //     "mech": "CaHVA",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Ca_HVA_GP}*{G_mult_Ca_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_SK",
+    //     "sectionlist": "axonal",
+    //     "mech": "SK",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_K_ahp_GP}*{G_mult_SK_soma}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_HCN",
+    //     "sectionlist": "axonal",
+    //     "mech": "HCN",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_h_HCN_GP}*{G_mult}"
+    // },
+    // {
+    //     "param_name": "gmax_HCN2",
+    //     "sectionlist": "axonal",
+    //     "mech": "HCN2",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_h_HCN2_GP}*{G_mult}"
+    // },
+// =============================================================================
+// AXON INITIAL SEGMENT
+// =============================================================================
+// SOURCE FILE: GPcomps.g/"make axon initial segment prototype"
+// NOTE: only use in full morphology with full axon instead of stub
+// NOTE: in axonless morphology, don't use this: use hillock parameters for stub
+// -----------------------------------------------------------------------------
+// Initial Segment passive parameters
+// -----------------------------------------------------------------------------
+    // {
+    //     "param_name": "Ra",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "Ohm*m",
+    //     "value": "{RA}"
+    // },
+    // {
+    //     "param_name": "g_pas",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "1.0/{RM_ax}"
+    // },
+    // {
+    //     "param_name": "cm",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "F/m^2",
+    //     "value": "{CM}" // CM_my not used in axonless model
+    // },
+    // {
+    //     "param_name": "e_pas",
+    //     "sectionlist": "axonal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{ELEAK_ax}"
+    // },
+// -----------------------------------------------------------------------------
+// Initial Segment conductances
+// -----------------------------------------------------------------------------
+    // {
+    //     "param_name": "gmax_NaF",
+    //     "sectionlist": "axonal",
+    //     "mech": "NaF",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Na_fast_GP}*{G_mult_Na_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_NaP",
+    //     "sectionlist": "axonal",
+    //     "mech": "NaP",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Na_slow_GP}*{G_mult_Na_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv2",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv2",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv2_GP}*{G_mult_Kdr_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv3",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv3",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv3_GP}*{G_mult_Kdr_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv4f",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv4f",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv4_fast_GP}*{G_mult_KA_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_Kv4s",
+    //     "sectionlist": "axonal",
+    //     "mech": "Kv4s",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_Kv4_slow_GP}*{G_mult_KA_axon}"
+    // },
+    // {
+    //     "param_name": "gmax_KCNQ",
+    //     "sectionlist": "axonal",
+    //     "mech": "KCNQ",
+    //     "mech_param": "gmax",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "S/m^2",
+    //     "value": "{G_KCNQ_GP}*{G_mult_KCNQ_axon}*{G_mult}"
+    // },
+// =============================================================================
+// DENDRITE
+// =============================================================================
+// sectionlist name in cell prototype: "basal"
+// source file: GPcomps.g/"Dendritic prototype"
+    {
+        "param_name": "cm",
+        "sectionlist": "basal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "F/m^2",
+        "value": "{CM}" // CM_my not used in axonless model
+    },
+    {
+        "param_name": "Ra",
+        "sectionlist": "basal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "Ohm*m",
+        "value": "{RA}"
+    },
+    {
+        "param_name": "g_pas",
+        "sectionlist": "basal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "1.0/{RM_sd}"
+    },
+    {
+        "param_name": "e_pas",
+        "sectionlist": "basal",
+        "type": "section",
+        "dist_type": "uniform",
+        "units": "V",
+        "value": "{ELEAK_sd}"
+    },
+    // NOTE: - ECa nerns potential not used:
+    //       - Ca reversal potential computed using GHK from ion concentrations
+    // {
+    //     "param_name": "eca",
+    //     "sectionlist": "basal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{ECa}"
+    // },
+    // NOTE: set to correct values in .mod files
+    // {
+    //     "param_name": "eh_HCN",
+    //     "sectionlist": "basal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{Eh}"
+    // },
+    // {
+    //     "param_name": "eh_HCN2",
+    //     "sectionlist": "basal",
+    //     "type": "section",
+    //     "dist_type": "uniform",
+    //     "units": "V",
+    //     "value": "{Eh}"
+    // },
+// -----------------------------------------------------------------------------
+// dendritic Ca buffering
+// -----------------------------------------------------------------------------
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "B",
+    //     "sectionlist": "basal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units" : "1/C",
+    //     "value": "{B_Ca_GP_conc}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "tau",
+    //     "sectionlist": "basal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units": "seconds",
+    //     "value": "{tau_CaClearance}"
+    // },
+    // {
+    //     "mech": "Calcium",
+    //     "mech_param": "shell_vol",
+    //     "sectionlist": "basal",
+    //     "type": "range",
+    //     "dist_type": "uniform",
+    //     "units" : "m^3",
+    //     "value": "{dend_shell_vol}"
+    // },
+// -----------------------------------------------------------------------------
+// dendritic conductances
+    {
+        "param_name": "gmax_NaF",
+        "sectionlist": "basal",
+        "mech": "NaF",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Na_fast_GP}*{G_mult_Na_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_NaP",
+        "sectionlist": "basal",
+        "mech": "NaP",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Na_slow_GP}*{G_mult_Na_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv2",
+        "sectionlist": "basal",
+        "mech": "Kv2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv2_GP}*{G_mult_Kdr_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv3",
+        "sectionlist": "basal",
+        "mech": "Kv3",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv3_GP}*{G_mult_Kdr_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv4f",
+        "sectionlist": "basal",
+        "mech": "Kv4f",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4_fast_GP}*{G_mult_KA_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_Kv4s",
+        "sectionlist": "basal",
+        "mech": "Kv4s",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Kv4_slow_GP}*{G_mult_KA_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_KCNQ",
+        "sectionlist": "basal",
+        "mech": "KCNQ",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_KCNQ_GP}*{G_mult_KCNQ_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_SK",
+        "sectionlist": "basal",
+        "mech": "SK",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_K_ahp_GP}*{G_mult_SK_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_HCN",
+        "sectionlist": "basal",
+        "mech": "HCN",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_h_HCN_GP}*{G_mult_HCN_dend}*{G_mult}"
+    },
+    {
+        "param_name": "gmax_HCN2",
+        "sectionlist": "basal",
+        "mech": "HCN2",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_h_HCN2_GP}*{G_mult_HCN_dend}*{G_mult}"
+    },
+    // CaHVA is non-uniform
+    {
+        "param_name": "gmax_CaHVA",
+        "sectionlist": "basal",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "range",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}"
+    },
+    // values below are from file GPcomps.g @ end of file
+    // NOTE: from code, it seems that dendritic sections with diameter 
+    //       between 0.5 - 1 micron (labeled 'dia1') get multiplier 1.5 
+    //       and dendritic sections with diameter 0 - 0.5 micron (labeled 'dia0')
+    //       get multiplier 3.
+    // NOTE: in paper, they say 
+    // "The dendrites contained three subdivisions based on dendritic diameter: 
+    // thick dendrites had diameters >1 um, medium dendrites had
+    // diameters ranging from 0.5 to 1 um, and thin dendrites had diameters
+    // 0.5 um. These subdivisions differed in only one parameter: the calcium
+    // channel density was 3 times higher in the thin dendrites than the thick
+    // dendrites, and 1.5 times higher in the medium dendrites than the thick
+    // dendrites (Hanson and Smith, 2002). "
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d0_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d0_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d25_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d25_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d50_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d50_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d100_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d100_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d200_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d200_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d300_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d300_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d400_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d400_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d500_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d500_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d600_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d600_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d700_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d700_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d800_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d800_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d900_dia1",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*1.5"
+    },
+    {
+        "param_name": "gmax_CaHVA",
+        "location": "GP_dendrite_d900_dia0",
+        "mech": "CaHVA",
+        "mech_param": "gmax",
+        "type": "segment",
+        "dist_type": "uniform",
+        "units": "S/m^2",
+        "value": "{G_Ca_HVA_GP}*{G_mult_Ca_dend}*{G_mult}*3"
+    },
+]

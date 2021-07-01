@@ -1,0 +1,338 @@
+[
+// #############################################################################
+// # Diameter and distance-based locations
+// #############################################################################
+// Locations specified by distance range from soma (in micron)
+// and diameter range (in micron).
+//
+// NOTE: regions defined in Gunay (2008) source code in file GP<i>.p
+//
+//     This defines the locations described in Hanson & Smith 2002, 
+//     https://doi.org/10.1002/cne.10075
+// 
+//     The locations are defined algorithmically by J.Edgerton as follows:
+// 
+//         Each dendritic prototype now has 2 defining variables:
+// 
+//         d = distance from soma, with segments as follows:
+//             d0 = 0-25 microns from soma
+//             d25 = >25 to 50 microns
+//             d50 = >50 to 100 microns
+//             all remaining divisions are 100 microns long, 
+//                 e.g. d100 means 100 < d <= 200 microns from soma.
+// 
+//         dia = diameter rating:
+//             dia0 = < 0.5 microns
+//             dia1 = 0.5 to 1 micron
+//             dia2 = > 1 micron
+//             CaHVA density is scaled based on diameter rating according to
+//                 Hanson & Smith, 2002.
+//             Once a dendrite crosses the line between two ratings, it cannot
+//                 go back to a higher rating again even if the diam thickens.
+//             If a transition occurs for a short stretch but the majority of
+//                 the dendrite distal to that stretch is at the previous level, 
+//                 ignore the transition.
+//             In cases where it is oscillating around a transition, make the
+//                 transition occur where the compartment and 3 of the next 4
+//                 are at the new level.
+    // distance 0 - 25
+    {
+        "loc_name": "GP_dendrite_d0_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "0",
+        "upper_distance": "25",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d0_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "0",
+        "upper_distance": "25",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d0_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "0",
+        "upper_distance": "25",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 25 - 50
+    {
+        "loc_name": "GP_dendrite_d25_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "25",
+        "upper_distance": "50",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d25_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "25",
+        "upper_distance": "50",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d25_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "25",
+        "upper_distance": "50",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 50 - 100
+    {
+        "loc_name": "GP_dendrite_d50_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "50",
+        "upper_distance": "100",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d50_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "50",
+        "upper_distance": "100",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d50_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "50",
+        "upper_distance": "100",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 100 - 200
+    {
+        "loc_name": "GP_dendrite_d100_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "100",
+        "upper_distance": "200",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d100_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "100",
+        "upper_distance": "200",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d100_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "100",
+        "upper_distance": "200",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 200 - 300
+    {
+        "loc_name": "GP_dendrite_d200_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "200",
+        "upper_distance": "300",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d200_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "200",
+        "upper_distance": "300",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d200_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "200",
+        "upper_distance": "300",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 300 - 400
+    {
+        "loc_name": "GP_dendrite_d300_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "300",
+        "upper_distance": "400",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d300_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "300",
+        "upper_distance": "400",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d300_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "300",
+        "upper_distance": "400",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 400 - 500
+    {
+        "loc_name": "GP_dendrite_d400_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "400",
+        "upper_distance": "500",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d400_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "400",
+        "upper_distance": "500",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d400_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "400",
+        "upper_distance": "500",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 500 - 600
+    {
+        "loc_name": "GP_dendrite_d500_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "500",
+        "upper_distance": "600",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d500_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "500",
+        "upper_distance": "600",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d500_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "500",
+        "upper_distance": "600",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 600 - 700
+    {
+        "loc_name": "GP_dendrite_d600_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "600",
+        "upper_distance": "700",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d600_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "600",
+        "upper_distance": "700",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d600_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "600",
+        "upper_distance": "700",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 700 - 800
+    {
+        "loc_name": "GP_dendrite_d700_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "700",
+        "upper_distance": "800",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d700_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "700",
+        "upper_distance": "800",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d700_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "700",
+        "upper_distance": "800",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 800 - 900
+    {
+        "loc_name": "GP_dendrite_d800_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "800",
+        "upper_distance": "900",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d800_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "800",
+        "upper_distance": "900",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d800_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "800",
+        "upper_distance": "900",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+    // distance 900 - 1000
+    {
+        "loc_name": "GP_dendrite_d900_dia2",
+        "sectionlist": "basal",
+        "lower_distance": "900",
+        "upper_distance": "1000",
+        "lower_diameter": "1",
+        "upper_diameter": "1e12"
+    },
+    {
+        "loc_name": "GP_dendrite_d900_dia1",
+        "sectionlist": "basal",
+        "lower_distance": "900",
+        "upper_distance": "1000",
+        "lower_diameter": "0.5",
+        "upper_diameter": "1"
+    },
+    {
+        "loc_name": "GP_dendrite_d900_dia0",
+        "sectionlist": "basal",
+        "lower_distance": "900",
+        "upper_distance": "1000",
+        "lower_diameter": "0",
+        "upper_diameter": "0.5"
+    },
+]

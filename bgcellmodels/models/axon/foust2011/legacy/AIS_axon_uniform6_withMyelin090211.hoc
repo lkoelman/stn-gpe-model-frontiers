@@ -1,0 +1,420 @@
+// from test4, but have collatoral
+load_file("nrngui.hoc")
+
+// --------------------------------------------------------------
+// redefine some things in stdrun.hoc
+// --------------------------------------------------------------
+objref st, st1, st2, st3, st4, st5, st6, st7, st8, st9, st10, st11, st12 //DC current stimuli
+
+dc0= 0.06//0.06//0.025 //0.12 //0
+dc = 0.14//0.14//0.04 //.22
+tp=5
+nk=1000 // gk/nk,  increase gk, destroy the sub-dep increased sp duration phonomenon
+gkd= 0.006*1//0.006*50 //0.006*10
+//gkd= 0.006*30 //0.006*10
+tstart = 0
+tstop = 120//10100 //6050 //10100
+//dt = 0.1/1
+dt = 0.01/1
+steps_per_ms = 1/dt
+
+// Create the neuron
+rm = 30000
+v_init    = -70
+celsius   = 37
+Ek = -90   //-90 might affect the axon spike phase slope value low, and less noisy, increase to be -85?
+           //   maybe not, still need check
+Ena = 60 //50
+ra = 150
+c_m = 0.8 // the optimal value, both increase and decrease will decrease slope value
+           //however, small C value will have high dv/dt value
+xn = 1
+gna = 2000*2   //2.5
+gk = gna/4
+
+
+ndend=1  // increase this will increase kink slope
+create ais, myelin1, cnod, node1, myelin2, node2,myelin3
+
+ais {
+    L=20
+    nseg=5
+    diam = 1.2 // weeken the biphase, but looks closer to the real data
+}
+node1 {
+    L=2
+    nseg=1
+    diam = 1.2 // weeken the biphase, but looks closer to the real data
+}
+
+node2 {
+    L=2
+    nseg=1
+    diam = 1.2 // weeken the biphase, but looks closer to the real data
+}
+myelin1{
+     L=80
+     nseg = 10
+     diam = 1.4       // .5?  nodes are thinner than axon
+      }
+myelin2{
+     L=200
+     nseg = L/20
+     diam = 1.4       // .5?  nodes are thinner than axon
+      }
+myelin3{
+     L=200
+     nseg = L/20
+     diam = 1.4       // .5?  nodes are thinner than axon
+      }
+cnod{
+     L=500
+     nseg = L/5
+     diam = 0.5       // .5?  nodes are thinner than axon
+      }
+   connect myelin1(0), ais(1)
+   connect node1(0), myelin1(1)
+   connect cnod(0), node1(0.5)
+   connect myelin2(0), node1(1)
+   connect node2(0), myelin2(1)
+   connect myelin3(0), node2(1)
+
+   
+proc init_cell() {
+      forall {
+              insert pas
+              Ra = ra
+              cm = c_m
+              g_pas = 1/rm //10/rm
+              e_pas = v_init
+              }
+         node1.g_pas=0.02
+         node2.g_pas=0.02
+         myelin1.cm=0.04
+         myelin2.cm=0.04
+         myelin3.cm=0.04
+          
+      forall insert na             
+             ais.gbar_na = gna  //gna
+             node1.gbar_na = gna*0.7 //2  //gna
+             node2.gbar_na = gna*0.7 //2  //gna
+             cnod.gbar_na = gna/3  //gna
+             myelin1.gbar_na = 10
+             myelin2.gbar_na = 10
+             myelin3.gbar_na = 10
+
+// insert Id current in the node only
+             ais { insert kd  gkbar_kd  = 2.5*gkd }
+             node1 { insert kd  gkbar_kd  = 1.2*gkd }
+             cnod { insert kd  gkbar_kd  = 1*gkd }
+             node2 { insert kd  gkbar_kd  = 1.2*gkd }
+     
+      forall insert kv
+             ais.gbar_kv = 20//6//20//0.1 //gk/nk  //gk/2000
+             node1.gbar_kv = 3  //gk/2000
+             node2.gbar_kv = 3  //gk/2000
+             cnod.gbar_kv = 10//gk/(nk)     //gk/2  //gk/2000
+             myelin1.gbar_kv=0
+             myelin2.gbar_kv=0
+             myelin3.gbar_kv=0
+   
+     
+      forall if(ismembrane("k_ion")) ek = Ek
+      forall if(ismembrane("na_ion")) {
+                ena = Ena
+                // seems to be necessary for 3d cells to shift Na kinetics -5 mV
+                vshift_na = -20 //-20  //-15
+                                      }
+}             
+                      
+init_cell()
+//nrnmainmenu()
+//nrncontrolmenu()
+access ais
+
+// --------------------------------------------------------------
+// stimulus
+// --------------------------------------------------------------
+
+  st=new IClamp(.5)
+  st.dur = 5000
+  st.del = 5
+  st.amp = .0
+
+  st1=new IClamp(.5)
+  st1.dur = 5000
+  st1.del = 5
+  st1.amp = .0
+
+  st2=new IClamp(.5)
+  st2.dur = 5000
+  st2.del = 5
+  st2.amp = .0
+  
+  st3=new IClamp(.5)
+  st3.dur = 5000
+  st3.del = 5
+  st3.amp = .0
+
+  st4=new IClamp(.5)
+  st4.dur = 5000
+  st4.del = 5
+  st4.amp = .0
+
+  st5=new IClamp(.5)
+  st5.dur = 5000
+  st5.del = 5
+  st5.amp = .0
+
+  st6=new IClamp(.5)
+  st6.dur = 5000
+  st6.del = 5
+  st6.amp = .0
+
+  st7=new IClamp(.5)
+  st7.dur = 5000
+  st7.del = 5
+  st7.amp = .0
+
+  st8=new IClamp(.5)
+  st8.dur = 5000
+  st8.del = 5
+  st8.amp = .0
+
+  st9=new IClamp(.5)
+  st9.dur = 5000
+  st9.del = 5
+  st9.amp = .0
+
+  st10=new IClamp(.5)
+  st10.dur = 5000
+  st10.del = 5
+  st10.amp = .0
+
+  st11=new IClamp(.5)
+  st11.dur = 5000
+  st11.del = 5
+  st11.amp = .0
+
+  st12=new IClamp(.5)
+  st12.dur = 5000
+  st12.del = 5
+  st12.amp = .0
+
+proc set_stim() {
+  st.loc($1)  st.amp = $2   st.del = $3   st.dur = $4
+}
+
+proc set_stim1() {
+  st1.loc($1)  st1.amp = $2   st1.del = $3   st1.dur = $4
+}
+
+proc set_stim2() {
+  st2.loc($1)  st2.amp = $2   st2.del = $3   st2.dur = $4
+}
+
+proc set_stim3() {
+  st3.loc($1)  st3.amp = $2   st3.del = $3   st3.dur = $4
+}
+
+proc set_stim4() {
+  st4.loc($1)  st4.amp = $2   st4.del = $3   st4.dur = $4
+}
+proc set_stim5() {
+  st5.loc($1)  st5.amp = $2   st5.del = $3   st5.dur = $4
+}
+proc set_stim6() {
+  st6.loc($1)  st6.amp = $2   st6.del = $3   st6.dur = $4
+}
+proc set_stim7() {
+  st7.loc($1)  st7.amp = $2   st7.del = $3   st7.dur = $4
+}
+proc set_stim8() {
+  st8.loc($1)  st8.amp = $2   st8.del = $3   st8.dur = $4
+}
+proc set_stim9() {
+  st9.loc($1)  st9.amp = $2   st9.del = $3   st9.dur = $4
+}
+proc set_stim10() {
+  st10.loc($1)  st10.amp = $2   st10.del = $3   st10.dur = $4
+}
+proc set_stim11() {
+  st11.loc($1)  st11.amp = $2   st11.del = $3   st11.dur = $4
+}
+proc set_stim12() {
+  st12.loc($1)  st12.amp = $2   st12.del = $3   st12.dur = $4
+}
+
+
+objref rect, recv, rec_somaic, rec_axonv
+objref rec_axon1, rec_axon2, rec_axon3, rec_axon4, rec_axon5 , rec_axon6, rec_axon7, rec_axon8, rec_axon9, rec_axon10 
+objref rec_caxon1, rec_caxon2, rec_caxon3, rec_caxon4, rec_caxon5 , rec_caxon6, rec_caxon7, rec_caxon8, rec_caxon9, rec_caxon10 
+objref rec_axonid,rec_axonina, rec_axonik
+rect = new Vector()
+recv = new Vector()
+
+rec_axonid=new Vector()
+rec_axonina=new Vector()
+rec_axonik=new Vector()
+
+rec_axon1=new Vector()
+rec_axon2=new Vector()
+rec_axon3=new Vector()
+rec_axon4=new Vector()
+rec_axon5=new Vector()
+rec_axon6=new Vector()
+rec_axon7=new Vector()
+rec_axon8=new Vector()
+rec_axon9=new Vector()
+rec_axon10=new Vector()
+
+rec_caxon1=new Vector()
+rec_caxon2=new Vector()
+rec_caxon3=new Vector()
+rec_caxon4=new Vector()
+rec_caxon5=new Vector()
+rec_caxon6=new Vector()
+rec_caxon7=new Vector()
+rec_caxon8=new Vector()
+rec_caxon9=new Vector()
+rec_caxon10=new Vector()
+
+objref savdata //used for saving file
+savdata = new File()  //savdata is a file pointer
+savdata.wopen("AIS_uniform_withmyelin090211AISkv20_new.dat")  //open a file with a defined name to save data
+
+objref savdata1 //used for saving file
+savdata1 = new File()  //savdata is a file pointer
+savdata1.wopen("AIS_uniform_withmyelin090211AISkv20_new_co.dat")  //open a file with a defined name to save data
+
+ais set_stim(0.,dc0,0,11000)
+proc node_inj() {
+   ais set_stim1(0.,dc,20,tp)
+  ais set_stim2(0.,dc,500,tp)
+  ais set_stim3(0.,dc,1000,tp)
+  ais set_stim4(0.,dc,2000,tp)
+  ais set_stim5(0.,dc,3000,tp)
+  ais set_stim6(0.,dc,4000,tp)
+  ais set_stim7(0.,dc,5000,tp)
+  ais set_stim8(0.,dc,6000,tp)
+  ais set_stim9(0.,dc,7000,tp)
+  ais set_stim10(0.,dc,8000,tp)
+  ais set_stim11(0.,dc,9000,tp)
+  ais set_stim12(0.,dc,10000,tp)
+    
+
+recv.record(&ais.v(0.1))   //put value of soma.v to recv
+rect.record(&t)             //put value of t to rect 
+rec_axon1.record(&ais.v(1))
+rec_axon2.record(&myelin1.v(0.1))
+rec_axon3.record(&myelin1.v(0.3))
+rec_axon4.record(&myelin1.v(0.5))
+rec_axon5.record(&myelin1.v(0.7))
+rec_axon6.record(&myelin1.v(0.9))
+rec_axon7.record(&node1.v(0.5))
+rec_axon8.record(&myelin2.v(0.5))
+rec_axon9.record(&node2.v(0.3))
+rec_axon10.record(&myelin2.v(0.5))
+
+rec_caxon1.record(&cnod.v(0.05))
+rec_caxon2.record(&cnod.v(0.1))
+rec_caxon3.record(&cnod.v(0.15))
+rec_caxon4.record(&cnod.v(0.2))
+rec_caxon5.record(&cnod.v(0.25))
+rec_caxon6.record(&cnod.v(0.3))
+rec_caxon7.record(&cnod.v(0.35))
+rec_caxon8.record(&cnod.v(0.4))
+rec_caxon9.record(&cnod.v(0.6))
+rec_caxon10.record(&cnod.v(8))
+
+run() // this is the right position
+
+for i=0,rect.size()-1 {
+savdata.printf("%g %g %g %g %g %g %g %g %g %g %g\n", rect.x(i), recv.x(i), rec_axon1.x(i), rec_axon2.x(i), rec_axon3.x(i), rec_axon4.x(i), rec_axon5.x(i), rec_axon6.x(i), rec_axon7.x(i), rec_axon8.x(i), rec_axon9.x(i))
+savdata1.printf("%g %g %g %g %g %g %g %g %g %g %g\n", rect.x(i), rec_caxon1.x(i), rec_caxon2.x(i), rec_caxon3.x(i), rec_caxon4.x(i), rec_caxon5.x(i), rec_caxon6.x(i), rec_caxon7.x(i), rec_caxon8.x(i), rec_caxon9.x(i), rec_caxon10.x(i))
+}
+savdata.close()
+savdata1.close()
+}
+
+
+//------------------figure area--------------------------------------------------
+access ais
+
+proc figv() { local wd,ht
+    graphItem = new Graph(0)
+   wd=300 ht=200
+    graphItem.save_name("graphList[0].")
+    graphList[0].append(graphItem)
+    graphItem.view(0,-80,tstop,140,300,200,wd,ht)
+  }
+
+proc figsyn() { local wd,ht
+    graphItem = new Graph(0)
+   wd=300 ht=200
+    graphItem.save_name("graphList[0].")
+    graphList[0].append(graphItem)
+   graphItem.view(0,-5,tstop,10,300,200,wd,ht)
+  }
+
+proc figina() { local wd,ht
+    graphItem = new Graph(0)
+   wd=300 ht=200
+    graphItem.save_name("graphList[0].")
+    graphList[0].append(graphItem)
+   graphItem.view(0,-20,tstop,22,300,200,wd,ht)
+  }
+
+proc figid() { local wd,ht
+    graphItem = new Graph(0)
+   wd=300 ht=200
+    graphItem.save_name("graphList[0].")
+    graphList[0].append(graphItem)
+   graphItem.view(0,0,tstop,40,300,200,wd,ht)
+  }
+
+objref vbox 
+vbox=new VBox()
+vbox.intercept(1)
+
+figina()
+graphItem.addvar("ais.ina(0.1)",2,1)
+
+figid()
+graphItem.addvar("ais.ik_kd(0.1)",2,1)
+//graphItem.addvar("node.ik_kf(0.9)",3,1)
+//graphItem.addvar("node.ik_ks(0.9)",7,1)
+//graphItem.addvar("node.i_hd(0.9)",1,1)
+
+
+//graphItem.addvar("node.ik_kasup(0.9)",3,1)
+
+vbox.intercept(0)
+vbox.map("current",0,0,500, 700)
+
+objref vbox1
+vbox1=new VBox()
+vbox1.intercept(1)
+figsyn()
+graphItem.addvar("myelin2.v(0.5)",2,1)
+
+figv()
+graphItem.addvar("ais.v(.1)",2,1)
+
+vbox1.intercept(0)
+vbox1.map("mv",700, 0, 500, 700)
+
+
+objref vbox2 
+vbox2=new VBox()
+vbox2.intercept(1)
+xpanel("Stuart & Sakmann")
+xvalue("stim amp","st.amp")
+xbutton("inject node","node_inj()")
+xpanel()
+
+
+nrnmainmenu()
+nrncontrolmenu()
+vbox2.intercept(0)
+vbox2.map("mv",1600, 0, 500, 600)

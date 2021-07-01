@@ -1,0 +1,120 @@
+/*
+
+File iniziale per lo studio del motoneurone spinale
+
+Balbi, marzo 2013 - settembre 2013
+
+*/
+
+load_file("nrngui.hoc")
+
+objref sh, box1, box2, gr1, gr2 // variabili per i grafici iniziali
+strdef curr_mod // variabile stringa per il modello in esecuzione
+
+box1 = new VBox()
+
+// paragrafo per l'inizializzazione ad uno steady state (precedentemente creato)
+// se non utilizzato settare flag_svstate=1
+
+objref svstate, f
+strdef filename
+svstate = new SaveState()
+
+proc init() {
+	finitialize(v_init)
+	if (flag_svstate==0) {svstate.restore()}
+	t=0
+	if (cvode.active()) {
+		cvode.re_init()
+	} else {
+		fcurrent()
+	}
+	frecord_init()
+}
+
+// fine paragrafo
+
+proc load_cell() { // loading soma and dendrites
+
+	forall delete_section() // cancella le sezioni di precedenti modelli
+	curr_mod = $s1
+	chdir("../cat_spinal_mn/")
+	load_file(1,curr_mod)
+	chdir("../channels/") // ritorna alla directory iniziale
+	
+	box2 = new VBox(2)
+	box2.intercept(1)
+	sh = new Shape()
+	box2.intercept(0)
+	box2.map("Shape",500,25,350,350)
+
+}
+
+proc compl() { // completamento dei singoli neuroni (con i rispettivi steady-states)
+
+	chdir("../")
+	load_file(1,"2_complete_cell.hoc")
+	chdir("channels/")
+	
+//  load save-states, utilizzando l'argomento della procedura
+
+	sprint(filename,"state%g.dat",$1)
+	chdir("../States/")
+	f = new File(filename)
+	svstate.fread(f)
+	chdir("../channels/")
+}
+
+// controlli
+
+celsius=37
+
+{
+xpanel("RunControl", 0)
+v_init = -70
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 1
+xvalue("t","t", 2 )
+tstop = 20
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.2
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+xcheckbox("Quiet",&stdrun_quiet,"")
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(45,80)
+}
+
+// scegli il motoneurone!
+
+box1.intercept(1)
+xpanel("")
+xbutton("AlphaMN1","{load_cell(\"AlphaMN1.hoc\") compl(1)}")
+xbutton("AlphaMN2","{load_cell(\"AlphaMN2.hoc\") compl(2)}")
+xbutton("AlphaMN3","{load_cell(\"AlphaMN3.hoc\") compl(3)}")
+xbutton("AlphaMN4","{load_cell(\"AlphaMN4.hoc\") compl(4)}")
+xbutton("AlphaMN5","{load_cell(\"AlphaMN5.hoc\") compl(5)}")
+xbutton("AlphaMN6","{load_cell(\"AlphaMN6.hoc\") compl(6)}")
+xbutton("AlphaMN8","{load_cell(\"AlphaMN8.hoc\") compl(7)}")
+xbutton("AlphaMN9","{load_cell(\"AlphaMN9.hoc\") compl(8)}")
+xbutton("v_e_moto1","{load_cell(\"v_e_moto1.hoc\") compl(9)}")
+xbutton("v_e_moto2","{load_cell(\"v_e_moto2.hoc\") compl(10)}")
+xbutton("v_e_moto3","{load_cell(\"v_e_moto3.hoc\") compl(11)}")
+xbutton("v_e_moto4","{load_cell(\"v_e_moto4.hoc\") compl(12)}")
+xbutton("v_e_moto5","{load_cell(\"v_e_moto5.hoc\") compl(13)}")
+xbutton("v_e_moto6","{load_cell(\"v_e_moto6.hoc\") compl(14)}")
+xpanel(400,25)
+box1.intercept(0)
+box1.map("pick up a neuron!",300,25,200,400)
+

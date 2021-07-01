@@ -1,0 +1,36 @@
+celsius = 24  // (degC)
+
+create soma
+access soma
+
+soma.nseg = 1
+soma.L = 20		// (um)       
+soma.diam = 20	// (um)
+soma.cm = 1       // (uF/cm2)
+
+insert Narsg
+insert Na
+insert Kv1
+insert Kv4
+insert Kbin
+insert CaBK
+insert Caint
+insert CaP
+insert Ih
+insert leak
+
+soma.ena = 60	// (mV)
+soma.ek = -88	// (mV)
+soma.eh_Ih = -30
+soma.e_leak = -61
+soma.cao = 2   // (mM)
+     
+soma.gbar_Narsg = 0.016     // (mho/cm2)
+soma.gbar_Na = 0.014
+soma.gbar_Kv1 = 0.011
+soma.gbar_Kv4 = 0.0039
+soma.gbar_Kbin = 0.0016
+soma.gkbar_CaBK = 0.014
+soma.pcabar_CaP = 0.00006
+soma.ghbar_Ih = 0.0002
+soma.gbar_leak = 9e-5

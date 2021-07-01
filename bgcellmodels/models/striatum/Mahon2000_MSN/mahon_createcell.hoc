@@ -1,0 +1,120 @@
+/**
+ * Initialization code for Mahon MSN model for use in network simulations.
+ *
+ * @author      Lucas Koelman
+ * @date        14/08/2018
+ */
+
+load_file("stdlib.hoc")
+load_file("stdrun.hoc")
+
+
+begintemplate MahonMSN
+
+// Declare public member variables & functions of class template
+public soma
+create soma[1] // NEURON error if not created here, before init()
+
+// Named Sectionlists to conform to cell prototype required by BluePyOpt.Ephys
+// NOTE: objref are public by default
+// NOTE: 'this' is reserved and refers to object itself
+objref all, somatic, basal, apical, axonal, myelinated
+
+proc init() {
+    create soma[1]
+
+    // Initialize sectionlists, even though some will be empty
+    all = new SectionList()
+    somatic = new SectionList()
+    basal = new SectionList()
+    apical = new SectionList()
+    axonal = new SectionList()
+    myelinated = new SectionList()
+
+    soma[0] {
+        nseg = 3
+        diam = 5.6419   // from gruber c_cell this gives SA=100 uM^2
+        L = 5.6419      // from gruber c_cell this gives SA=100 uM^2
+        
+        insert Nam
+        insert Km
+        insert Leakm
+        insert Kirm
+        insert KAfm
+        insert KAsm
+        insert Krpm
+        insert NaPm
+        insert NaSm
+
+        all.append()
+        somatic.append()
+    }
+}
+
+// /**
+//  * Destructor. Destroys circular reference to 'this' so that
+//  * it will be garbage collected.
+//  */
+// proc destroy() {localobj nil
+//     // Add 'objref this' at beginning of template and
+//     // set CellRef = this in last line of init() procedure
+//     CellRef = nil
+// }
+
+
+/**
+ * Set parameters of Mahon MSN cell according to article Corbit, Whalen et. al.
+ * (2016). This changes the reversal potential for the leak current from
+ * -75 mV to -90 mV
+ *
+ * @param   $o1
+ *          Instance of MahonMSN template
+ */
+proc setparams_corbit2016() {
+    soma[0] {
+        gnasmbar_NaSm = 0.11e-3
+        gnapmbbar_NaPm = 0.02e-3
+        gkrpmbar_Krpm = 0.42e-3
+        gkasmbar_KAsm = 0.32e-3
+        gkafmbar_KAfm = 0.09e-3
+        gkirmbar_Kirm = 0.15e-3
+        gkmbar_Km = 6e-3
+        gnabar_Nam = 35e-3
+        gl_Leakm = 0.075e-3
+        el_Leakm = -90 // Only this is different from Mahon model
+    }
+}
+
+proc setparams_mahon2000() {
+    soma[0] {
+        gnasmbar_NaSm = 0.11e-3
+        gnapmbbar_NaPm = 0.02e-3
+        gkrpmbar_Krpm = 0.42e-3
+        gkasmbar_KAsm = 0.32e-3
+        gkafmbar_KAfm = 0.09e-3
+        gkirmbar_Kirm = 0.15e-3
+        gkmbar_Km = 6e-3
+        gnabar_Nam = 35e-3
+        gl_Leakm = 0.075e-3
+        el_Leakm = -75 // Only this is different from Corbit article
+    }
+}
+
+endtemplate MahonMSN
+
+// Physiological parameters
+// celsius = 37         // the value from mahon et al 2000
+// v_init = -77.4       // 11/13/06
+
+
+/**
+ * Make MSN cell without storing a global reference : you are responsible
+ * for keeping a reference to the returned objref.
+ *
+ * @note    Since there is no additional setup code, you can call
+ *          `cell = h.MahonMsn()` from Python instead of using this function.
+ */
+obfunc make_mahon_msn_ref() { localobj cell_ref
+    cell_ref = new MahonMSN()
+    return cell_ref
+}

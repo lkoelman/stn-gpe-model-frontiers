@@ -1,0 +1,157 @@
+/**
+ * Initialization code for Golomb FSI model for use in network simulations.
+ *
+ * @author      Lucas Koelman
+ * @date        20/08/2018
+ */
+
+load_file("stdlib.hoc")
+load_file("stdrun.hoc")
+
+// If adaptive integration is used: set absolute error tolerance
+// objref cvode
+// cvode = new CVode(0)
+// cvode.active(1)
+// cvode.atolscale("v", 10)
+// cvode.atolscale("m_NasFSI", 1)
+// cvode.atolscale("h_NasFSI", 0.1)
+// cvode.atolscale("a_KdFSI", 0.1)
+// cvode.atolscale("b_KdFSI", 0.1)
+// cvode.atolscale("n_KdrFSI", 0.1)
+
+
+begintemplate GolombFSI
+
+// Declare public members of class/template
+public soma
+create soma[1] // NEURON error if not created here, before init()
+
+// Named Sectionlists to conform to cell prototype required by BluePyOpt.Ephys
+objref all, somatic, basal, apical, axonal, myelinated
+
+proc init() {
+    create soma[1]
+
+    // Initialize sectionlists, even though some will be empty
+    all = new SectionList()
+    somatic = new SectionList()
+    basal = new SectionList()
+    apical = new SectionList()
+    axonal = new SectionList()
+    myelinated = new SectionList()
+
+    soma[0] {
+        nseg = 1
+        L = 3.1831
+        Ra = 35.4
+        diam = 10
+        cm = 1
+        
+        insert pas
+        g_pas = 0.00025
+        e_pas = -70
+
+        insert KdFSI
+        gkd_KdFSI = 0.0001 // 1e-4 in Corbit & Whalen (2016), 3.9e-4 in Golomb (2007)
+
+        insert KdrFSI
+        gkdr_KdrFSI = 0.225
+
+        insert NasFSI
+        gna_NasFSI = 0.1125
+
+        // shared ion properties
+        ek = -90
+        ena = 50
+
+        all.append()
+        somatic.append()
+    }
+}
+
+proc setparams_golomb2007() {
+    soma[0] {
+        g_pas = 0.00025
+        e_pas = -70
+
+        gkd_KdFSI = 3.9e-4 // 1e-4 in Corbit & Whalen (2016), 3.9e-4 in Golomb (2007)
+        gkdr_KdrFSI = 0.225
+        gna_NasFSI = 0.1125
+
+        ek = -90
+        ena = 50
+    }
+}
+
+
+proc setparams_corbit2016() {
+    soma[0] {
+        g_pas = 0.00025
+        e_pas = -70
+
+        gkd_KdFSI = 0.0001 // 1e-4 in Corbit & Whalen (2016), 3.9e-4 in Golomb (2007)
+        gkdr_KdrFSI = 0.225
+        gna_NasFSI = 0.1125
+
+        ek = -90
+        ena = 50
+    }
+}
+
+
+/**
+ * Set conductances to make make cell exhibit delayed tonic firing.
+ */
+proc set_gbar_delayed_tonic() {
+    soma[0].gkd_KdFSI = 3.9e-4
+}
+
+/**
+ * Set conductances according to make cell exhibit delayed stuttering.
+ */
+proc set_gbar_delayed_stuttering() { localobj cell
+    soma[0].gkd_KdFSI = 18e-4
+}
+
+/**
+ * Set conductances according to make cell exhibit tonic firing.
+ * Parameter values used by Corbit, Whalen (2016).
+ */
+proc set_gbar_nondelayed_tonic() { localobj cell
+    soma[0].gkd_KdFSI = 1.0e-4
+}
+
+endtemplate GolombFSI
+
+// Physiological parameters from article
+v_init_GolombFSI = -70.038
+
+
+/**
+ * Make MSN cell without storing a global reference : you are responsible
+ * for keeping a reference to the returned objref.
+ *
+ * @note    Since there is no additional setup code, you can call
+ *          `cell = h.GolombFSI()` from Python instead of using this function.
+ */
+obfunc make_golomb_fsi_ref() { localobj cell_ref
+    cell_ref = new GolombFSI()
+    return cell_ref
+}
+
+
+/**
+ * Set error tolerance for adaptive integrator so results match those
+ * of fixed step integrator. See original author comments in nas.mod.
+ */
+proc golomb_set_state_tolerances() { // localobj cvode
+    // NOTE: global variable 'cvode' seems to be created automatically by Hoc
+    // cvode = new CVode(0)
+    // cvode.active(1)
+    cvode.atolscale("v", 10)
+    cvode.atolscale("m_NasFSI", 1)
+    cvode.atolscale("h_NasFSI", 0.1)
+    cvode.atolscale("a_KdFSI", 0.1)
+    cvode.atolscale("b_KdFSI", 0.1)
+    cvode.atolscale("n_KdrFSI", 0.1)
+}

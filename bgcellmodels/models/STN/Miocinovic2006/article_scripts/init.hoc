@@ -1,0 +1,7 @@
+// init.hoc
+// choice of simple run or full run
+
+xpanel("Miocinovic et al. 2006")
+  xbutton("small demo run", "load_file(\"small_run.hoc\")")
+  xbutton("full run","load(\"main.hoc\")")
+xpanel()

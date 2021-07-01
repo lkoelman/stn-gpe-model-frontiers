@@ -1,0 +1,327 @@
+soma[0] distance(0,0)
+
+objref secref, secref2, term, sl, secmed
+// objref box3, box4, gr3 // MODIFIED: commented out graphics parts
+strdef lab
+strdef med_dend
+
+proc ca_chan() {  // attribuisce i valori delle conduttanze di L_Ca e kca2
+	/**
+	 * In dendritic sections at intermediate distance from soma: 
+	 *     - assign values of the L_Ca and kca2 conductances
+	 *     - set their parameters
+	 */
+    forsec secmed {
+	        insert L_Ca
+	              gcabar_L_Ca = $1
+	              tau_m_L_Ca=60
+	              theta_m_L_Ca = -40
+            insert kca2
+	              g_kca2 = $2
+	              depth2_kca2 = 200
+	              taur2_kca2 = 60
+            
+            // subroutine per ridurre le zone di PIC dendritica
+            
+            flag1 = 0
+            loc1 = 0
+            loc2 = 1
+            if (distance(0)<min_d) { flag1 = 2 }
+            
+            for(x,0) {
+            	if ((flag1==0)&&(distance(x)>max_d)) {
+            		loc1=x
+            		flag1=1
+            	}
+            	if ((flag1==2)&&(distance(x)>min_d)) {
+            		loc1=x
+            		flag1=3
+            	}
+            	if ((flag1==3)&&(distance(x)>max_d)) {
+            		loc2=x
+            		flag1=4
+            	}
+            }
+
+            //   |  ----|----  
+            if (flag1==1) { 
+            	gcabar_L_Ca(0:loc1)=$1:$1
+            	gcabar_L_Ca(loc1:1)=0:0
+            	g_kca2(0:loc1)=$2:$2
+            	g_kca2(loc1:1)=0:0
+            }
+            
+            //   ----|----  |	
+            if (flag1==3) { 
+            	gcabar_L_Ca(0:loc1)=0:0
+            	gcabar_L_Ca(loc1:1)=$1:$1
+            	g_kca2(0:loc1)=0:0
+            	g_kca2(loc1:1)=$2:$2
+            }
+	        
+            //   --|----|--	
+            if (flag1==4) {
+            	gcabar_L_Ca(0:loc1)=0:0
+            	gcabar_L_Ca(loc1:loc2)=$1:$1
+            	gcabar_L_Ca(loc2:1)=0:0
+            	g_kca2(0:loc1)=0:0
+            	g_kca2(loc1:loc2)=$2:$2
+            	g_kca2(loc2:1)=0:0
+            }
+            
+            // |  --------  |
+
+    }
+
+	// subroutine per il calcolo del punto medio (uno) dei canali del calcio dendritici
+	// med_dend stringa per nome sezione, secref2 riferimento alla sezione
+	// (utilizzato dal grafico delle variabili di attivazione)
+
+	// subroutine for the calculation of the midpoint (one) of the dendritic calcium channels
+	// 'med_dend':  string for section name, 'secref2' reference to section
+	// (used by the chart of the activation variables)
+	
+	med_d = (min_d + max_d)/2
+	in = 0
+
+	forsec secmed for(x,0) {
+		if ((distance(x)>=(med_d-5))&&(distance(x)<=(med_d+5))&&(in==0)) {
+			secref2 = new SectionRef()
+			index = x
+			sprint(med_dend,"%s",secname())	
+			in = in + 1
+		}
+	}
+}
+
+proc soma_mech() {
+	/**
+	* Insert somatic mechanisms and set region-specific mechanism parameters.
+	*/
+	forsec "soma" {
+		Ra=70
+		cm=1
+		insert pas
+			g_pas=0.0044
+			e_pas=-72
+		insert na3rp
+			gbar_na3rp=0.015 // original value 0.044
+			sh_na3rp=0      // original value 5
+			ar_na3rp=0.4
+		insert naps
+			gbar_naps=0.002  // original value 0.00044
+			sh_naps=15		 // original value 0
+			ar_naps=0.4
+		insert kdrRL
+			gMax_kdrRL=0.035  // original value 0.07
+		insert gh
+			ghbar_gh = 0.0001325
+			half_gh=-75
+		insert mAHP
+			gcamax_mAHP = 8e-06
+			gkcamax_mAHP = 0.01 // original value 0.0076
+			taur_mAHP = 56.6666666666667
+		insert extracellular xraxial=1e9 xg=1e10 xc=0
+	}
+}
+
+proc dend_mech() {
+	/**
+	* Insert dendritic mechanisms and set region-specific mechanism parameters.
+	*/
+	forsec "dend" {
+		Ra=70
+		cm=1
+                
+        nseg = 2*int(L/40)+1 // L/nseg max 20 micron
+
+		insert pas
+			g_pas = 7.22e-05
+			e_pas = -72
+		insert na3rp
+			gbar_na3rp = 1.5e-4
+			sh_na3rp = 0	// original value 5
+			ar_na3rp = 0.4
+		insert naps
+			gbar_naps = 1.5e-5
+			sh_naps = 15	// original value 0
+			ar_naps = 0.4
+		insert kdrRL
+			gMax_kdrRL = 3e-4
+		insert gh
+			ghbar_gh = 1.325e-4
+			half_gh = -75
+		insert extracellular xraxial=1e9 xg=1e10 xc=0
+	}
+}
+
+
+proc prim_mech() {
+	/**
+	 * Primary dendrites (direct children of soma): 
+	 * insert extra mechanisms and adjust parameters.
+	 */
+
+	sl=new SectionList() // variabile lista dei tronchi dendritici primari
+	soma[0] sl.children() // memorizza i tronchi dendritici primari (più soma[1])
+	forsec sl {
+		ifsec "soma" {
+			sl.remove()  // elimina soma[1] dalla lista dei dendriti primari
+		
+			print "tronchi dendritici primari: sl"
+			sl.printnames()  // flag per debugging
+			print ""
+		}
+	}
+		
+	forsec sl { // valori particolari per i tronchi dendritici primari, poi modificati
+			gbar_na3rp = 0.015  // valore originario 0.044
+			gbar_naps = 0.002   // valore originario 0.00044
+			gMax_kdrRL = 0.035    // valore originario 0.07
+		insert mAHP
+			gcamax_mAHP = 8e-06
+			gkcamax_mAHP = 0.01  // original value 0.0076
+			taur_mAHP = 56.6666666666667
+
+	}
+	
+	term=new Vector() // IT: vettore per le distanze dal soma dei rami terminali
+	                  // EN: vector for the distances from the soma to the terminal branches
+	
+	forsec "dend" {
+		secref=new SectionRef()
+		if (secref.nchild==0) {  // IT: ramificazioni terminali, prive di children
+			                     // EN: terminal branches, without children
+	
+			term.append(distance(1))
+		}
+	}
+
+	// IT: subroutine per limitare la distribuzione dei canali ionici sui dendriti primari
+	// (simile a soma) al 10% della lunghezza media dei dendriti
+
+	// EN: subroutine to limit the distribution of ion channels on primary dendrites
+	// (similar to soma) to 10% of the average length of dendrites
+	
+	print "\nRiduzione dendriti primari: "
+	
+	forsec sl {
+		ind = 0
+		for(x,0) {
+			if ((distance(x)>=(term.mean()*0.1))&&(ind==0)) {
+				gbar_na3rp(0:x) = 0.015:0.015		//
+				gbar_na3rp(x:1) = 1.5e-4:1.5e-4
+				gbar_naps(0:x) = 0.002:0.002  	//
+				gbar_naps(x:1) = 1.5e-5:1.5e-5
+				gMax_kdrRL(0:x) = 0.035:0.035	//
+				gMax_kdrRL(x:1) = 3e-4:3e-4
+				gcamax_mAHP(0:x) = 8e-6:8e-6
+				gcamax_mAHP(x:1) = 0:0
+				gkcamax_mAHP(0:x) = 0.01:0.01		//
+				gkcamax_mAHP(x:1) = 0:0
+				ind = 1
+				print secname(), "(", x, ")"
+			}
+		}
+	}
+	
+}
+
+
+// IT: routine per l'inserimento dei canali del calcio nei dendriti medi
+
+proc med_mech() {
+	/**
+	 * Dendritic sections at intermediate distance from soma: 
+	 * insert extra mechanisms and adjust parameters.
+	 */
+	min_d=$1*term.mean()
+	max_d=$2*term.mean()
+	print "\nmin L_Ca dist.= ", min_d  // distanza minima da soma dei rami 'medi'
+	print "max L_Ca dist.= ", max_d  // distanza massima da soma dei rami 'medi'
+	print ""
+
+	secmed=new SectionList()
+	forsec "dend" {
+	       flag = 0
+	       for(x) if((flag==0)&&((distance(x)>=min_d)&&(distance(x)<=max_d))) {
+	              flag = flag + 1
+                  secmed.append
+                  }
+    }
+
+    ca_chan(2.8e-4,1.6e-4)
+}
+
+// display graphics
+
+// MODIFIED by Lucas Koelman: commented out display section
+//proc disp1() {
+//
+	//box3 = new VBox()
+	//box3.intercept(1)
+	//gr1 = new Graph()
+	//gr1.size(0,300,-80,40)
+	//gr1.addvar("soma.v(.5)")
+	//graphList[0].append(gr1)
+	//gr2 = new Graph()
+	//gr2.size(0,300,-80,40)
+	//sprint(lab,"%s.v(%g)",med_dend,index)
+	//gr2.label(.5,1)
+	//gr2.addvar(lab,"secref2.sec.v(index)",3,1)
+	//graphList[0].append(gr2)
+	//box3.intercept(0)
+	//box3.map("Voltage",850,25,350,600)
+//
+	//box4 = new VBox()
+	//box4.intercept(1)
+	//gr3 = new Graph()
+	//gr3.size(0,300,0,1)
+	//sprint(lab,"%s.m_L_Ca(%g)",med_dend,index)
+	//gr3.label(.5,1)
+	//gr3.addvar(lab,"secref2.sec.m_L_Ca(index)",3,1)
+	//sprint(lab,"%s.n_kca2(%g)",med_dend,index)
+	//gr3.addvar(lab,"secref2.sec.n_kca2(index)",1,1)
+	//graphList[0].append(gr3)
+	//box4.intercept(0)
+	//box4.map("States",500,400,350,300)
+//}
+
+soma_mech()          // inserisce meccanismi in soma
+dend_mech()          // inserisce meccanismi nei dendriti
+prim_mech()          // meccanismi nei dendriti primari
+med_mech(0.30,0.60)  // conduttanza dei canali del calcio dendritici a distanza media da soma
+                     // conductance of dendritic calcium channels at mean distance from soma
+
+// disp1()              // grafici di base
+
+print "\nca_chan() varia le conduttanze di L_Ca ($1) e kca2 ($2)"
+print " valori di base: 2.8e-4 e 1.6e-4\n"
+
+// parametri vari per files .mod
+
+tmin_kdrRL = 0.8
+taumax_kdrRL = 20
+qinf_na3rp = 4.8
+thinf_na3rp = -50.5
+Rd_na3rp = 0.06
+qd_na3rp = 1.3
+qg_na3rp = 1.3
+thi1_na3rp = -35
+thi2_na3rp = -35
+vslope_naps = 5
+V0 = -3.88888888888889
+
+proc fix_global_params() {
+	tmin_kdrRL = 0.8
+	taumax_kdrRL = 20
+	qinf_na3rp = 4.8
+	thinf_na3rp = -50.5
+	Rd_na3rp = 0.06
+	qd_na3rp = 1.3
+	qg_na3rp = 1.3
+	thi1_na3rp = -35
+	thi2_na3rp = -35
+	vslope_naps = 5
+	V0 = -3.88888888888889
+}

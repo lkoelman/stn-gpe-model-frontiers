@@ -1,0 +1,18 @@
+load_file("nrngui.hoc")
+
+xpanel("original or demo")
+xbutton("Off On Off original protocol","restart(\"OFF_ON_OFF_protocol\")")
+xbutton("Short demo run simulation","restart(\"shortRun\")")
+
+xpanel(5,100)
+
+pwmcnt = PWManager[0].count // the initial gui should not be dismissed
+
+proc restart() {local i
+	for (i= PWManager[0].count-1; i >= pwmcnt; i -= 1) {
+		PWManager[0].close(i)
+		doNotify()
+	}
+	sprint(tstr, "%s.hoc", $s1)
+	load_file(1, tstr)
+}

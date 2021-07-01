@@ -1,0 +1,162 @@
+/*
+
+LFP tracker class to keep track of a cell's LFP contributions.
+
+
+CREDITS
+-------
+
+Author:         Lucas Koelman
+Affiliations:   Neuromuscular Systems Lab, University College Dublin, Ireland
+Email:          lucas.koelman@gmail.com
+Last updated:   26-April-2019
+*/
+
+// Increase above 1 to increase verbosity
+XTRA_VERBOSITY = 0
+
+
+begintemplate ImembTracker
+
+    // List public member variables & functions
+    public summator, update_imemb_ptrs
+
+    // Member variables
+    objref this, summator, imemb_ptrs, tracked_seclist
+    strdef imemb_source
+
+    external XTRA_VERBOSITY
+
+    /**
+     * Make membrane current tracker that links segment's membrane currents
+     * to a summator object and manages pointers.
+     *
+     * ARGUMENTS
+     * ---------
+     *
+     * @param   $o1 : summator <xtra_summator POINT_PROCESS>
+     *
+     * @param   $o2 : tracked_seclist <SectionList>
+     *          SectionLists containing sections whose LFP contributions should
+     *          be summed.
+     *
+     * @param   $s3 : imemb_source <string>
+     *          Depending on its value, membrane current contributions will be 
+     *          taken from the following RANGE variable:
+     *          - 'extracellular'   -> 'i_membrane'
+     *          - 'fast_imem'       -> 'i_membrane_'
+     *          - 'xtra'            -> 'im_xtra'
+     *
+     *
+     * CONDITIONS
+     * ----------
+     *
+     * @pre     Depending on the choice of imemb_source, one of the following must be true:
+     *          - "fast_imem": cvode.use_fast_imem(True) must be called.
+     *          - "extracellular": mechanism "extracellular" must be inserted in each section
+     *          - "xtra": both mechanisms "extracellular" and "xtra" must be inserted
+     *            in each section, and pointers in "xtra" must be set.
+     *
+     * @post    Pointers in summator object are linked to the relevant membrane
+     *          current variable in each segment in the sectionlist. Pointers
+     *          will be re-established after they become invalid because of
+     *          possible cache reorganization (see cvode.cache_efficient()).
+     *
+     * PYTHON USAGE
+     * ------------
+     * 
+     *    >>> icell = CellTemplate()
+     *    >>> summator = h.xtra_sum(icell.soma[0](0.5))
+     *    >>> tracker = h.ImembTracker(summator, icell.dendritic, "xtra")
+     */
+    proc init() { \
+        local num_tracked_segs, i_seg
+
+        // Parse arguments
+        summator = $o1
+        tracked_seclist = $o2
+        imemb_source = $s3
+
+        // Pointer vector to keep track of each compartment's transmembrane current
+        num_tracked_segs = 0
+        forsec tracked_seclist {
+            num_tracked_segs += nseg
+        }
+        imemb_ptrs = new PtrVector(num_tracked_segs)
+
+
+        i_seg = 0
+        forsec tracked_seclist {
+
+            for (x, 0) { // x = center of each segment
+
+                if (strcmp(imemb_source, "fast_imem") == 0) {
+                    // i_membrane_ computed by fast_imem() has dimensions of nA 
+                    // but 'i_membrane' computed in extracellular mechanism
+                    // has units of mA/cm2
+                    setpointer summator.temp_ptr, i_membrane_(x)
+                    imemb_ptrs.pset(i_seg, &i_membrane_(x))
+                } 
+                if (strcmp(imemb_source, "extracellular") == 0) {
+                    setpointer summator.temp_ptr, i_membrane(x)
+                    imemb_ptrs.pset(i_seg, &i_membrane(x))
+                }
+                if (strcmp(imemb_source, "xtra") == 0) {
+                    setpointer summator.temp_ptr, im_xtra(x)
+                    imemb_ptrs.pset(i_seg, &im_xtra(x))
+                }
+                summator.add_imemb_source()
+                i_seg += 1
+
+                if ((i_seg % 1000 == 0) && (XTRA_VERBOSITY > 0)) {
+                    print "Added 1000 segments to tracker. (", i_seg, "/", num_tracked_segs, ")."
+                }
+            }
+
+            // Ask Hoc to notify us whenever i_membrane range variables have changed
+            // so we can update the pointers.
+            imemb_ptrs.ptr_update_callback("update_imemb_ptrs()", this)
+
+        } // end forsec
+
+        if (XTRA_VERBOSITY > 0) {
+            print "Tracking membrane currents from ", i_seg, " segments."
+        }
+    }
+
+
+    /**
+     * Callback function for when i_membrane range variables have changed.
+     * Re-establish pointers to each compartment's transmembrane current.
+     */
+    proc update_imemb_ptrs() { local i_seg
+        i_seg = 0
+            
+        forsec tracked_seclist {
+            for (x, 0) { 
+
+                // Re-establish pointers
+                if (strcmp(imemb_source, "fast_imem") == 0) {
+                    setpointer summator.temp_ptr, i_membrane_(x)
+                    // Statement below does not seem to be necessary.
+                    // It makes sense that pointers are automatically updates,
+                    // and that the callback lets you do related actions.
+                    // imemb_ptrs.pset(i_seg, &i_membrane_(x))
+                }
+                if (strcmp(imemb_source, "extracellular") == 0) {
+                    setpointer summator.temp_ptr, i_membrane(x)
+                    // imemb_ptrs.pset(i_seg, &i_membrane(x))
+                }
+                if (strcmp(imemb_source, "xtra") == 0) {
+                    setpointer summator.temp_ptr, im_xtra(x)
+                }
+                summator.update_imemb_ptr(i_seg)
+                i_seg += 1
+            }
+        }
+        if (XTRA_VERBOSITY > 0) {
+            print "Updated i_memb pointers for sectionlist ", tracked_seclist
+        }
+    }
+
+endtemplate ImembTracker

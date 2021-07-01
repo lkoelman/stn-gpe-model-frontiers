@@ -1,0 +1,73 @@
+load_file("nrngui.hoc")
+load_file("morphology_mechanisms.hoc")
+// load_file("OFF_ON_OFF.ses")
+xopen("OFF_ON_OFF.ses")
+prelength = 1000
+mainlength1 = 1500
+mainlength2 = 1500
+mainlength3 = 1500
+
+// new values for a short run
+prelength = 130
+mainlength1 = 30
+mainlength2 = 60
+mainlength3 = 50
+
+access soma
+
+//**********************************************************************
+proc simulate() { local preDT, mainDT, Kbin
+
+Kbin = gbar_Kbin
+gbar_Kbin = 0
+
+mainDT = dt
+preDT = 0.025
+
+dt = preDT
+tstop = prelength
+run()
+gbar_Kbin = Kbin
+if ( stoprun == 1) return
+
+gbar_Kbin = 0
+dt = mainDT
+continuerun(prelength + mainlength1)
+gbar_Kbin = Kbin
+if ( stoprun == 1) return
+
+gbar_Kbin = Kbin
+continuerun(prelength + mainlength1 + mainlength2)
+if ( stoprun == 1) return
+
+gbar_Kbin = 0
+continuerun(prelength + mainlength1 + mainlength2 + mainlength3)
+gbar_Kbin = Kbin
+
+if ( stoprun == 1) return
+
+}
+
+
+//*************User-Interface*******************************************
+
+dt = 0.005
+nrnsecmenu(0.5, 1)
+
+xpanel("Spontaneous firing")
+xlabel("Kbin Off...on...off")
+xvalue("Time for Initialization", "prelength")
+xvalue("Duration w/o Kbin", "mainlength1")
+xvalue("Duration with Kbin", "mainlength2")
+xvalue("Duration w/o Kbin", "mainlength3")
+
+xvalue("dt", "dt")
+xvalue("t", "t")
+xlabel("")
+xbutton("Start", "simulate()")
+xbutton("Stop", "stoprun = 1")
+xpanel()
+
+simulate()
+g1.exec_menu("View = plot")
+g2.exec_menu("View = plot")

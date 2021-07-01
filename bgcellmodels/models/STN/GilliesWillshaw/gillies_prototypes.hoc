@@ -1,0 +1,428 @@
+//
+// The prototype STh cell class
+//
+
+print " "
+print "loading STh cell data structures..."
+print " "
+
+/**
+ * Template describing only the properties and structure of the cell.
+ * It does not instantiate any cells.
+ */
+begintemplate SThproto
+
+    public ntrees,ntree0,ntree1,nsoma,somadiam,somaL,PI
+    public ref,child,diam,L,nseg,Ra,Cm
+
+    objref f
+    objref tree0ref,tree0c1,tree0c2,tree0diam,tree0L,tree0nseg,tree0dist,tree0var
+    objref tree1ref,tree1c1,tree1c2,tree1diam,tree1L,tree1nseg,tree1dist,tree1var
+
+    proc init() {local i, j, me, child1, child2
+
+        somaL = 18.8
+        somadiam = 18.3112
+        nsoma = 1 // number of soma sections
+
+        nsegscale = 1
+
+        ntrees = 2
+        tc=0
+        PI=3.14159265358979
+
+        printf("  %d trees\n",ntrees)
+
+        // TREE 1
+
+        ntree0=23
+        tree0ref  = new Vector(ntree0)
+        tree0c1   = new Vector(ntree0)
+        tree0c2   = new Vector(ntree0)
+        tree0diam = new Vector(ntree0)
+        tree0L    = new Vector(ntree0)
+        tree0nseg = new Vector(ntree0)
+        tree0dist = new Vector(ntree0)
+        tree0var  = new Vector(ntree0)
+
+        f = new File()
+        f.ropen("sth-data/tree0-nom.dat")
+
+        i=0
+
+        while (!f.eof()) {
+            if (i<ntree0) {
+                tree0ref.x[i]  = f.scanvar()-1 // myref
+                tree0c1.x[i]   = f.scanvar()-1 // child1
+                tree0c2.x[i]   = f.scanvar()-1 // child2
+                tree0diam.x[i] = f.scanvar()   // diam
+                tree0L.x[i]    = f.scanvar()   // L
+                tree0nseg.x[i] = nsegscale*f.scanvar()   // nseg
+            }
+            i=i+1
+        }
+        if (i!=ntree0) printf("WARNING file tree0ns.dat is inconsistent expecting %d branches got %d \n",ntree0,i)
+
+        // sort Vectors
+
+        sortv(ntree0,tree0ref,tree0c1,tree0c2,tree0diam,tree0L,tree0nseg)
+
+        printf("  loaded tree 0 (%d branches)\n",ntree0)
+        f.close()
+
+        // TREE 2
+
+        ntree1=11
+        tree1ref  = new Vector(ntree1)
+        tree1c1   = new Vector(ntree1)
+        tree1c2   = new Vector(ntree1)
+        tree1diam = new Vector(ntree1)
+        tree1L    = new Vector(ntree1)
+        tree1nseg = new Vector(ntree1)
+        tree1dist = new Vector(ntree1)
+        tree1var  = new Vector(ntree1)
+
+        f = new File()
+        f.ropen("sth-data/tree1-nom.dat")
+        i=0
+        while (!f.eof()) {
+            if (i<ntree1) {
+                tree1ref.x[i]  = f.scanvar()-1 // myref
+                tree1c1.x[i]   = f.scanvar()-1 // child1
+                tree1c2.x[i]   = f.scanvar()-1 // child2
+                tree1diam.x[i] = f.scanvar()   // diam
+                tree1L.x[i]    = f.scanvar()   // L
+                tree1nseg.x[i] = nsegscale*f.scanvar()   // nseg
+            }
+            i=i+1
+        }
+        if (i!=ntree1) printf("WARNING file tree0ns.dat is inconsistent expecting %d branches got %d \n",ntree1,i)
+
+        // sort Vectors
+
+        sortv(ntree1,tree1ref,tree1c1,tree1c2,tree1diam,tree1L,tree1nseg)
+
+        printf("  loaded tree 1 (%d branches)\n",ntree1)
+        f.close()
+    }
+
+     // sortv - sort the vectors into index reference order!
+
+     proc sortv() {local i, j, tmp
+                   // arg1 is the number of branches
+    	       // arg2,3,4,5,6,7 are the vectors to sort
+
+        for i=0,$1-1 {
+            j=i
+                while (j<$1) {
+
+                    if (($o2.x[j]==i) && (j!=i)) {
+                        // swap jth line with ith
+                        tmp = $o2.x[i]
+                        $o2.x[i] = $o2.x[j]
+                        $o2.x[j] = tmp
+                        tmp = $o3.x[i]
+                        $o3.x[i] = $o3.x[j]
+                        $o3.x[j] = tmp
+                        tmp = $o4.x[i]
+                        $o4.x[i] = $o4.x[j]
+                        $o4.x[j] = tmp
+                        tmp = $o5.x[i]
+                        $o5.x[i] = $o5.x[j]
+                        $o5.x[j] = tmp
+                        tmp = $o6.x[i]
+                        $o6.x[i] = $o6.x[j]
+                        $o6.x[j] = tmp
+                        tmp = $o7.x[i]
+                        $o7.x[i] = $o7.x[j]
+                        $o7.x[j] = tmp
+                    }
+
+                    j=j+1
+                }
+        }
+    }
+
+     // ref(tree,branch) returns the recorded ref
+
+    func ref() {local res
+
+        res=0
+
+        if (($1==0) && ($2<ntree0)){
+            res=tree0ref.x[$2]
+        }
+
+        if (($1==1) && ($2<ntree1)){
+            res=tree1ref.x[$2]
+        }
+
+        return res
+    }
+
+     // diam(tree,branch) returns the recorded diam
+
+     func diam() {local res
+
+        res=0
+
+        if ($1==-1) {
+            res=somadiam
+        }
+
+        if (($1==0) && ($2<ntree0)){
+            res=tree0diam.x[$2]
+        }
+
+        if (($1==1) && ($2<ntree1)){
+            res=tree1diam.x[$2]
+        }
+
+        return res
+    }
+
+     // L(tree,branch) returns the recorded L
+
+     func L() {local res
+
+      res=0
+
+      if ($1==-1) {
+        res=somaL
+    }
+    if (($1==0) && ($2<ntree0)){
+        res=tree0L.x[$2]
+    }
+    if (($1==1) && ($2<ntree1)){
+        res=tree1L.x[$2]
+    }
+
+    return res
+    }
+
+     // Ra(tree) returns the recorded Ra
+
+     func Ra() {local res
+
+      return 150.224
+      
+    }
+
+     // Cm(tree) returns the recorded membrane capacitance Cm [uF/cm^2]
+
+     func Cm() {local res
+
+      return 1.0
+
+    }
+
+     // nseg(tree,branch) returns the recorded nseg
+
+     func nseg() {local res
+
+      res=1
+      
+      if (($1==0) && ($2<ntree0)){
+        res=tree0nseg.x[$2]
+    }
+    if (($1==1) && ($2<ntree1)){
+        res=tree1nseg.x[$2]
+    }
+
+    return res
+    }
+
+     // child(tree,branch,0|1) returns the child ref 
+
+     func child() {local res
+
+      res=0
+
+      if ($3==0){
+         if (($1==0) && ($2<ntree0)){
+           res=tree0c1.x[$2]
+       }
+       if (($1==1) && ($2<ntree1)){
+           res=tree1c1.x[$2]
+       }
+    }
+
+    if ($3==1){
+     if (($1==0) && ($2<ntree0)){
+       res=tree0c2.x[$2]
+    }
+    if (($1==1) && ($2<ntree1)){
+       res=tree1c2.x[$2]
+    }
+    }
+
+    return res
+    }
+
+endtemplate SThproto
+
+
+
+/*******************************************************************************
+ *  THE STh CELL OBJECT
+ ******************************************************************************/
+
+/**
+ * Template for instantiating an STN cell.
+ * It uses the cell definition in SThproto to query cell properties.
+ */
+begintemplate SThcell
+
+    public soma, dend0, dend1
+
+    // declare the variables we will be using
+
+    create soma[1], dend0[1], dend1[1]
+
+    objref sthtype, all, somatic, basal, apical, axonal, myelinated
+
+    strdef cmd
+
+    proc init() {local i, j, me, child1, child2
+
+        // $1   = cell reference number
+        // $o2  = cell prototype
+   
+        cellref = $1
+        
+        sthtype = $o2
+ 
+        SThnsoma   = sthtype.nsoma
+        SThndend0  = sthtype.ntree0
+        SThndend1  = sthtype.ntree1
+ 
+        create soma[SThnsoma], dend0[SThndend0], dend1[SThndend1]
+ 
+        // Create named SectionLists for compatibility with imported morphologies
+        all = new SectionList()
+        somatic = new SectionList()
+        basal = new SectionList()
+        apical = new SectionList()
+        axonal = new SectionList()
+        myelinated = new SectionList()
+
+        soma[0] {
+            nseg = sthtype.nseg(-1,-1)
+            Ra = sthtype.Ra(-1)
+            diam = sthtype.diam(-1,-1)
+            L = sthtype.L(-1,-1)
+            cm = sthtype.Cm(-1)
+
+            // channels
+
+            insert STh
+            insert Na
+            insert NaL
+            insert KDR
+            insert Kv31
+            insert Ih
+            insert Cacum
+            insert sKCa
+            insert CaT
+            insert HVA
+
+            // copy to named SectionLists
+            all.append()
+            somatic.append()
+        }
+
+        for i = 0,SThndend0-1 {
+
+            me = sthtype.ref(0,i)
+            child1 = sthtype.child(0,i,0)
+            child2 = sthtype.child(0,i,1)
+
+            dend0[me] {
+
+                if (child1 >= 0) {
+                    connect dend0[child1](0), 1
+                }
+
+                if (child2 >= 0) {
+                    connect dend0[child2](0), 1
+                }
+
+                diam = sthtype.diam(0,i)
+                L = sthtype.L(0,i)
+                Ra = sthtype.Ra(0)
+                nseg = sthtype.nseg(0,i)
+                cm = sthtype.Cm(0)
+
+                // channels
+                insert STh
+                insert Na
+                insert NaL
+                insert KDR
+                insert Kv31
+                insert Ih
+                insert Cacum
+                insert sKCa       
+                insert CaT
+                insert HVA
+     
+                // copy to named SectionLists
+                all.append()
+                basal.append()
+            }
+        }
+
+        for i = 0,SThndend1-1 {
+
+           me = sthtype.ref(1,i)
+           child1 = sthtype.child(1,i,0)
+           child2 = sthtype.child(1,i,1)
+
+           dend1[me] {
+
+             if (child1 >= 0) {
+                connect dend1[child1](0), 1
+            }
+
+            if (child2 >= 0) {
+                connect dend1[child2](0), 1
+            }
+
+            diam = sthtype.diam(1,i)
+            L = sthtype.L(1,i)
+            Ra = sthtype.Ra(1)
+            nseg = sthtype.nseg(1,i)
+            cm = sthtype.Cm(0)       
+
+               // channels
+               
+               insert STh
+               insert Na
+               insert NaL
+               insert KDR
+               insert Kv31
+               insert Ih
+               insert Cacum
+               insert sKCa       
+               insert CaT
+               insert HVA
+
+               // copy to named SectionLists
+               all.append()
+               basal.append()
+           }
+        }
+
+        // connect trees to soma
+        connect dend0[0](0), soma[0](1)
+        connect dend1[0](0), soma[0](0)
+
+
+        // set the ion styles
+        // (Within an object, forall refers to all the sections declared in the object)
+        forall ion_style("na_ion",1,2,1,0,1)
+        forall ion_style("k_ion",1,2,1,0,1)
+        forall ion_style("ca_ion",3,2,1,1,1)
+    
+    } // end init()
+
+endtemplate SThcell

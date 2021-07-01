@@ -1,0 +1,147 @@
+{
+    // #########################################################################
+    // Passive Properties
+    "RA": 1.74,
+    "RM_ax": 1.47,
+    "RM_my": 10,
+    "RM_sd": 1.47,
+    "CM": 0.024,
+    "CM_my": 0.00024,
+
+    "ECa": 0.13,
+    "EK": -0.09,
+    "ELEAK_ax": -0.06,
+    "ELEAK_sd": -0.06,
+    "ENa": 0.05,
+    "EREST_ACT": -0.06,
+    "Eh": -0.03,
+
+    // #########################################################################
+    // NaF channel properties
+    "tauhV0_NaF": -0.043,
+    "tauhmax_NaF": 0.004,
+    "tauhmin_NaF": 0.00025,
+    "taummax_NaF": 2.8e-05,
+    "taummin_NaF": 2.8e-05,
+    "tausmax_NaF": 1,
+    "tausmin_NaF": 0.01,
+
+    "Kh_NaF": -0.0028,
+    "Km_NaF": 0.005,
+    "Ks_NaF": -0.0054,
+
+    "Ktaus1_NaF": 0.0183,
+    "Ktaus2_NaF": 0.01,
+    "mins_NaF": 0.15,
+
+    "V0h_NaF": -0.048,
+    "V0s_NaF": -0.04,
+    "Vhalfm_NaF": -0.0324,
+
+    "G_NaF_axon": 5000,
+    "G_NaF_dend": 40,
+    "G_NaF_soma": 2500,
+    "dendNaF": 40,
+
+    // #########################################################################
+    // NaP channel properties
+    "Abeta_NaP": 6.94,
+    "Bbeta_NaP": 0.447,
+
+    "Kh_NaP": -0.004,
+    "hmin_NaP": 0.154,
+
+    "V0h_NaP": -0.057, 
+    "V0s_NaP": -0.01,
+    "Vhalfm_NaP": -0.05,
+
+    "G_NaP_axon": 40,
+    "G_NaP_dend": 1,
+    "G_NaP_soma": 1,
+
+    // #########################################################################
+    // Kv2 properties
+    "npower_Kv2": 4,
+    "Kn_Kv2": 0.0091,
+    "Vhalfn_Kv2": -0.018,
+    "hmin_Kv2": 0.2,
+
+    "taunmax_Kv2": 0.03,
+    "taunmin_Kv2": 0.0001,
+
+    "G_Kv2_axon": 640,
+    "G_Kv2_dend": 64,
+    "G_Kv2_soma": 320,
+
+    // #########################################################################
+    // Kv3 properties
+    "npower_Kv3": 4,
+    "Kn_Kv3": 0.0078,
+    "Vhalfn_Kv3": -0.013,
+    "hmin_Kv3": 0.6,
+
+    "G_Kv3_axon": 1280,
+    "G_Kv3_dend": 128,
+    "G_Kv3_soma": 640,
+
+    // #########################################################################
+    // Kv4 properties
+    "Kn_Kv4": 0.0125,
+    "Kh_Kv4": -0.01,
+    "V0n_Kv4": -0.049,
+    "V0h_Kv4": -0.083,
+    
+    "Ktauh1_Kv4": 0.01,
+    "Ktauh2_Kv4": 0.01,
+    "Ktaun1_Kv4": 0.029,
+    "Ktaun2_Kv4": 0.029,
+
+    "G_Kv4f_axon": 1600,
+    "G_Kv4f_dend": 160,
+    "G_Kv4f_soma": 160,
+    "G_Kv4s_axon": 2400.0,
+    "G_Kv4s_dend": 240.0,
+    "G_Kv4s_soma": 240.0,
+
+    // #########################################################################
+    // KCNQ channel properties
+    "Kn_KCNQ": 0.0195,
+    "Vhalfn_KCNQ": -0.0285,
+
+    "G_KCNQ_axon": 0.4,
+    "G_KCNQ_dend": 0.4,
+    "G_KCNQ_soma": 0.4,
+
+    // #########################################################################
+    // SK channel properties
+    "EC50_SK": 0.00035,
+    "dQ10_SK": 2,
+
+    "G_SK_dend": 4,
+    "G_SK_soma": 50,
+
+    // #########################################################################
+    // HCN channel properties
+    "G_h_HCN2_dend": 0.5,
+    "G_h_HCN2_soma": 0.5,
+    "G_h_HCN_dend": 0.2,
+    "G_h_HCN_soma": 0.2,
+
+    // #########################################################################
+    // CaHVA channel properties
+    "npower_CaHVA": 1,
+    "Kn_CaHVA": 0.007,
+    "Vhalfn_CaHVA": -0.02,
+
+    "G_Ca_HVA_dend": 0.15,
+    "G_Ca_HVA_soma": 2,
+
+    // #########################################################################
+    // Calcium buffering parameters
+    "soma_shell_vol": 6.283185050026674e-08,
+    "dend_shell_vol": 6.283185183253437e-08,
+    "axon_shell_vol": 6.283185183253437e-08,
+    "shell_thick": 2e-08,
+    "tau_CaClearance": 0.001,
+    "B_Ca_GP_conc": 6.933333333333332e-12,
+}

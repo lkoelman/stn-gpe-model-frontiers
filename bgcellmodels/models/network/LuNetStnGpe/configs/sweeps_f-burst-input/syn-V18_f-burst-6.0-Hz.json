@@ -1,0 +1,458 @@
+{
+    "simulation": {
+        "duration": 10000, 
+        "timestep": 0.025, 
+        "shared_rng_seed": 151985012, 
+        "DD": true
+    }, 
+    "CTX": {
+        "local_context": {
+            "combined_spike_sources": 5.0
+        }, 
+        "base_population_size": 1000, 
+        "spiking_pattern": {
+            "algorithm": "synchronous_permuted_bursts", 
+            "bursting_fraction": 0.1, 
+            "T_burst": 166.66666666666666, 
+            "phi_burst": 0.0, 
+            "f_intra": 200.0, 
+            "f_background": 15.051546391752577, 
+            "num_spk_burst": [
+                3, 
+                5
+            ], 
+            "max_dt_spk": 1.0, 
+            "t_refrac_pre": 20.0, 
+            "t_refrac_post": 10.0, 
+            "intervals": [
+                [
+                    2000.0, 
+                    20000.0
+                ]
+            ]
+        }
+    }, 
+    "STR.MSN": {
+        "local_context": {
+            "combined_spike_sources": 1.0
+        }, 
+        "base_population_size": 2000, 
+        "spiking_pattern": {
+            "algorithm": "continuous_bursts", 
+            "bursting_fraction": 1.0, 
+            "synchronous": false, 
+            "T_burst": 1000.0, 
+            "dur_burst": 25.0, 
+            "f_intra": 200.0, 
+            "f_inter": {
+                "statement": "(6.64 if DD else 1.5) * combined_spike_sources", 
+                "locals": null
+            }, 
+            "f_background": {
+                "statement": "(6.64 if DD else 1.5) * combined_spike_sources", 
+                "locals": null
+            }
+        }
+    }, 
+    "GPE.all": {
+        "local_context": {
+            "grid_dx": 50.0
+        }, 
+        "base_population_size": 100, 
+        "prototypic_fraction": 1.0, 
+        "arkypallidal_fraction": 0.0, 
+        "PyNN_cell_parameters": {
+            "membrane_noise_std": 0.1, 
+            "gmax_HCN_scale": {
+                "statement": "0.5 if DD else 1.0", 
+                "locals": null
+            }
+        }, 
+        "grid_dx": {
+            "statement": "grid_dx", 
+            "locals": null
+        }, 
+        "surrogate_fraction": 0.1, 
+        "surrogate_rate": {
+            "statement": "14.6 if DD else 33.7", 
+            "locals": null
+        }
+    }, 
+    "GPE.proto": {
+        "traces": [
+            {
+                "cells": 3, 
+                "sampling_period": 0.05, 
+                "specs": {
+                    "iGLU{:d}": {
+                        "syn": "GLUsyn[0:10]", 
+                        "var": "i"
+                    }, 
+                    "iGABA{:d}": {
+                        "syn": "GABAsyn2[0:6]", 
+                        "var": "i"
+                    }, 
+                    "iGABAA{:d}": {
+                        "syn": "GABAAsynTM[0:20]", 
+                        "var": "i"
+                    }
+                }
+            }
+        ], 
+        "STN": {
+            "connector": {
+                "name": "FixedNumberPreConnector", 
+                "parameters": {
+                    "n": 10
+                }
+            }, 
+            "receptor_type": "distal.AMPA+NMDA", 
+            "synapse": {
+                "name": "GluSynapse", 
+                "parameters": {
+                    "weight": 1.0, 
+                    "delay": 2.0, 
+                    "U1": 0.1, 
+                    "tau_rec": 200.0, 
+                    "tau_facil": 800.0, 
+                    "gmax_AMPA": {
+                        "statement": "(1 + 0.5*DD)*gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.00025
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_AMPA": 1.0, 
+                    "tau_d_AMPA": 4.0, 
+                    "gmax_NMDA": {
+                        "statement": "(1 + 0.5*DD)*gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.0
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_NMDA": 3.7, 
+                    "tau_d_NMDA": 80.0
+                }
+            }
+        }, 
+        "GPE.all": {
+            "connector": {
+                "name": "FixedNumberPreConnector", 
+                "parameters": {
+                    "n": 6, 
+                    "allow_self_connections": false
+                }
+            }, 
+            "receptor_type": "proximal.GABAA+GABAB", 
+            "synapse": {
+                "name": "GabaSynTmHill", 
+                "parameters": {
+                    "weight": 1.0, 
+                    "delay": 0.5, 
+                    "U1": 0.2, 
+                    "tau_rec": 400.0, 
+                    "tau_facil": 1.0, 
+                    "gmax_GABAA": {
+                        "statement": "(1 + 1.0*DD)*gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.0001
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_GABAA": 2.0, 
+                    "tau_d_GABAA": 5.0, 
+                    "gmax_GABAB": {
+                        "statement": "(1 + 1.0*DD)*gmax_base", 
+                        "locals": {
+                            "gmax_base": 2e-05
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_GABAB": 5.0, 
+                    "tau_d_GABAB": 25.0, 
+                    "K3": 0.098, 
+                    "K4": 0.00625, 
+                    "KD": 1.4, 
+                    "n": 4.0
+                }
+            }
+        }, 
+        "STR.MSN": {
+            "connector": {
+                "name": "FixedNumberPreConnector", 
+                "parameters": {
+                    "n": 30, 
+                    "allow_self_connections": false
+                }
+            }, 
+            "receptor_type": "proximal.GABAA+GABAB", 
+            "synapse": {
+                "name": "GABAAsynTM", 
+                "parameters": {
+                    "weight": 1.0, 
+                    "delay": 5.0, 
+                    "U1": {
+                        "statement": "0.2 * (1 + 0.5*DD)", 
+                        "locals": null
+                    }, 
+                    "tau_rec": 1.0, 
+                    "tau_facil": 200.0, 
+                    "gmax_GABAA": {
+                        "statement": "(1+0.5*DD)*gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.0002
+                        }, 
+                        "globals": null
+                    }, 
+                    "tau_r_GABAA": 2.0, 
+                    "tau_d_GABAA": 5.0
+                }
+            }
+        }
+    }, 
+    "STN": {
+        "base_population_size": 50, 
+        "v_init": -63.0, 
+        "calculate_lfp": false, 
+        "grid_dx": {
+            "statement": "grid_dx", 
+            "locals": null
+        }, 
+        "local_context": {
+            "grid_dx": 50.0, 
+            "frac_lateral_projecting": 0.0, 
+            "num_lateral_projections": 3, 
+            "surrogate_afferent_fraction": 0.2
+        }, 
+        "PyNN_cell_parameters": {
+            "membrane_noise_std": 0.0075, 
+            "lfp_sigma_extracellular": 0.3, 
+            "gk_Ih_scale": {
+                "statement": "0.5 if DD else 1.0", 
+                "locals": null
+            }
+        }, 
+        "surrogate_fraction": 0.1, 
+        "surrogate_rate": {
+            "statement": "29.5 if DD else 14.6", 
+            "locals": null
+        }, 
+        "traces": [
+            {
+                "cells": 3, 
+                "sampling_period": 0.05, 
+                "specs": {
+                    "g_AMPA{:d}": {
+                        "syn": "GLUsyn[0:3]", 
+                        "var": "g_AMPA"
+                    }, 
+                    "g_NR2BD{:d}": {
+                        "syn": "GLUsyn[0:3]", 
+                        "var": "g_NMDA"
+                    }, 
+                    "i_GLU{:d}": {
+                        "syn": "GLUsyn[0:14]", 
+                        "var": "i"
+                    }, 
+                    "g_NR2A{:d}": {
+                        "syn": "NMDAsynTM[0:3]", 
+                        "var": "g_NMDA"
+                    }, 
+                    "i_NR2A{:d}": {
+                        "syn": "NMDAsynTM[0:14]", 
+                        "var": "i"
+                    }, 
+                    "gGABAA{:d}": {
+                        "syn": "GABAsyn2[0:3]", 
+                        "var": "g_GABAA"
+                    }, 
+                    "gGABAB{:d}": {
+                        "syn": "GABAsyn2[0:3]", 
+                        "var": "g_GABAB"
+                    }, 
+                    "iGABA{:d}": {
+                        "syn": "GABAsyn2[0:8]", 
+                        "var": "i"
+                    }, 
+                    "v_dend1_dist{:d}": {
+                        "secs": "dend1[[4,6,7,9]]", 
+                        "loc": 0.5, 
+                        "var": "v"
+                    }, 
+                    "v_dend0_dist{:d}": {
+                        "secs": "dend0[[8,6,9,11,16,18,19,21]]", 
+                        "loc": 0.5, 
+                        "var": "v"
+                    }, 
+                    "STN_cai": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "var": "cai"
+                    }, 
+                    "STN_CaT_inact_fast": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "mech": "CaT", 
+                        "var": "s"
+                    }, 
+                    "STN_CaT_inact_slow": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "mech": "CaT", 
+                        "var": "d"
+                    }, 
+                    "STN_CaT_open": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "mech": "CaT", 
+                        "var": "o"
+                    }, 
+                    "STN_CaL_inact": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "mech": "HVA", 
+                        "var": "h"
+                    }, 
+                    "STN_CaL_open": {
+                        "sec": "dend1[7]", 
+                        "loc": 0.8, 
+                        "mech": "HVA", 
+                        "var": "o_L"
+                    }
+                }
+            }
+        ], 
+        "GPE.all": {
+            "connector": {
+                "name": "FixedNumberPreConnector", 
+                "parameters": {
+                    "n": 8, 
+                    "allow_self_connections": false
+                }
+            }, 
+            "receptor_type": "proximal.GABAA+GABAB", 
+            "synapse": {
+                "name": "GabaSynTmHill", 
+                "parameters": {
+                    "weight": 1.0, 
+                    "delay": 2.0, 
+                    "U1": 0.2, 
+                    "tau_rec": 400.0, 
+                    "tau_facil": 1.0, 
+                    "gmax_GABAA": {
+                        "statement": "(1 + 0.5*DD)*gmax_base*peak_factor", 
+                        "locals": {
+                            "gmax_base": 0.003, 
+                            "peak_factor": 4.0
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_GABAA": 2.0, 
+                    "tau_d_GABAA": {
+                        "statement": "7.0 if DD else 5.0", 
+                        "locals": {}, 
+                        "globals": {}
+                    }, 
+                    "gmax_GABAB": {
+                        "statement": "(1 + 0.5*DD)*gmax_base*peak_factor", 
+                        "locals": {
+                            "gmax_base": 0.0015, 
+                            "peak_factor": 1.666
+                        }, 
+                        "globals": {}
+                    }, 
+                    "tau_r_GABAB": 5.0, 
+                    "tau_d_GABAB": 25.0, 
+                    "K3": 0.098, 
+                    "K4": 0.00625, 
+                    "KD": 1.4, 
+                    "n": 4.0
+                }
+            }
+        }, 
+        "CTX": {
+            "connector": {
+                "name": "FixedNumberPreConnector", 
+                "parameters": {
+                    "n": {
+                        "statement": "14 if DD else 20", 
+                        "locals": null
+                    }, 
+                    "allow_self_connections": false
+                }
+            }, 
+            "receptor_type": "distal.AMPA+NMDA", 
+            "synapse": {
+                "name": "NativeMultiSynapse", 
+                "parameters": {
+                    "mechanisms_receptors": {
+                        "GLUsyn": "distal.AMPA+NMDA", 
+                        "NMDAsynTM": "proximal.NMDA"
+                    }, 
+                    "weight": 1.0, 
+                    "delay": 5.9, 
+                    "GLUsyn_U1": 0.2, 
+                    "GLUsyn_tau_rec": 200.0, 
+                    "GLUsyn_tau_facil": 1.0, 
+                    "GLUsyn_gmax_AMPA": {
+                        "statement": "(1 + 0.85*DD) * gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.0024
+                        }
+                    }, 
+                    "GLUsyn_tau_r_AMPA": 1.0, 
+                    "GLUsyn_tau_d_AMPA": 4.0, 
+                    "GLUsyn_gmax_NMDA": {
+                        "statement": "(1 + 0.26*DD) * gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.004
+                        }
+                    }, 
+                    "GLUsyn_tau_r_NMDA": 3.7, 
+                    "GLUsyn_tau_d_NMDA": 212.0, 
+                    "NMDAsynTM_U1": 0.2, 
+                    "NMDAsynTM_tau_rec": 200.0, 
+                    "NMDAsynTM_tau_facil": 1.0, 
+                    "NMDAsynTM_gmax_NMDA": {
+                        "statement": "(1 + 0.26*DD) * gmax_base", 
+                        "locals": {
+                            "gmax_base": 0.004
+                        }
+                    }, 
+                    "NMDAsynTM_tau_r_NMDA": 3.7, 
+                    "NMDAsynTM_tau_d_NMDA": 80.0
+                }
+            }
+        }, 
+        "STN.all": {
+            "connector": {
+                "name": "FromListConnector", 
+                "parameters": {
+                    "conn_list": {
+                        "statement": "make_stn_lateral_connlist(pop_stn.size, num_lateral_projections, frac_lateral_projecting, shared_rng)", 
+                        "locals": null, 
+                        "globals": null
+                    }
+                }
+            }, 
+            "receptor_type": "distal.AMPA+NMDA", 
+            "synapse": {
+                "name": "GluSynapse", 
+                "parameters": {
+                    "weight": 1.0, 
+                    "delay": 0.5, 
+                    "U1": 0.1, 
+                    "tau_rec": 200.0, 
+                    "tau_facil": 800.0, 
+                    "gmax_AMPA": 0.007, 
+                    "tau_r_AMPA": 1.0, 
+                    "tau_d_AMPA": 4.0, 
+                    "gmax_NMDA": 0.0, 
+                    "tau_r_NMDA": 3.7, 
+                    "tau_d_NMDA": 80.0
+                }
+            }
+        }
+    }
+}

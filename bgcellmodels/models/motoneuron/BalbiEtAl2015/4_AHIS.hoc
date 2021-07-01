@@ -1,0 +1,50 @@
+create AH
+create IS
+
+IS {
+	nseg = 9
+	diam = 3.0
+	L = 50
+	Ra = 70
+	cm = 1
+	
+	insert pas
+		g_pas = 0.0044
+		e_pas = -72
+	insert na3rp
+		gbar_na3rp = 0.3 // original value 0.65
+		sh_na3rp = 0	 // original value 5
+		ar_na3rp = 0.4
+	insert naps
+		gbar_naps = 0.01 // original value 0.013
+		sh_naps = 15	 // original value 0
+		ar_naps = 0.4
+	insert kdrRL
+		gMax_kdrRL = 0.4 // original value 0.4
+	insert extracellular xraxial=1e9 xg=1e10 xc=0
+}
+
+AH {
+	nseg = 7
+	diam(0:1) = soma.diam:IS.diam
+	L = 25
+	Ra = 70
+	cm = 1
+
+	insert pas
+		g_pas = 0.0044
+		e_pas = -72
+	insert na3rp
+		gbar_na3rp(0:1) = 0.015:0.3  //
+		sh_na3rp = 0
+		ar_na3rp = 0.4
+	insert naps
+		gbar_naps(0:1) = 0.002:0.01  //
+		sh_naps = 15
+		ar_naps = 0.4
+	insert kdrRL
+		gMax_kdrRL(0:1) = 0.035:0.4    //
+	insert extracellular xraxial=1e9 xg=1e10 xc=0
+}
+
+connect IS(0), AH(1)

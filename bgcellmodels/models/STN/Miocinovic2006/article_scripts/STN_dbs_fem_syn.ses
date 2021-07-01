@@ -1,0 +1,53 @@
+load_file("nrngui.hoc")
+objectvar save_window_, rvp_
+objectvar scene_vector_[6]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,700,-80,50)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -80, 700, 130, 390, 48, 816.3, 200.8)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addvar("soma[1].v( 0.5 )", 2, 1, 0.8, 0.9, 2)
+save_window_.addvar("node[1].v( 0.5 )", 4, 1, 0.8, 0.9, 2)
+save_window_.addexpr("node[0].v( 0.5 )", 3, 1, 0.8, 0.9, 2)
+save_window_.addexpr("node[2].v( 0.5 )", 5, 1, 0.8, 0.9, 2)
+save_window_.addexpr("node[3].v( 0.5 )", 6, 1, 0.8, 0.9, 2)
+//save_window_.addexpr("node[55].v( 0.5 )", 7, 1, 0.8, 0.9, 2)
+save_window_.addexpr("node[10].v( 0.5 )", 8, 1, 0.8, 0.9, 2)
+save_window_.addexpr("node[20].v( 0.5 )", 9, 1, 0.8, 0.9, 2)
+//save_window_.addexpr("node[30].v( 0.5 )", 2, 1, 0.8, 0.9, 2)
+//save_window_.addexpr("node[50].v( 0.5 )", 4, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-10,700,0,1)
+scene_vector_[3] = save_window_
+{save_window_.view(-10, 0, 710, 1, 388, 387, 819, 200.8)}
+graphList[1].append(save_window_)
+save_window_.save_name("graphList[1].")
+save_window_.addexpr("exIClmp.i", 2, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,700,-65,16)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -65, 700, 81, 36, 618, 300.6, 200.8)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addvar("GABApre.v( 0.5 )", 3, 1, 0.8, 0.9, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-10,700,-0.024,0.004)
+scene_vector_[5] = save_window_
+{save_window_.view(-10, -0.024, 710, 0.028, 384, 732, 820.8, 277.3)}
+graphList[1].append(save_window_)
+save_window_.save_name("graphList[1].")
+save_window_.addexpr("GABAsynA.i", 4, 1, 0.857018, 0.997368, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

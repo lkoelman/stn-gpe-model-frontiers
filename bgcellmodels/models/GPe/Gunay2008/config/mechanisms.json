@@ -1,0 +1,54 @@
+// Parameters from model https:#senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=127728
+// See script /articleCode/commonGPFull/GPcomps.g to see which named compartments
+// defined in .p file get which mechanisms (prototypes copied into compartment).
+// Equivalent GENESIS mechanism names in trailing comment.
+{
+    "all": [
+        // leak conductance is built-in in GENESIS (no explicit mechanism)
+        "pas"
+    ],
+    "somatic": [
+        // One soma section mapped to this secarray.
+        // See soma prototype in original GENESIS file.
+        "CaHVA", // Ca_HVA_GP
+        "SK", // K_ahp_GP
+        "Calcium", // Ca_GP_nernst + Ca_GP_conc
+        "NaF", // Na_fast_GP
+        "NaP", // Na_slow_GP
+        "Kv2", // Kv2_GP
+        "Kv3", // Kv3_GP
+        "Kv4f", // Kv4_fast_GP
+        "Kv4s", // Kv4_slow_GP
+        "KCNQ", // KCNQ_GP
+        "HCN", // h_HCN_GP
+        "HCN2" // h_HCN2_GP
+    ],
+    "basal": [
+        // all dendritic sections are mapped to this secarray
+        "CaHVA", // Ca_HVA_GP
+        "SK", // K_ahp_GP
+        "Calcium", // Ca_GP_nernst + Ca_GP_conc
+        "NaF", // Na_fast_GP
+        "NaP", // Na_slow_GP
+        "Kv2", // Kv2_GP
+        "Kv3", // Kv3_GP
+        "Kv4f", // Kv4_fast_GP
+        "Kv4s", // Kv4_slow_GP
+        "KCNQ", // KCNQ_GP
+        "HCN", // h_HCN_GP
+        "HCN2" // h_HCN2_GP
+    ],
+    "apical": [
+        // no sections are mapped to this secarray
+    ],
+    "axonal": [
+        // one equivalent section mapped to this secarray
+        "NaF", // Na_fast_GP
+        "NaP", // Na_slow_GP
+        "Kv2", // Kv2_GP
+        "Kv3", // Kv3_GP
+        "Kv4f", // Kv4_fast_GP
+        "Kv4s", // Kv4_slow_GP
+        "KCNQ" // KCNQ_GP
+    ]
+}

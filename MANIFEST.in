@@ -1,0 +1,18 @@
+# package_data in setup.py is only used when building binary packages 
+# (python setup.py bdist ...) but not when building source packages 
+# (python setup.py sdist ...). That's why we need the MANIFEST.in file
+
+# Include the README
+include *.md
+include *.hoc
+include *.ses
+include *.mod
+include *.ipynb
+
+# Include the license file
+# include LICENSE.txt
+
+# Include the data files
+# recursive-include data *
+include bgcellmodels/models/STN/GilliesWillshaw/sth-data/*
+include bgcellmodels/models/GPe/Gunay2008/morphology/*

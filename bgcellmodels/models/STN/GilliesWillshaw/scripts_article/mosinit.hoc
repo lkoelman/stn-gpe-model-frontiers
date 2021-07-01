@@ -1,0 +1,20 @@
+
+load_file("nrngui.hoc")
+
+xpanel("Examples from Gillies & Willshaw 2006")
+xlabel("This set of simulations will produce seven graphs")
+xlabel("showing the following model subthalamic physiology")
+xlabel("   1. the shape of the action potential.")
+xlabel("   2. spontaneous rest firing at 25 degC.")
+xlabel("   3. spontaneous rest firing at 37 degC.")
+xlabel("   4. post hyperpolarising rebound burst.")
+xlabel("   5. low frequency (<1Hz) rhythmic bursting.")
+xlabel("   6. high frequency (>1Hz) rhythmic bursting.")
+xlabel("   7. mixed mode rhythmic bursting.")
+xlabel("Each graph takes 1-2 minutes (on a 2GHz PC).")
+
+xbutton("Begin", "load_file(1,\"sample.hoc\")")
+xlabel("Click the above button to begin the simulations.")
+
+xpanel(10,110)
+
