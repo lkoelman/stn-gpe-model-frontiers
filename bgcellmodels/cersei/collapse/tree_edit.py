@@ -141,7 +141,7 @@ def sub_equivalent_Y_sec(
         # first segment after cut (not collapsed)
         cut_segs = next_segs(dist_seg) 
         
-        for i in xrange(len(cut_segs)):
+        for i in range(len(cut_segs)):
             cut_seg = cut_segs[i] # cut_seg may be destroyed by resizing so don't make loop variable
             cut_sec = cut_seg.sec
             cut_seg_index = seg_index(cut_seg)
@@ -163,7 +163,7 @@ def sub_equivalent_Y_sec(
                 cut_sec.L = post_cut_L
                 for jseg, seg in enumerate(cut_sec):
                     pseg = cut_props[cut_seg_index + jseg]
-                    for pname, pval in pseg.iteritems():
+                    for pname, pval in pseg.items():
                         seg.__setattr__(pname, pval)
                 
                 logger.debug("Cut section {0} and re-assigned segment properties.".format(cut_sec.name()))

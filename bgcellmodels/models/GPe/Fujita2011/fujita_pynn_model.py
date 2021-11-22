@@ -72,7 +72,7 @@ class GpeCellModel(cell_base.MorphModelBase):
         # 'Calcium':  [''],
     }
     rangevar_names = [
-        rvar + '_' + mech for mech, params in _mechs_params_dict.iteritems() 
+        rvar + '_' + mech for mech, params in _mechs_params_dict.items() 
             for rvar in params
     ]
     gleak_name = 'gmax_leak'

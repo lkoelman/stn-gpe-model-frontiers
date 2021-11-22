@@ -114,7 +114,7 @@ def plot_individual_fitness(objectives, box=None):
 	"""
 
 	import collections
-	objectives = collections.OrderedDict(sorted(objectives.iteritems()))
+	objectives = collections.OrderedDict(sorted(objectives.items()))
 
 	fig, axes = plt.subplots(facecolor='white')
 	

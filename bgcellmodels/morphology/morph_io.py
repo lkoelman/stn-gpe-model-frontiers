@@ -60,10 +60,10 @@ def morphology_to_dict(sections):
             'section_orientation':  h.section_orientation(sec=sec),
             'parent':               parent_id,
             'parent_loc':           parent_x,
-            'x':                    [h.x3d(i, sec=sec) for i in xrange(n3d)],
-            'y':                    [h.y3d(i, sec=sec) for i in xrange(n3d)],
-            'z':                    [h.z3d(i, sec=sec) for i in xrange(n3d)],
-            'diam':                 [h.diam3d(i, sec=sec) for i in xrange(n3d)],
+            'x':                    [h.x3d(i, sec=sec) for i in range(n3d)],
+            'y':                    [h.y3d(i, sec=sec) for i in range(n3d)],
+            'z':                    [h.z3d(i, sec=sec) for i in range(n3d)],
+            'diam':                 [h.diam3d(i, sec=sec) for i in range(n3d)],
             'name':                 sec.hname()           
         })
     
@@ -349,7 +349,7 @@ def test_json_export():
     Text exporting a simple example morphology to JSON format
     """
 
-    s = [h.Section(name='s[%d]' % i) for i in xrange(13)]
+    s = [h.Section(name='s[%d]' % i) for i in range(13)]
 
     """
         Create the tree
@@ -434,7 +434,7 @@ def morphology_to_STEP_1D(secs, filepath):
         # Copy points
         num_verts = int(h.n3d(sec=sec))
         pts = TColgp_Array1OfPnt(1, num_verts)
-        for i in xrange(num_verts):
+        for i in range(num_verts):
             pts.SetValue(i+1,
                 gp_Pnt(h.x3d(i, sec=sec), h.y3d(i, sec=sec), h.z3d(i, sec=sec)))
 
@@ -536,7 +536,7 @@ def morphologies_to_edges(section_lists, segment_centers=True,
         
         # Add one edge between each successive pair of samples in the section
         edges = [
-            (i, i+1) for i in xrange(vert_offset, vert_offset + num_samples - 1)
+            (i, i+1) for i in range(vert_offset, vert_offset + num_samples - 1)
         ]
         edge_list.extend(edges)
 
@@ -664,14 +664,14 @@ def morphology_to_PLY(section_lists, filepath, segment_centers=True,
         # Face is degenerate face [a, b, a]
         faces = [
             ([i, i+1, i], rgb[0], rgb[1], rgb[2])
-                for i in xrange(sample_offset, sample_offset + num_samples - 1)
+                for i in range(sample_offset, sample_offset + num_samples - 1)
         ]
         secs_faces.extend(faces)
 
         # Add edge [a, b]
         edges = [
             (i, i+1, rgb[0], rgb[1], rgb[2])
-                for i in xrange(sample_offset, sample_offset + num_samples - 1)
+                for i in range(sample_offset, sample_offset + num_samples - 1)
         ]
         secs_edges.extend(edges)
 

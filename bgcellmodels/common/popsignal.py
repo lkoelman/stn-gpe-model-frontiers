@@ -921,7 +921,7 @@ def plot_synapse_traces(pop_label, max_ncell, max_nsyn, interval, interval_only=
 
     # For each cell we try to plot all synapses of one type on one axis
     # TODO: for each plotted signal, check that the cell_gid is the same
-    for i_cell in xrange(num_cell):
+    for i_cell in range(num_cell):
         # One axis for all iGLU, one for all iGABA, one for each conductance type.
         # This makes a maximum of 6 axes per cell
         for i_plotted, tracename in enumerate(existing_traces):

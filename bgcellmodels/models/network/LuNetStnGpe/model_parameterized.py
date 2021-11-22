@@ -263,7 +263,7 @@ def run_simple_net(
         else:
             param_specs = config[pop][group_name]
         if mapping is not None:
-            param_specs = {v: param_specs[k] for k,v in mapping.iteritems()}
+            param_specs = {v: param_specs[k] for k,v in mapping.items()}
         return eval_params(param_specs, params_global_context,
                            [params_local_context, config_locals])
 
@@ -516,7 +516,7 @@ def run_simple_net(
     }
 
     # Make all Projections directly from (pre, post) pairs in config
-    for post_label, pop_config in config.iteritems():
+    for post_label, pop_config in config.items():
         # get post-synaptic Population
         if post_label in all_pops.keys():
             post_pop = all_pops[post_label]
@@ -615,14 +615,14 @@ def run_simple_net(
     for pop in biophysical_pops:
         pop.record(traces_biophys.items(), sampling_interval=.05)
 
-    for pop in all_pops.values():
+    for pop in list(all_pops.values()):
         pop.record(['spikes'], sampling_interval=.05)
 
     if calculate_lfp:
         pop_stn.record(['lfp'], sampling_interval=.05)
 
     # Traces defined in config file
-    for pop_label, pop_config in config.iteritems():
+    for pop_label, pop_config in config.items():
         if 'traces' not in pop_config:
             continue
         if pop_label in all_pops:
@@ -718,7 +718,7 @@ def run_simple_net(
         # Write recorded data
         if len(write_times) > 0 and abs(sim.state.t - write_times[0]) <= 5.0:
             suffix = "_{:.0f}ms-{:.0f}ms".format(last_write_time, sim.state.t)
-            for pop in all_pops.values():
+            for pop in list(all_pops.values()):
                 write_population_data(pop, output, suffix, gather=True, clear=True)
             write_times.pop(0)
             last_write_time = sim.state.t
@@ -745,13 +745,13 @@ def run_simple_net(
     saved_params = {'dopamine_depleted': DD}
 
     # Save cell information
-    for pop in all_pops.values() + all_asm.values():
+    for pop in list(all_pops.values()) + list(all_asm.values()):
         saved_params.setdefault(pop.label, {})['gids'] = pop.all_cells.astype(int)
 
     # Save connection information
-    for pre_pop, post_pops in all_proj.iteritems():
+    for pre_pop, post_pops in all_proj.items():
         saved_params.setdefault(pre_pop, {})
-        for post_pop, proj in post_pops.iteritems():
+        for post_pop, proj in post_pops.items():
 
             # Plot connectivity matrix ('O' is connection, ' ' is no connection)
             utf_matrix, float_matrix = connection_plot(proj)
@@ -811,7 +811,7 @@ def run_simple_net(
         # Only plot on one process, and if GUI available
         import analysis
         pop_neo_data = {
-            pop.label: pop.get_data().segments[0] for pop in all_pops.values()
+            pop.label: pop.get_data().segments[0] for pop in list(all_pops.values())
         }
         analysis.plot_population_signals(pop_neo_data)
 

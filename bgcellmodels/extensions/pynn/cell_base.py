@@ -391,7 +391,7 @@ class MorphModelBase(object):
         self.parameter_names.append('owning_gid') # gid of owning ID object
 
         # Make parameters accessible as attributes
-        for param_name in kwargs.keys():
+        for param_name in list(kwargs.keys()):
 
             # Check if we should handle the parameter
             if param_name not in self.parameter_names:
@@ -423,7 +423,7 @@ class MorphModelBase(object):
         self._init_synapses()
 
         # Handle post-instantiation parameters
-        for param_name, param_value in kwargs.iteritems():
+        for param_name, param_value in kwargs.items():
             if isinstance(param_value, ArrayParameter):
                 param_value = param_value.value
             setattr(self, param_name, param_value)
@@ -537,7 +537,7 @@ class MorphModelBase(object):
 
         for sec in target_secs:
             nsyn = np.ceil(sec.L / synapse_spacing)
-            for i in xrange(int(nsyn)):
+            for i in range(int(nsyn)):
                 seg = sec((i+1.0)/nsyn)
                 for region in self.regions:
                     if self.segment_in_region(seg, region):

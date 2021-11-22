@@ -58,7 +58,7 @@ def plot_proto_responses(proto_responses, show=True):
     @param  proto_responses : dict[str: protocol_name, dict: responses]
     """
     figs = []
-    for proto_name, responses in proto_responses.iteritems():
+    for proto_name, responses in proto_responses.items():
         fig, axes = plot_responses(responses, show=False)
         plt.suptitle("Responses of {}".format(proto_name))
         figs.append(fig)
@@ -72,7 +72,7 @@ def plot_proto_responses(proto_responses, show=True):
     #   axes = [axes]
     
     # index = 0
-    # for proto_name, responses in proto_responses.iteritems():
+    # for proto_name, responses in proto_responses.items():
     #   for resp_name, response in sorted(responses.items()):
     #       axes[index].plot(response['time'], response['voltage'], label=resp_name)
     #       axes[index].set_title(resp_name)

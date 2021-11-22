@@ -86,8 +86,6 @@ def remove_trailing_commas(json_like):
         '{"foo":"bar","baz":["blah"]}'
 
     """
-    if isinstance(json_like, str):
-        json_like = json_like.decode('utf-8')
 
     trailing_object_commas_re = re.compile(
         r'(,)\s*}(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)')

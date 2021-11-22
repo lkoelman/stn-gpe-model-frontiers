@@ -320,10 +320,10 @@ def get_sec_range_props(src_sec, mechs_pars):
     """
     pnames = [
         par+'_'+mech if mech != '' else par
-            for mech, pars in mechs_pars.iteritems() for par in pars
+            for mech, pars in mechs_pars.items() for par in pars
     ]
 
-    seg_props = [{} for i in xrange(src_sec.nseg)]
+    seg_props = [{} for i in range(src_sec.nseg)]
     
     # Store segment RANGE properties
     for j_seg, seg in enumerate(src_sec):
@@ -386,10 +386,10 @@ def get_sec_props_ref(
     sec_props.mechanisms = [mech for mech in mechs_pars.iterkeys() if secref.sec.has_membrane(mech)]
 
     # Initialize segment RANGE properties
-    sec_props.seg = [{} for i in xrange(secref.sec.nseg)]
+    sec_props.seg = [{} for i in range(secref.sec.nseg)]
     bprops = [
         par+'_'+mech if mech != '' else par
-            for mech, pars in mechs_pars.iteritems() for par in pars
+            for mech, pars in mechs_pars.items() for par in pars
     ]
     
     # Store segment RANGE properties
@@ -429,10 +429,10 @@ def get_sec_props(sec, mechs_pars):
                     nseg=sec.nseg)
 
     # Initialize dicts with RANGE properties
-    sec_props.seg = [dict() for i in xrange(sec.nseg)]
+    sec_props.seg = [dict() for i in range(sec.nseg)]
     parnames = [
         par+'_'+mech if mech != '' else par
-            for mech, pars in mechs_pars.iteritems() for par in pars
+            for mech, pars in mechs_pars.items() for par in pars
     ]
     
     # Store segment RANGE properties
@@ -466,14 +466,14 @@ def merge_sec_properties(
     # keep track of assigned parameters
     assigned_params = {
         par+'_'+mech if mech != '' else par: None
-            for mech,pars in mechs_pars.iteritems() for par in pars
+            for mech,pars in mechs_pars.items() for par in pars
     }
 
     # merge all mechanism RANGE properties
     for src_sec in src_props:
         nseg = src_sec.nseg
         segs = src_sec.seg
-        for mechname, parnames in mechs_pars.iteritems():
+        for mechname, parnames in mechs_pars.items():
             
             # Check if any segment in source has the mechanism
             if mechname in src_sec.mechanisms:
@@ -532,7 +532,7 @@ def merge_ion_styles(src_props, tar_sec, check_uniform=True):
     # They must all be the same or we have a problem with mechanisms
     final_styles = ionstyles_dicts[0]
     for styles_dict in ionstyles_dicts[1:]:
-        for ion, style_flags in styles_dict.iteritems():
+        for ion, style_flags in styles_dict.items():
             
             if ion not in final_styles:
                 final_styles[ion] = style_flags
@@ -645,7 +645,7 @@ def subtree_assign_attributes(noderef, allsecrefs, attr_dict):
     @param attr_dict    dictionary of key-value pairs (attribute_name, attribute_value)
     """
     # Process self
-    for aname, aval in attr_dict.iteritems():
+    for aname, aval in attr_dict.items():
         setattr(noderef, aname, aval)
 
     # Process children

@@ -447,7 +447,7 @@ def test_spontaneous(soma, dends_locs, stims, resurgent=False):
 	print("Simulation ran for {:.6f} seconds".format(t1-t0))
 
 	# Plot membrane voltages
-	recV = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.startswith('V_')]) # preserves order
+	recV = collections.OrderedDict([(k,v) for k,v in recData.items() if k.startswith('V_')]) # preserves order
 	figs_vm = analysis.plotTraces(recV, recordStep, yRange=(-80,40), traceSharex=True)
 	vm_fig = figs_vm[0]
 	vm_ax = figs_vm[0].axes[0]
@@ -558,7 +558,7 @@ def test_plateau(soma, dends_locs, stims):
 
 
 	# Plot membrane voltages
-	recV = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.startswith('V_')]) # preserves order
+	recV = collections.OrderedDict([(k,v) for k,v in recData.items() if k.startswith('V_')]) # preserves order
 	figs_vm = analysis.plotTraces(recV, recordStep, yRange=(-80,40), traceSharex=True)
 	vm_fig = figs_vm[0]
 	vm_ax = figs_vm[0].axes[0]
@@ -567,7 +567,7 @@ def test_plateau(soma, dends_locs, stims):
 	figs, cursors = plot_currents_activations(recData, recordStep)
 
 	# # Soma currents
-	# recSoma = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if not k.endswith('_d')])
+	# recSoma = collections.OrderedDict([(k,v) for k,v in recData.items() if not k.endswith('_d')])
 	# Set fixed ranges for comparison
 	# traceYLims = {'V_soma': (-80, 40), 'I_Na': (-0.7, 0.1), 'I_NaL': (-2e-3, 0),
 	# 			'I_KDR': (0, 0.1), 'I_Kv3': (-1e-2, 0.1), 'I_KCa': (-1e-3, 8e-3),
@@ -580,7 +580,7 @@ def test_plateau(soma, dends_locs, stims):
 	# analysis.cumulPlotTraces(recSoma, recordStep, cumulate=False, timeRange=burst_time)
 
 	# Dendrite currents during burst
-	recDend = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.endswith('_d')])
+	recDend = collections.OrderedDict([(k,v) for k,v in recData.items() if k.endswith('_d')])
 	analysis.cumulPlotTraces(recDend, recordStep, timeRange=burst_time)
 	
 	return recData, figs, cursors
@@ -673,7 +673,7 @@ def test_reboundburst(soma, dends_locs, stims):
 	print("Simulation ran for {:.6f} seconds".format(t1-t0))
 
 	# Plot membrane voltages
-	recV = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.startswith('V_')]) # preserves order
+	recV = collections.OrderedDict([(k,v) for k,v in recData.items() if k.startswith('V_')]) # preserves order
 	figs_vm = analysis.plotTraces(recV, recordStep, yRange=(-80,40), traceSharex=True)
 	vm_fig = figs_vm[0]
 	vm_ax = figs_vm[0].axes[0]
@@ -694,7 +694,7 @@ def test_reboundburst(soma, dends_locs, stims):
 
 	# Dendrite currents during burst
 	# burst_time = [980, 1120]
-	# recDend = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.endswith('_d')])
+	# recDend = collections.OrderedDict([(k,v) for k,v in recData.items() if k.endswith('_d')])
 	# analysis.cumulPlotTraces(recDend, recordStep, timeRange=burst_time)
 
 	return recData, figs, cursors
@@ -783,7 +783,7 @@ def test_slowbursting(soma, dends_locs, stims):
 	burst_time = [] # enter burst time
 	# Soma currents
 	recSoma = collections.OrderedDict()
-	for k, v in recData.iteritems():
+	for k, v in recData.items():
 		if not k.startswith('d'): recSoma[k] = recData[k]
 	analysis.plotTraces(recSoma, recordStep)
 	# Soma currents (relative)
@@ -791,7 +791,7 @@ def test_slowbursting(soma, dends_locs, stims):
 	analysis.cumulPlotTraces(recSoma, recordStep, cumulate=False)
 	# Dendrite currents (relative)
 	recDend = collections.OrderedDict()
-	for k, v in recData.iteritems():
+	for k, v in recData.items():
 		if k.startswith('d'): recDend[k] = recData[k]
 	analysis.cumulPlotTraces(recDend, recordStep, cumulate=False)
 	return recData

@@ -55,7 +55,7 @@ mechs_params_dict = {
 
 # All mechanism parameters that are not conductances
 mechs_params_nogbar = dict(mechs_params_dict)
-for mech, params in mechs_params_nogbar.iteritems():
+for mech, params in mechs_params_nogbar.items():
     for gbar_param in gbar_dict.get(mech, []):
         try:
             params.remove(gbar_param)
@@ -70,7 +70,7 @@ global_params_list = [
 ]
 
 mechs_list = list(mechs_params_dict.keys()) # all mechanisms
-gbar_list = [gname+'_'+mech for mech,chans in gbar_dict.iteritems() for gname in chans]
+gbar_list = [gname+'_'+mech for mech,chans in gbar_dict.items() for gname in chans]
 active_gbar_names = [gname for gname in gbar_list if gname != gleak_name]
 
 

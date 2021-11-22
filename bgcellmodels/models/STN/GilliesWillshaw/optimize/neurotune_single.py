@@ -246,7 +246,7 @@ class STNCellController(object):
         gmax_pattern = re.compile(gmax_prefix)
 
         # Adapt model according to candidate parameters
-        for par_name, par_value in cand_params.iteritems():
+        for par_name, par_value in cand_params.items():
             scale_match = re.search(scale_pattern, par_name)
             gmin_match = re.search(gmin_pattern, par_name)
             gmax_match = re.search(gmax_pattern, par_name)

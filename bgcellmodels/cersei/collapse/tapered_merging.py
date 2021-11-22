@@ -178,7 +178,7 @@ class Cylinder(object):
         # Calculate area, capacitance, conductances
         pmerge.area += pother.area
         pmerge.cmtot += pother.cmtot
-        for gname, gsum in pother.gtot.iteritems():
+        for gname, gsum in pother.gtot.items():
             pmerge.gtot[gname] += gsum
 
         # Information about absorbed segments

@@ -68,7 +68,7 @@ gillies_mechs_chans = {'STh': ['gpas'], # passive/leak channel
 
 mechs_chans = gillies_mechs_chans
 gleak_name = 'gpas_STh'
-glist = [gname+'_'+mech for mech,chans in mechs_chans.iteritems() for gname in chans]
+glist = [gname+'_'+mech for mech,chans in mechs_chans.items() for gname in chans]
 f_lambda = 100.0
 
 def merge_parallel(childrefs, allsecrefs):
@@ -443,7 +443,7 @@ def zip_fork_branches(allsecrefs, i_pass, zips_per_pass, Y_criterion):
 		# Name for equivalent zipped section
 		# name_sanitized = par_sec.name().replace('[','').replace(']','').replace('.','_')
 		name_sanitized = re.sub(r"[\[\]\.]", "", par_sec.name())
-		alphabet_uppercase = [chr(i) for i in xrange(65,90+1)] # A-Z are ASCII 65-90
+		alphabet_uppercase = [chr(i) for i in range(65,90+1)] # A-Z are ASCII 65-90
 		zip_label = "zip{0}_{1}".format(alphabet_uppercase[i_pass], name_sanitized)
 		zip_id = 1000*i_pass + j_zip
 
@@ -1077,7 +1077,7 @@ def assign_attributes(noderef, allsecrefs, attr_dict):
 	@param attr_dict	dictionary of key-value pairs (attribute_name, attribute_value)
 	"""
 	# Assign current node
-	for aname, aval in attr_dict.iteritems():
+	for aname, aval in attr_dict.items():
 		setattr(noderef, aname, aval)
 
 	childsecs = noderef.sec.children()
@@ -1165,7 +1165,7 @@ def reduce_gillies_incremental(n_passes, zips_per_pass):
 	path_props = [redtools.get_sec_props_obj(ref, mechs_chans, seg_assigned, sec_assigned) for ref in path_secs]
 
 	# Start iterative collapsing procedure
-	for i_pass in xrange(n_passes):
+	for i_pass in range(n_passes):
 		# Check that we haven't collapsed too many levels
 		if not (dendL_upper_root.exists() and dendL_lower_root.exists()):
 			logger.warning("Maximum number of collapses reached: Cannot collapse past trunk sections.")

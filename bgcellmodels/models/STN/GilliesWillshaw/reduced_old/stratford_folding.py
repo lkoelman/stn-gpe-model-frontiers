@@ -31,7 +31,7 @@ from neuron import h
 
 # Global parameters
 f_lambda = 0.0
-alphabet_uppercase = [chr(i) for i in xrange(65,90+1)] # A-Z are ASCII 65-90
+alphabet_uppercase = [chr(i) for i in range(65,90+1)] # A-Z are ASCII 65-90
 
 # logging of DEBUG/INFO/WARNING messages
 import logging
@@ -176,7 +176,7 @@ def next_eq_diam(a_seg, a_i, root_X, dX, cluster, reduction, lvl=0):
 		step_attrs['step_gbar'] = [dict(((gname, getattr(new_seg, gname)) for gname in gbar_list))]
 
 		# Save them on cluster object
-		for attr_name, new_seg_vals in step_attrs.iteritems():
+		for attr_name, new_seg_vals in step_attrs.items():
 
 			# Get cluster attribute
 			step_attr_list = getattr(cluster, attr_name) # list(list()) : [[step1_d1...], [step2_d1...], ...]
@@ -260,7 +260,7 @@ def next_seg_diam(a_seg, a_i, cluster, reduction, lvl=0):
 		step_attrs['step_gbar'] = [dict(((gname, getattr(new_seg, gname)) for gname in gbar_list))]
 
 		# Save them on cluster object
-		for attr_name, new_seg_vals in step_attrs.iteritems():
+		for attr_name, new_seg_vals in step_attrs.items():
 
 			# Get cluster attribute
 			step_attr_list = getattr(cluster, attr_name) # list(list()) : [[step1_d1...], [step2_d1...], ...]
@@ -363,7 +363,7 @@ def calc_folds(target_Y_secs, i_pass, reduction, dX=0.1):
 			# Combine dict of gbar for each parallel section
 			cluster.eq_gbar[i_step] = dict(((gname, 0.0) for gname in gbar_list))
 			for gdict in cluster.step_gbar[i_step]:
-				for gname, gval in gdict.iteritems():
+				for gname, gval in gdict.items():
 					cluster.eq_gbar[i_step][gname] += (gval / num_parallel) # average of parallel branches
 
 			# Physical length 

@@ -355,7 +355,7 @@ def set_ion_styles(tar_sec, **kwargs):
 
     @param  kwargs      keyword arguments ion_name: style_int
     """
-    for ion, style in kwargs.iteritems():
+    for ion, style in kwargs.items():
 
         # Decompose int into bit flags
         c_style = int(style) & (1+2)

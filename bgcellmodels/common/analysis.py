@@ -215,7 +215,7 @@ def recordTraces(secs, traceSpecs, recordStep=0.05, duration=None, recData=None)
         recData = collections.OrderedDict() # empty dict for storing recording vectors
     pp_markers = []
 
-    for trace, spec in traceSpecs.iteritems():
+    for trace, spec in traceSpecs.items():
         if trace in recData:
             logger.warning("Trace named {} already exists in data dictionary. Overwriting.".format(trace))
 
@@ -554,7 +554,7 @@ def match_traces(recData, matchfun, orderfun=None, reverse=False, pop=False):
             Pop (remove) matched traces from recData
     """
 
-    traces = ((name,data) for name,data in recData.iteritems() if matchfun(name))
+    traces = ((name,data) for name,data in recData.items() if matchfun(name))
 
     if orderfun is not None:
         traces = sorted(traces, key=orderfun, reverse=reverse) # if no orderfun: keep recData order

@@ -72,7 +72,7 @@ class GolombFsiModel(MorphModelBase):
 
         @override   MorphModelBase.get_synapse()
         """
-        syns = [self.make_new_synapse(receptors, self.icell.soma[0](0.5), **kwargs) for i in xrange(num_contacts)]
+        syns = [self.make_new_synapse(receptors, self.icell.soma[0](0.5), **kwargs) for i in range(num_contacts)]
         synmap_key = tuple(sorted(receptors))
         self._synapses['proximal'].setdefault(synmap_key, []).extend(syns)
         return syns

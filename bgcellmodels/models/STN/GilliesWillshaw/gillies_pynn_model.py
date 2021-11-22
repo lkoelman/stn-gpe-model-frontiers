@@ -8,7 +8,7 @@ PyNN compatible cell models for Gillies STN cell model.
 """
 
 import os, os.path
-import cPickle as pickle
+import pickle
 
 import neuron
 import numpy as np
@@ -100,7 +100,7 @@ class StnCellModel(ephys_pynn.EphysModelWrapper):
         'HVA':  ['gcaL', 'gcaN'],
         'Cacum':[],
     }
-    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.iteritems() for p in params]
+    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.items() for p in params]
     gleak_name = 'gpas_STh'
 
     tau_m_scaled_regions = ['somatic', 'basal', 'apical', 'axonal']
@@ -119,7 +119,7 @@ class StnCellModel(ephys_pynn.EphysModelWrapper):
 
     def __init__(self, *args, **kwargs):
         # Define parameter names before calling superclass constructor
-        self.parameter_names = StnCellType.default_parameters.keys()
+        self.parameter_names = list(StnCellType.default_parameters.keys())
         for rangevar in self.rangevar_names:
             self.parameter_names.append(rangevar + '_scale')
         
@@ -242,7 +242,7 @@ class StnCellReduced(StnCellModel):
 
     def __init__(self, *args, **kwargs):
         # Define parameter names before calling superclass constructor
-        self.parameter_names = StnReducedType.default_parameters.keys()
+        self.parameter_names = list(StnReducedType.default_parameters.keys())
         for rangevar in self.rangevar_names:
             self.parameter_names.append(rangevar + '_scale')
 
@@ -371,7 +371,7 @@ def test_stn_cells_multiple(export_locals=True):
         stn_cells.append(h.SThcells[cell_idx])
 
     if export_locals:
-        print("Adding to global namespace: {}".format(locals().keys()))
+        print("Adding to global namespace: {}".format(list(locals().keys())))
         globals().update(locals())
 
 
@@ -408,7 +408,7 @@ def test_stn_pynn_population(export_locals=True):
     nrn.run(250.0)
 
     if export_locals:
-        print("Adding to global namespace: {}".format(locals().keys()))
+        print("Adding to global namespace: {}".format(list(locals().keys())))
         globals().update(locals())
 
 

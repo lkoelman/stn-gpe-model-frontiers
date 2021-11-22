@@ -52,7 +52,7 @@ def voxels_by_nearest(file_path, dxyz, out_path=None,
 
 
     # Average voxels with multiple samples
-    for vox_index, num_samples in vox_numsamples.iteritems():
+    for vox_index, num_samples in vox_numsamples.items():
         vox_vals[vox_index] /= num_samples
 
     # Rescale to [0, 1]
@@ -71,7 +71,7 @@ def voxels_by_nearest(file_path, dxyz, out_path=None,
 def voxels_by_interp(file_path, out_path, method='linear', scale=None, translation=None):
     # TODO: use NDInterpolator : iterate over voxel centers and interpolate
     # Coordinates vary most rapidly along x, then y, then z
-    # for i_z in xrange(nz):
+    # for i_z in range(nz):
     #     z = xyz_lims[2][0] + i_z * dz
     #     for i_y in range(ny):
     #         y = xyz_lims[1][0] + i_y * dy

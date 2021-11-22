@@ -140,7 +140,7 @@ all_objectives = [ephys.objectives.SingletonObjective(f.name, f) for f in all_op
 fitcalc = ephys.objectivescalculators.ObjectivesCalculator(all_objectives)
 
 # Make evaluator to evaluate model using objective calculator
-opt_ephys_protos = {k.name: v.ephys_protocol for k,v in red_protos.iteritems()}
+opt_ephys_protos = {k.name: v.ephys_protocol for k,v in red_protos.items()}
 opt_params_names = [param.name for param in free_params]
 
 cell_evaluator = ephys.evaluators.CellEvaluator(
@@ -208,10 +208,10 @@ for deap_seed in range(3, 20):
 
     # Save dict {StimProtol: {feat_name : {exp_mean/std : value } } }
     proto_feat_info = {}
-    for stim_proto, feat_dict in stimprotos_feats.iteritems():
+    for stim_proto, feat_dict in stimprotos_feats.items():
         proto_feat_info[stim_proto.name] = {
             feat_name: {'weight': feat_data[1], 'exp_mean': feat_data[0].exp_mean, 'exp_std': feat_data[0].exp_std} 
-                for feat_name, feat_data in feat_dict.iteritems()
+                for feat_name, feat_data in feat_dict.items()
         }
 
     # Module info

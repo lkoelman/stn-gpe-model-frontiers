@@ -70,3 +70,4 @@ var/
 
 # sftp configuration file
 sftp-config.json
+*.profraw

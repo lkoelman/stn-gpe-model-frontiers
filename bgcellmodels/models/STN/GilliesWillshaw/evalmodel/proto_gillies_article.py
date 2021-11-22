@@ -104,7 +104,7 @@ def rec_traces_rebound(self, protocol, traceSpecs):
 	rec_segs = self.model_data[model]['rec_segs'][protocol]
 
 	# Trace specs for membrane voltages
-	for seclabel, seg in rec_segs.iteritems():
+	for seclabel, seg in rec_segs.items():
 		traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 
 	# Trace specs for recording ionic currents, channel states
@@ -239,7 +239,7 @@ def rec_traces_plateau(self, protocol, traceSpecs):
 	# }
 
 	# Trace specs for membrane voltages
-	for seclabel, seg in rec_segs.iteritems():
+	for seclabel, seg in rec_segs.items():
 		traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 
 	# Record Ca and Ca-activated currents in dendrite
@@ -272,7 +272,7 @@ def plot_traces_plateau(self, model, protocol):
 	figs, cursors = analysis.plot_currents_activations(recData, recordStep)
 
 	# Dendrite currents during burst
-	recDend = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.endswith('_d')])
+	recDend = collections.OrderedDict([(k,v) for k,v in recData.items() if k.endswith('_d')])
 
 	burst_time = self.model_data[model]['proto_vars'][proto]['burst_time']
 	analysis.cumulPlotTraces(recDend, recordStep, timeRange=burst_time)

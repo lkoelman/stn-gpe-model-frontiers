@@ -49,7 +49,7 @@ mechs_params_dict = {
 
 # All mechanism parameters that are not conductances
 mechs_params_nogbar = dict(mechs_params_dict)
-for mech, params in mechs_params_nogbar.iteritems():
+for mech, params in mechs_params_nogbar.items():
     for gbar_param in gbar_dict.get(mech, []):
         try:
             params.remove(gbar_param)
@@ -62,7 +62,7 @@ mechs_list = gillies_mechs
 
 # All gbar (max conductance) names
 gillies_glist = [
-    gname+'_'+mech for mech,chans in gillies_gdict.iteritems() 
+    gname+'_'+mech for mech,chans in gillies_gdict.items() 
                     for gname in chans
 ]
 gbar_list = gillies_glist

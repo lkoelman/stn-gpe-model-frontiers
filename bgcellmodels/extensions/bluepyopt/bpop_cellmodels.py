@@ -9,7 +9,7 @@ import bluepyopt.ephys as ephys
 
 from bgcellmodels.common import nrnutil
 from bgcellmodels.morphology import morph_io
-import cPickle as pickle
+import pickle
 
 
 class PickledCellModel(ephys.models.Model):

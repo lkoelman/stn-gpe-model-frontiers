@@ -112,7 +112,7 @@ def pick_random_segments(sections, n_segs, elig_func, rng=None):
     #   segments will not lead to a uniform spatial distribution of synapses.
     target_segs = [] # target segments, including their x-location
     Ltotal = sum((seg.sec.L/seg.sec.nseg for seg in elig_segs)) # summed length of all found segments
-    for i in xrange(n_segs):
+    for i in range(n_segs):
         sample = rng.random_sample() # in [0,1)
         # Pick segment at random fraction of combined length of Sections
         Ltraversed = 0.0
@@ -193,7 +193,7 @@ def plot_all_spikes(trace_vectors, **kwargs):
     kwarg_names = args[-len(defaults):] # only keyword arguments
     fig, ax = analysis.plotRaster(
                         spikeData,
-                        **{k:v for k,v in kwargs.iteritems() if k in kwarg_names})
+                        **{k:v for k,v in kwargs.items() if k in kwarg_names})
     return fig, ax
 
 
@@ -373,7 +373,7 @@ def rec_Vm(**kwargs):
     rec_segs = kwargs['rec_hoc_objects']
     traceSpecs = kwargs['trace_specs']
     
-    for seclabel, seg in rec_segs.iteritems():
+    for seclabel, seg in rec_segs.items():
         if isinstance(seg, neuron.nrn.Segment):
             traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 

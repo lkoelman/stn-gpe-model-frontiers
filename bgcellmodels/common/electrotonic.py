@@ -326,7 +326,7 @@ def measure_along_paths(root, leaves, measure_funcs, freq):
         dist_measures_vecs['pathlen_micron'] = map(pathlen_func, path_segments)
 
         # do each measurement
-        for measure, dist_func in measure_funcs.iteritems():
+        for measure, dist_func in measure_funcs.items():
             measure_func = lambda seg: dist_func(
                                         source=seg,
                                         target=root(0.5),
@@ -354,9 +354,9 @@ def segs_at_dX(cur_seg, dX, f, gleak):
     sec_L = cur_seg.sec.L
     sec_dL = sec_L / nseg
     sec_lamb = [seg_lambda(seg, gleak, f) for seg in cur_seg.sec]
-    sec_Xi = [sec_dL / sec_lamb[i] for i in xrange(nseg)]
+    sec_Xi = [sec_dL / sec_lamb[i] for i in range(nseg)]
     sec_Xtot = sum(sec_Xi) # total L/lambda
-    sec_Xacc = [sum((sec_Xi[j] for j in xrange(i)), 0.0) for i in xrange(nseg)] # accumulated X to left border
+    sec_Xacc = [sum((sec_Xi[j] for j in range(i)), 0.0) for i in range(nseg)] # accumulated X to left border
     sec_dx = 1.0/nseg
 
     # Get electrotonic length from start of Section to current x

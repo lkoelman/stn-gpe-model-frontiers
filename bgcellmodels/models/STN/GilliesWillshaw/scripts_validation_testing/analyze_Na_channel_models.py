@@ -116,7 +116,7 @@ def test_spontaneous():
     mechs_chans['NaTB'] = ['gbar']
     mechs_chans['NaRB'] = ['gbar']
     mechs_chans['NaKR'] = ['gbar']
-    glist = [gname+'_'+mech for mech,chans in mechs_chans.iteritems() for gname in chans]
+    glist = [gname+'_'+mech for mech,chans in mechs_chans.items() for gname in chans]
     gbar_default = {
         'gna_Na':   1.483419823e-02, # global default var
         'gna_NaL':  1.108670852e-05, # global default var
@@ -138,7 +138,7 @@ def test_spontaneous():
     soma.cm = all_cm
     for mech in test_mechs:
         soma.insert(mech)
-    # for k,v in gbar_default.iteritems():
+    # for k,v in gbar_default.items():
     #     setattr(soma, k, v)
     # setionstyles_gillies(soma)
 
@@ -189,7 +189,7 @@ def test_spontaneous():
     h.run()
 
     # Plot membrane voltages
-    recV = collections.OrderedDict([(k,v) for k,v in recData.iteritems() if k.startswith('V_')])
+    recV = collections.OrderedDict([(k,v) for k,v in recData.items() if k.startswith('V_')])
     figs_vm = analysis.plotTraces(recV, recordStep, yRange=(-80,40), traceSharex=True)
     vm_fig = figs_vm[0]
     vm_ax = figs_vm[0].axes[0]

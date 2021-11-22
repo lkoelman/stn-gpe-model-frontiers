@@ -129,7 +129,7 @@ class NativeSynToRegion(Connection):
         pynn_weight = parameters.pop('weight')
         parameters.setdefault('netcon:weight[0]', pynn_weight)
 
-        for param_spec, value_spec in parameters.iteritems():
+        for param_spec, value_spec in parameters.items():
             # Convert value specification to actual parameter value
             if callable(value_spec):
                 # Generate distance map lazily and cache it
@@ -296,18 +296,17 @@ class ConnectionNrnWrapped(Connection):
         else:
             super(ConnectionNrnWrapped, self).__setattr__(name, value)
 
-
     def __getattr__(self, name):
         """
         Called as last resort if property not found.
         """
-        if hasattr(self, 'synapse_type') and (name in self.synapse_type.get_parameter_names()):
-            pinfo = self.synapse_type.translations[name]
+        try:
+            stype = super(ConnectionNrnWrapped,self).__getattribute__("synapse_type")
+            pinfo = stype.translations[name]
             pname = pinfo['translated_name']
             return getattr(self.synapse, pname)
-        else:
-            return super(ConnectionNrnWrapped, self).__getattr__(name)
-
+        except AttributeError:
+            return super(ConnectionNrnWrapped,self).__getattribute__(name)
 
 class MultiMechanismConnection(Connection):
     """
@@ -331,7 +330,7 @@ class MultiMechanismConnection(Connection):
         self.synapses = {} # dict[str, list[nrn.Synapse]]
         all_synapses = []
 
-        for mech_name, subcell_conn in projection.synapse_type.subcellular_conn.iteritems():
+        for mech_name, subcell_conn in projection.synapse_type.subcellular_conn.items():
             region, mech_receptors = subcell_conn['receptors'].split(".")
             receptor_list = mech_receptors.split("+")
             synapses = post_cell.get_synapses(region, receptor_list,
@@ -403,9 +402,10 @@ class MultiMechanismConnection(Connection):
         """
         Called as last resort if property not found.
         """
-        if hasattr(self, 'synapse_type') and (name in self.synapse_type.get_parameter_names()):
-            pinfo = self.synapse_type.translations[name]
+        try:
+            stype = super(MultiMechanismConnection,self).__getattribute__("synapse_type")
+            pinfo = stype.translations[name]
             pname = pinfo['translated_name']
             return getattr(self.synapse, pname)
-        else:
-            raise AttributeError("'{}'' has no attribute '{}'.".format(self, name))
+        except AttributeError:
+            return super(MultiMechanismConnection,self).__getattribute__(name)

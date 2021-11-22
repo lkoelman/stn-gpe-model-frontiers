@@ -89,7 +89,7 @@ class NativeSynapse(pyNN.neuron.StaticSynapse):
 
         # Convert distance-based string expressions to callable functions
         converted_expressions = {}
-        for param_spec, value_spec in self.mechanism_parameters.iteritems():
+        for param_spec, value_spec in self.mechanism_parameters.items():
             if not isinstance(value_spec, str):
                 continue
             d_expression = value_spec
@@ -148,13 +148,13 @@ class NativeMultiSynapse(pyNN.neuron.BaseSynapse, synapses.StaticSynapse):
         translation_pairs = [('weight', 'weight'), ('delay', 'delay')]
 
         # Build default parameters and translations for mechanism
-        for mechname, receptor in mechs_receptors.iteritems():
+        for mechname, receptor in mechs_receptors.items():
             self.subcellular_conn[mechname] = {
                 'receptors': receptor,
                 'num_contacts': num_contacts,
                 'num_converge': 1,
             }
-            for pname, pinfo in synmech.SYN_MECH_DB[mechname]['parameters'].iteritems():
+            for pname, pinfo in synmech.SYN_MECH_DB[mechname]['parameters'].items():
                 prefixed_pname = mechname + '_' + pname
                 translation_pairs.append((prefixed_pname, prefixed_pname))
                 self.default_parameters[prefixed_pname] = pinfo['value']

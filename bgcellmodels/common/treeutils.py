@@ -8,7 +8,7 @@ from neuron import h
 import numpy as np
 
 from .nrnutil import seg_index, seg_xmin, seg_xmax, seg_xmid, seg_at_index, getsecref
-import StringIO
+from io import StringIO
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _h_section_ref = h.SectionRef
@@ -694,7 +694,7 @@ def gather_rangevar_along_paths(
                 path_segments)
 
         # Measure using custom functions
-        for measure_name, measure_func in measure_funcs.iteritems():
+        for measure_name, measure_func in measure_funcs.items():
             path_measurements[measure_name] = map(measure_func, path_segments)
 
         leaf_path_measurements.append(path_measurements)

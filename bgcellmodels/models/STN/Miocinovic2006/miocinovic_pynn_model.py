@@ -48,7 +48,7 @@ class GilliesSwcModel(cell_base.MorphModelBase):
         'HVA':  ['gcaL', 'gcaN'],
         'Cacum':[],
     }
-    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.iteritems() for p in params]
+    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.items() for p in params]
     gleak_name = 'gpas_STh'
 
     # Scaling of NEURON RANGE variables

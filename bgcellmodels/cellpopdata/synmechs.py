@@ -14,7 +14,7 @@ nrn = neuron.nrn # types nrn.Section and nrn.Segment
 h = neuron.h
 
 from bgcellmodels.mechanisms import synapses
-from physiotypes import Populations, NTReceptors, ParameterSource
+from bgcellmodels.cellpopdata.physiotypes import Populations, NTReceptors, ParameterSource
 Pop = Populations
 Rec = NTReceptors
 Src = ParameterSource
@@ -163,7 +163,7 @@ def getSynMechParamNames(mech_name):
     mech_parnames = []
 
     # Get all parameter names prefixed by 'syn:'
-    for ntr, params_names in ntr_params_names.iteritems():
+    for ntr, params_names in ntr_params_names.items():
         for pname in params_names.values():
             matches = re.search(r'^(?P<mech>\w+):(?P<parname>\w+)(\[(?P<idx>\d+)\])?', pname)
             mechtype = matches.group('mech')
@@ -330,7 +330,7 @@ def get_synapse_data(connector, synapses, netcons):
         # gbar parameters that need to be scaled
         syn_info.gbar_param_specs = []
         ntrs_params = getNrnConParamMap(modname)
-        for ntr, syn_param_specs in ntrs_params.iteritems():
+        for ntr, syn_param_specs in ntrs_params.items():
             if 'gbar' in syn_param_specs:
                 syn_info.gbar_param_specs.append(syn_param_specs['gbar'])
 

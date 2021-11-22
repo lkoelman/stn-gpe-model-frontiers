@@ -95,7 +95,7 @@ mechs_params_dict = {
 
 # All mechanism parameters that are not conductances
 mechs_params_nogbar = dict(mechs_params_dict)
-for mech, params in mechs_params_nogbar.iteritems():
+for mech, params in mechs_params_nogbar.items():
     for gbar_param in gbar_dict.get(mech, []):
         try:
             params.remove(gbar_param)
@@ -105,7 +105,7 @@ for mech, params in mechs_params_nogbar.iteritems():
 
 # List of mechanisms, max conductance params, active conductances
 mechs_list = [k for k in mechs_params_dict.keys() if k!=''] # all mechanisms
-gbar_list = [gname+'_'+mech for mech,chans in gbar_dict.iteritems() for gname in chans]
+gbar_list = [gname+'_'+mech for mech,chans in gbar_dict.items() for gname in chans]
 active_gbar_names = [gname for gname in gbar_list if gname != gleak_name]
 
 
@@ -262,7 +262,7 @@ def define_parameters(
             spec = param_spec['value']
             if isinstance(spec, (float, int)):
                 value = spec
-            elif isinstance(spec, (str, unicode)):
+            elif isinstance(spec, str):
                 value = eval(spec.format(**genesis_params))
             else:
                 raise ValueError(
@@ -359,7 +359,7 @@ def define_parameters(
 
         p = parameters[-1]
         logger.debug("Created parameter description:\n" + "\n\t".join(
-            ["{} : {}".format(k,getattr(p,k)) for k in 'name', 'value', 'bounds']))
+            ["{} : {}".format(k,getattr(p,k)) for k in ['name', 'value', 'bounds']]))
 
     # delete dummy section
     h.delete_section(sec=dummysec)
@@ -511,7 +511,7 @@ if __name__ == '__main__':
 
     # Save cell
     # from bgcellmodels.morphology import morph_io
-    # import cPickle as pickle
+    # import pickle
     # cell_data = morph_io.cell_to_dict(
     #                     section=icell.soma[0],
     #                     descr='Gunay (2008) GPe cell, axonless',

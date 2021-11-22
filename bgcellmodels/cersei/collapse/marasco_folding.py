@@ -291,7 +291,7 @@ class FoldingPass(object):
         # Name for equivalent zipped section
         # name_sanitized = par_sec.name().replace('[','').replace(']','').replace('.','_')
         name_sanitized = re.sub(r"[\[\]\.]", "", par_sec.name())
-        alphabet_uppercase = [chr(i) for i in xrange(65,90+1)] # A-Z are ASCII 65-90
+        alphabet_uppercase = [chr(i) for i in range(65,90+1)] # A-Z are ASCII 65-90
         zip_label = "zip{0}_{1}".format(alphabet_uppercase[self.i_pass], name_sanitized)
         zip_id = 1000*self.i_pass + j_zip
 
@@ -457,7 +457,7 @@ class FoldingPass(object):
         """
         
         # Set passive electrical properties
-        for cluster, eqref in clusters_refs.iteritems():
+        for cluster, eqref in clusters_refs.items():
             eqsec = eqref.sec
 
             # Scale passive electrical properties
@@ -522,7 +522,7 @@ class FoldingPass(object):
         else:
             raise ValueError("Unknown path property '{}'".format(self.interp_prop))
 
-        for cluster, eqref in clusters_refs.iteritems():
+        for cluster, eqref in clusters_refs.items():
             logger.debug("Scaling properties of cluster %s ..." % cluster.label)
             eqsec = eqref.sec
 
@@ -575,7 +575,7 @@ class FoldingPass(object):
         @post   
         """
 
-        for cluster, eqref in clusters_refs.iteritems():
+        for cluster, eqref in clusters_refs.items():
             eqsec = eqref.sec
 
             # Re-scale gbar distribution to yield same total gbar (sum(gbar*area))
@@ -622,7 +622,7 @@ class FoldingPass(object):
 
         orsecrefs = self.reduction.all_sec_refs
 
-        for cluster, eqref in clusters_refs.iteritems():
+        for cluster, eqref in clusters_refs.items():
             eqsec = eqref.sec
 
             # Disconnect substituted segments and attach segment after Y boundary

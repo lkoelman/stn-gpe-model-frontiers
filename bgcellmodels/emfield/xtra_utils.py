@@ -67,12 +67,12 @@ def set_transfer_impedances_nearest(seclist, Z_coords, Z_values,
         nseg = sec.nseg
 
         # Get 3D sample points for section
-        xx = h.Vector([h.x3d(i, sec=sec) for i in xrange(num_samples)])
-        yy = h.Vector([h.y3d(i, sec=sec) for i in xrange(num_samples)])
-        zz = h.Vector([h.z3d(i, sec=sec) for i in xrange(num_samples)])
+        xx = h.Vector([h.x3d(i, sec=sec) for i in range(num_samples)])
+        yy = h.Vector([h.y3d(i, sec=sec) for i in range(num_samples)])
+        zz = h.Vector([h.z3d(i, sec=sec) for i in range(num_samples)])
 
         # Length in micron from start of section to sample i
-        pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in xrange(num_samples)])
+        pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in range(num_samples)])
         L = pt_locs.x[num_samples-1]
 
         # Normalized location of 3D sample points (0-1)
@@ -157,12 +157,12 @@ def set_transfer_impedances_interp(seclist, Z_coords, Z_values,
         nseg = sec.nseg
 
         # Get 3D sample points for section
-        xx = h.Vector([h.x3d(i, sec=sec) for i in xrange(num_samples)])
-        yy = h.Vector([h.y3d(i, sec=sec) for i in xrange(num_samples)])
-        zz = h.Vector([h.z3d(i, sec=sec) for i in xrange(num_samples)])
+        xx = h.Vector([h.x3d(i, sec=sec) for i in range(num_samples)])
+        yy = h.Vector([h.y3d(i, sec=sec) for i in range(num_samples)])
+        zz = h.Vector([h.z3d(i, sec=sec) for i in range(num_samples)])
 
         # Length in micron from start of section to sample i
-        pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in xrange(num_samples)])
+        pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in range(num_samples)])
         L = pt_locs.x[num_samples-1]
 
         # Normalized location of 3D sample points (0-1)

@@ -22,12 +22,12 @@ import neuron
 nrn = neuron.nrn # types nrn.Section and nrn.Segment
 h = neuron.h
 
-from physiotypes import PhysioState, Populations, NTReceptors, ParameterSource
+from bgcellmodels.cellpopdata.physiotypes import PhysioState, Populations, NTReceptors, ParameterSource
 Pop = Populations
 Rec = NTReceptors
 Src = ParameterSource
 
-import synmechs
+from bgcellmodels.cellpopdata import synmechs
 
 from bgcellmodels.common.configutil import interpretParamSpec
 from bgcellmodels.common import logutils
@@ -173,7 +173,7 @@ class CellConnector(object):
             if citation in firing_params[pre_pop]:
 
                 # Update params if requested Physiological state matches the described state
-                for state_described, params in firing_params[pre_pop][citation].iteritems():
+                for state_described, params in firing_params[pre_pop][citation].items():
                     if phys_state.is_subset(state_described):
                         fp_final.update(params)
 
@@ -668,7 +668,7 @@ class CellConnector(object):
             physio_to_values = physio_params[rec]
 
             # Translate each physiological parameter to NEURON parameter
-            for physio_name, nrn_param_spec in physio_to_nrn.iteritems():
+            for physio_name, nrn_param_spec in physio_to_nrn.items():
 
                 # Check if parameters is available from given sources
                 if physio_name not in physio_to_values:
@@ -892,7 +892,7 @@ class CellConnector(object):
                 phys_params = con_par_data[rec] # physiological parameters from given sources
 
             # Translate each param value to a mechanism parameter
-            for phys_parname, mech_parspec in parname_map.iteritems():
+            for phys_parname, mech_parspec in parname_map.items():
 
                 # Check if parameters is available from given sources
                 if phys_parname not in phys_params:
@@ -930,7 +930,7 @@ class CellConnector(object):
 
         # Custom synaptic mechanism parameters
         if custom_synpar is not None:
-            for pname, pval in custom_synpar.iteritems():
+            for pname, pval in custom_synpar.items():
                 setattr(syn, pname, pval)
 
         # Apply possible corrections to synaptic parameters
