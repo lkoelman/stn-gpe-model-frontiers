@@ -1,7 +1,9 @@
 # Introduction
 
 This is the code for biological neural network model published in the paper
-[Beta-Band Resonance and Intrinsic Oscillations in a Biophysically Detailed Model of the Subthalamic Nucleus-Globus Pallidus Network](https://www.frontiersin.org/articles/10.3389/fncom.2019.00077/full)
+[Beta-Band Resonance and Intrinsic Oscillations in a Biophysically Detailed Model of the Subthalamic Nucleus-Globus Pallidus Network](https://www.frontiersin.org/articles/10.3389/fncom.2019.00077/full).
+
+The main branch is the original code written for python 2.7. The updated code for Python 3.X is maintained on the branch [python3](https://github.com/lkoelman/stn-gpe-model-frontiers/tree/python3), with help of [@DavidCromp](https://github.com/DavidCromp).
 
 # Installation
 
@@ -15,16 +17,15 @@ pip install -e .
 cd ..
 
 # PyNN for network simulation (patched version)
-git clone https://github.com/lkoelman/PyNN.git
-cd PyNN && git checkout lkmn-multicomp
-cd pyNN/neuron/nmodl && nrnivmodl
+git clone -b lkmn-multicomp https://github.com/lkoelman/PyNN.git
+cd PyNN/pyNN/neuron/nmodl && nrnivmodl
 cd ../../.. & pip install -e .
 cd ..
 
-# Neo electrophysiology data formats (patched version)
+# Neo electrophysiology data formats (patched version with MATLAB annotation support)
 pip uninstall neo
-git clone https://github.com/lkoelman/python-neo.git
-cd python-neo && git checkout lkmn-dev # development version with MATLAB annotation support
+git clone -b lkmn-dev https://github.com/lkoelman/python-neo.git
+cd python-neo 
 pip install -e .
 cd ..
 
