@@ -125,7 +125,7 @@ def test_protocol(stim_proto, model, export_locals=True):
     anls_proto.plot_proto_responses(protos_responses)
    
     # from matplotlib import pyplot as plt
-    # for resp_name, traces in responses.iteritems():
+    # for resp_name, traces in responses.items():
     #     if resp_name.lower().endswith('.v'):
     #         plt.figure()
     #         plt.plot(traces['time'], traces['voltage'])
@@ -352,7 +352,7 @@ def make_optimisation(model_type=None, parallel=False, export_locals=False):
 
     # # Plot responses
     # from matplotlib import pyplot as plt
-    # for resp_name, traces in responses.iteritems():
+    # for resp_name, traces in responses.items():
     #   plt.figure()
     #   plt.plot(traces['time'], traces['voltage'])
     #   plt.suptitle(resp_name)
@@ -389,7 +389,7 @@ def make_optimisation(model_type=None, parallel=False, export_locals=False):
     # Evaluator ================================================================
 
     # Make evaluator to evaluate model using objective calculator
-    opt_ephys_protos = {k.name: v.ephys_protocol for k,v in red_protos.iteritems()}
+    opt_ephys_protos = {k.name: v.ephys_protocol for k,v in red_protos.items()}
     opt_params_names = [param.name for param in free_params]
     
     # TODO: check that: synapse parameters must be on model but unactive during clamp protocols
@@ -424,7 +424,7 @@ def make_optimisation(model_type=None, parallel=False, export_locals=False):
         'evaluator':            cell_evaluator,
         'optimisation':         optimisation,
     }
-    # opt_data = {k:v for k,v in locals().iteritems() if k in save_vars}
+    # opt_data = {k:v for k,v in locals().items() if k in save_vars}
 
     if export_locals:
         globals().update(locals())

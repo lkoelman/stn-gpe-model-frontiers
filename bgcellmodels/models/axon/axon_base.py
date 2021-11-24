@@ -429,7 +429,7 @@ class AxonBuilder(object):
 
         # Build axon progressively by walking along streamline path
         prev_sec = self.parent_sec
-        for i_compartment in xrange(MAX_NUM_COMPARTMENTS):
+        for i_compartment in range(MAX_NUM_COMPARTMENTS):
 
             # Find properties of next Section (compartment type)
             sec_type, sec_attrs = self.get_next_compartment_def(i_compartment)

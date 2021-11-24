@@ -102,7 +102,7 @@ def eval_params(param_dict, caller_globals, caller_locals):
                 Same as param_dict but each parameter specification is evaluated.
     """
     params_evaluated = {}
-    for param_name, param_spec in param_dict.iteritems():
+    for param_name, param_spec in param_dict.items():
 
         if isinstance(param_spec, dict):
             # Parameter specification is a statement to be avaluated in
@@ -119,7 +119,7 @@ def eval_params(param_dict, caller_globals, caller_locals):
             # Numerical values are passed as is
             params_evaluated[param_name] = param_spec
 
-        elif isinstance(param_spec, (str, unicode)):
+        elif isinstance(param_spec, str):
             # String values are passed as is
             params_evaluated[param_name] = param_spec
 

@@ -380,7 +380,7 @@ class SelfContainedProtocol(ephys.protocols.SweepProtocol):
 		self._iproto_data.update(self._proto_setup_kwargs_const)
 
 		# kwargs getters add keyword arguments on-the-fly
-		for kwarg_name, kwarg_getter in self._proto_setup_kwargs_getters.iteritems():
+		for kwarg_name, kwarg_getter in self._proto_setup_kwargs_getters.items():
 			self._iproto_data[kwarg_name] = kwarg_getter(self._iproto_data)
 
 		cell_model.proto_setup_funcs = self._proto_setup_funcs_pre

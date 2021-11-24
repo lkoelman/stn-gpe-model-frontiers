@@ -900,7 +900,7 @@ def get_efel_features(
         efel.setThreshold(threshold)
 
     if kwargs is not None:
-        for pname, pval in kwargs.iteritems():
+        for pname, pval in kwargs.items():
             if isinstance(pval, float):
                 efel.setDoubleSetting(pname, pval)
             elif isinstance(pval, int):

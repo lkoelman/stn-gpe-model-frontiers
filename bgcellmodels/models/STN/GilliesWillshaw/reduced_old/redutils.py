@@ -582,7 +582,7 @@ def substitute_cluster(rootref, cluster, clu_eqsec, allsecrefs, mechs_pars,
         cut_sec.L = pre_cut_L
         for jseg, seg in enumerate(cut_sec):
             pseg = cut_props[jseg]
-            for pname, pval in pseg.iteritems():
+            for pname, pval in pseg.items():
                 seg.__setattr__(pname, pval)
 
         # Mark as being cut
@@ -618,7 +618,7 @@ def substitute_cluster(rootref, cluster, clu_eqsec, allsecrefs, mechs_pars,
             cut_sec.L = post_cut_L
             for jseg, seg in enumerate(cut_sec):
                 pseg = cut_props[cut_seg_index + jseg]
-                for pname, pval in pseg.iteritems():
+                for pname, pval in pseg.items():
                     seg.__setattr__(pname, pval)
 
         # Set child segment for equivalent section
@@ -671,7 +671,7 @@ def sub_equivalent_Y_sec(eqsec, parent_seg, bound_segs, allsecrefs, mechs_pars,
     eqsec_child_segs = []
     for bound_seg in bound_segs: # last absorbed/collapsed segment
         cut_segs = next_segs(bound_seg) # first segment after cut (not collapsed)
-        for i in xrange(len(cut_segs)):
+        for i in range(len(cut_segs)):
             cut_seg = cut_segs[i] # cut_seg may be destroyed by resizing so don't make loop variable
             cut_sec = cut_seg.sec
             cut_seg_index = seg_index(cut_seg)
@@ -693,7 +693,7 @@ def sub_equivalent_Y_sec(eqsec, parent_seg, bound_segs, allsecrefs, mechs_pars,
                 cut_sec.L = post_cut_L
                 for jseg, seg in enumerate(cut_sec):
                     pseg = cut_props[cut_seg_index + jseg]
-                    for pname, pval in pseg.iteritems():
+                    for pname, pval in pseg.items():
                         seg.__setattr__(pname, pval)
                 logger.debug("Cut section {0} and re-assigned segment properties.".format(cut_sec.name()))
 
@@ -831,7 +831,7 @@ def get_range_props(secref, prop_names):
     Get Section's requested RANGE properties for each segment.
     """
 
-    seg_prop_dicts = [dict() for i in xrange(secref.sec.nseg)]
+    seg_prop_dicts = [dict() for i in range(secref.sec.nseg)]
 
     for j_seg, seg in enumerate(secref.sec):
         for prop in prop_names:
@@ -849,7 +849,7 @@ def set_range_props(secref, seg_prop_dicts):
     
     for j_seg, seg in enumerate(secref.sec):
         propdict = seg_prop_dicts[j_seg]
-        for pname, pval in propdict.iteritems():
+        for pname, pval in propdict.items():
             setattr(seg, pname, pval)
 
 
@@ -883,8 +883,8 @@ def get_sec_props_obj(secref, mechs_pars, seg_assigned, sec_assigned):
         setattr(sec_props, prop, getattr(secref, prop))
 
     # Initialize segment RANGE properties
-    sec_props.seg = [dict() for i in xrange(secref.sec.nseg)]
-    bprops = [par+'_'+mech for mech,pars in mechs_pars.iteritems() for par in pars] # NEURON properties
+    sec_props.seg = [dict() for i in range(secref.sec.nseg)]
+    bprops = [par+'_'+mech for mech,pars in mechs_pars.items() for par in pars] # NEURON properties
     
     # Store segment RANGE properties
     for j_seg, seg in enumerate(secref.sec):
@@ -919,8 +919,8 @@ def store_seg_props(secref, mechs_pars, attr_name='or_seg_props', assigned_props
     """
 
     # Initialize segment RANGE properties
-    secref.__setattr__(attr_name, [dict() for i in xrange(secref.sec.nseg)])
-    nrn_props = [par+'_'+mech for mech,pars in mechs_pars.iteritems() for par in pars] # NEURON properties
+    secref.__setattr__(attr_name, [dict() for i in range(secref.sec.nseg)])
+    nrn_props = [par+'_'+mech for mech,pars in mechs_pars.items() for par in pars] # NEURON properties
     ref_props = [] if assigned_props is None else assigned_props
 
     # Store segment RANGE properties
@@ -1017,7 +1017,7 @@ def set_ion_styles(tar_sec, **kwargs):
     """
     # Copy to target Section
     tar_sec.push()
-    for ion, style in kwargs.iteritems():
+    for ion, style in kwargs.items():
 
         # Decompose int into bit flags
         c_style = int(style) & (1+2)

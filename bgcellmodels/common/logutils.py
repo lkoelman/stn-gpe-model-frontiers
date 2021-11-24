@@ -144,7 +144,7 @@ def getLogLevel(level):
 	"""
 	Get log level from string
 	"""
-	if level in logging._levelNames:
+	if level in logging._nameToLevel:
 		return level
 	elif level.lower() in ['verbose', 'debug']: # DEBUG equivalents
 		return logging.DEBUG

@@ -156,7 +156,7 @@ def test_spont():
 
     # Convert results
     tvec = trec.as_numpy()
-    sigs = {k:v.as_numpy() for k,v in recvars.iteritems()}
+    sigs = {k:v.as_numpy() for k,v in recvars.items()}
 
     # plot results
     interval = (0,dur)

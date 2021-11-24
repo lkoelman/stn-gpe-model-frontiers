@@ -199,7 +199,7 @@ class MechanismType(type):
         newattrs['_MECH_STATE_TAU'] = {} # (optional) expression for time constant of state
         newattrs['_MECH_MEMB_CURRENTS'] = {} # (optional) expression for time constant of state
 
-        for attr_name, attr_val in namespace.iteritems():
+        for attr_name, attr_val in namespace.items():
             # Process special attributes created in class scope
             attr_type = getattr(attr_val, '_mech_attr_type', None)
             
@@ -288,7 +288,7 @@ class MechanismBase:
                                 v._param_name,
                                 v.val,
                                 v.units) 
-                for p,v in self._MECH_PARAMS.iteritems()
+                for p,v in self._MECH_PARAMS.items()
         }
 
 
@@ -313,7 +313,7 @@ class MechanismBase:
         caller_locals_dict = inspect.currentframe().f_back.f_locals
         def_mech_vars = MechanismType.group_namespace_vars(caller_locals_dict)
         subcls._MECH_PARAMS.update(def_mech_vars['_MECH_PARAMS'])
-        for pname, pval in def_mech_vars['_MECH_PARAMS'].iteritems():
+        for pname, pval in def_mech_vars['_MECH_PARAMS'].items():
             setattr(subcls, pname, pval)
     
 

@@ -354,7 +354,7 @@ def interpconductances(sec, tree_index, path_indices, glist=None):
 			raise Exception('could not map to branch')
 
 		# now interpolate all conductances from file
-		for gname, gmat in allgmats.iteritems():
+		for gname, gmat in allgmats.items():
 			if gname not in glist:
 				print('Skipping conductance: '+gname)
 				continue
@@ -367,7 +367,7 @@ def interpconductances(sec, tree_index, path_indices, glist=None):
 		gNaL = 1.108670852e-05 if tree_index==-1 else 0.81e-5 # see h.default_gNaL_soma/dend in .hoc file
 		gNarsg = 0.016 # same as in .mod file and Akeman papeer
 		g_fixed = {'gna_Na':gNa, 'gna_NaL':gNaL, 'gbar_Narsg':gNarsg} # NOTE: Narsg is NOT in Gillies model
-		for gname, gval in g_fixed.iteritems():
+		for gname, gval in g_fixed.items():
 			if gname in glist:
 				setattr(seg, gname, gval)
 
@@ -439,7 +439,7 @@ def setconductances(sec, dendidx, fixbranch=None, fixloc=None, glist=None):
 				raise Exception('could not map to branch')
 
 		# now interpolate all conductances from file
-		for gname, gmat in allgmats.iteritems():
+		for gname, gmat in allgmats.items():
 			if gname not in glist:
 				print('Skipping conductance: '+gname)
 				continue
@@ -452,6 +452,6 @@ def setconductances(sec, dendidx, fixbranch=None, fixloc=None, glist=None):
 		gNaL = 1.108670852e-05 if dendidx==-1 else 0.81e-5 # see h.default_gNaL_soma/dend in .hoc file
 		gNarsg = 0.016 # same as in .mod file and Akeman papeer
 		g_fixed = {'gna_Na':gNa, 'gna_NaL':gNaL, 'gbar_Narsg':gNarsg} # NOTE: Narsg is NOT in Gillies model
-		for gname, gval in g_fixed.iteritems():
+		for gname, gval in g_fixed.items():
 			if gname not in glist: continue
 			sec(xnode).__setattr__(gname, gval)

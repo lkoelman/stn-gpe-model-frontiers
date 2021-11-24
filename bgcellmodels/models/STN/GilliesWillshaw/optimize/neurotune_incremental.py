@@ -305,7 +305,7 @@ class STNCellController(object):
 		raise Exception("TESTME: check if self.__dict__ has variabled that need to be purged before updating locals()")
 
 		# Start iterative collapsing procedure
-		for i_pass in xrange(n_passes):
+		for i_pass in range(n_passes):
 			# Check that we haven't collapsed too many levels
 			if not (dendL_upper_root.exists() and dendL_lower_root.exists()):
 				logger.warning("Maximum number of collapses reached: Cannot collapse past trunk sections.")
@@ -424,7 +424,7 @@ class STNCellController(object):
 		gmax_pattern = re.compile(gmax_prefix)
 
 		# Adapt model according to candidate parameters
-		for par_name, par_value in cand_params.iteritems():
+		for par_name, par_value in cand_params.items():
 			scale_match = re.search(scale_pattern, par_name)
 			gmin_match = re.search(gmin_pattern, par_name)
 			gmax_match = re.search(gmax_pattern, par_name)

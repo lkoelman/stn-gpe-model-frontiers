@@ -249,7 +249,7 @@ class ScoresDictIndividual(dict):
 
 
     def get_param_values(self):
-        return [self[i] for i in xrange(self['param_size'])]
+        return [self[i] for i in range(self['param_size'])]
 
 
     # Implement Sequence interface for DEAP toolbox

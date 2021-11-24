@@ -280,7 +280,7 @@ if __name__ == '__main__':
 
     # Load cell
     # from bgcellmodels.morphology import morph_io
-    # import cPickle as pickle
+    # import pickle
     # with open(cell_pkl_file, 'rb') as file:
     #     cell_data = pickle.load(file)
     # seclists = morph_io.cell_from_dict(cell_data)

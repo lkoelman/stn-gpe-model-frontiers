@@ -44,7 +44,7 @@ def test_without_collaterals():
         'original': [np.array(axon_builder.streamline_pts)],
         'reconstructed': [np.array(axon_builder.interp_pts)],
     }
-    import cPickle as pickle
+    import pickle
     out_fpath = 'compare_axon_pre-post-build.pkl'
     with open(out_fpath, 'wb') as file:
         pickle.dump(build_results, file)

@@ -47,7 +47,7 @@ def make_spiketrains(signal, threshold, order_by=None,
     }
 
     spike_trains = []
-    for i_signal in xrange(signal.shape[1]):
+    for i_signal in range(signal.shape[1]):
         vm = vv[:, i_signal]
         spike_idx = sig_anal.spike_indices(vm, threshold, loc='onset')
         spike_times = tv[spike_idx]

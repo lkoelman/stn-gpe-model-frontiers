@@ -185,7 +185,7 @@ class FoldReduction(object):
 		Set mechanism names and their conductances
 		"""
 		self._mechs_gbars_dict = val
-		self.gbar_names = [gname+'_'+mech for mech,chans in val.iteritems() for gname in chans]
+		self.gbar_names = [gname+'_'+mech for mech,chans in val.items() for gname in chans]
 		self.active_gbar_names = list(self.gbar_names)
 		self.active_gbar_names.remove(self.gleak_name)
 
@@ -259,7 +259,7 @@ class FoldReduction(object):
 		
 		else:
 			user_params = self._REDUCTION_PARAMS[method]
-			user_kwargs = dict((kv for kv in user_params.iteritems() if kv[0] in arg_names)) # get required args
+			user_kwargs = dict((kv for kv in user_params.items() if kv[0] in arg_names)) # get required args
 			
 			if step_args is None:
 				step_args = []
@@ -387,7 +387,7 @@ class FoldReduction(object):
 		self.preprocess_cell(method)
 
 		# Fold one pass at a time
-		for i_pass in xrange(num_passes):
+		for i_pass in range(num_passes):
 			self.prepare_folds(method)
 			self.calc_folds(method, i_pass)
 			self.make_fold_equivalents(method)

@@ -88,7 +88,7 @@ def calc_collapses(target_Y_secs, i_pass, allsecrefs):
 		# Name for equivalent zipped section
 		# name_sanitized = par_sec.name().replace('[','').replace(']','').replace('.','_')
 		name_sanitized = re.sub(r"[\[\]\.]", "", par_sec.name())
-		alphabet_uppercase = [chr(i) for i in xrange(65,90+1)] # A-Z are ASCII 65-90
+		alphabet_uppercase = [chr(i) for i in range(65,90+1)] # A-Z are ASCII 65-90
 		zip_label = "zip{0}_{1}".format(alphabet_uppercase[i_pass], name_sanitized)
 		zip_id = 1000*i_pass + j_zip
 
@@ -396,7 +396,7 @@ def assign_attributes(noderef, allsecrefs, attr_dict):
 	@param attr_dict	dictionary of key-value pairs (attribute_name, attribute_value)
 	"""
 	# Assign current node
-	for aname, aval in attr_dict.iteritems():
+	for aname, aval in attr_dict.items():
 		setattr(noderef, aname, aval)
 
 	childsecs = noderef.sec.children()
@@ -653,7 +653,7 @@ def reduce_gillies_incremental(n_passes, zips_per_pass):
 	# Iterative/recursive collapsing
 
 	eq_secrefs = []
-	for i_pass in xrange(n_passes):
+	for i_pass in range(n_passes):
 		# Check that we haven't collapsed too many levels
 		if not (dendL_upper_root.exists() and dendL_lower_root.exists()):
 			logger.warning("Maximum number of collapses reached: Cannot collapse past trunk sections.")

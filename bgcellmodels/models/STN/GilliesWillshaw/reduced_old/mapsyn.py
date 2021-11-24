@@ -234,7 +234,7 @@ def get_syn_info(rootsec, allsecrefs, syn_mod_pars=None, Z_freq=25., linearize_g
 			setattr(syn_info, par, getattr(syn, par))
 
 		# Save all NetCon objects targetting this synapse
-		syn_info.afferent_weights = [[nc.weight[i] for i in xrange(int(nc.wcnt()))] for nc in syn_info.afferent_netcons]
+		syn_info.afferent_weights = [[nc.weight[i] for i in range(int(nc.wcnt()))] for nc in syn_info.afferent_netcons]
 
 		# Save requested properties of synapse SectionRef
 		syn_info.saved_ref_attrs = save_ref_attrs
@@ -242,7 +242,7 @@ def get_syn_info(rootsec, allsecrefs, syn_mod_pars=None, Z_freq=25., linearize_g
 			setattr(syn_info, attr, getattr(syn_secref, attr))
 
 		# Save other computed properties
-		for attr, mapper in attr_mappers.iteritems():
+		for attr, mapper in attr_mappers.items():
 			setattr(syn_info, attr, mapper(syn))
 
 		# Get axial path resistance to synapse
@@ -494,7 +494,7 @@ def map_synapses(rootref, allsecrefs, orig_syn_info, init_cell, Z_freq,
 				assert len(orig_weights) == int(nc.wcnt())
 				
 				# Scale original weights
-				for i_w in xrange(int(nc.wcnt())):
+				for i_w in range(int(nc.wcnt())):
 					nc.weight[i_w] = orig_weights[i_w] * scale_g
 					logger.anal("Scaled weight {} by factor {}".format(orig_weights[i_w], scale_g))
 

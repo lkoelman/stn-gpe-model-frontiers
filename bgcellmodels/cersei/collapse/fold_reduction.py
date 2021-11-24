@@ -183,7 +183,7 @@ class FoldReduction(object):
         Save reduced cell as binary pickle file.
         """
         from bgcellmodels.morphology import morph_io
-        import cPickle as pickle
+        import pickle
 
         if not pkl_path.endswith('.pkl'):
             pkl_path += '.pkl'
@@ -236,7 +236,7 @@ class FoldReduction(object):
 
         # Merge two dicts
         self.mechs_params_all = dict(param_dict)
-        for mech, gbars in gbar_dict.iteritems():
+        for mech, gbars in gbar_dict.items():
             if mech in self.mechs_params_all:
                 old_params = self.mechs_params_all[mech]
                 new_params = list(set(old_params + gbars))
@@ -244,7 +244,7 @@ class FoldReduction(object):
                 new_params = list(gbars)
             self.mechs_params_all[mech] = new_params
 
-        self.gbar_names = [gname+'_'+mech for mech,chans in gbar_dict.iteritems()
+        self.gbar_names = [gname+'_'+mech for mech,chans in gbar_dict.items()
                                             for gname in chans]
         self.active_gbar_names = list(self.gbar_names)
         if self.gleak_name in self.active_gbar_names:
@@ -458,7 +458,7 @@ class FoldReduction(object):
         self.folder.preprocess_reduction()
 
         # Actual reduction procedure
-        for i_pass in xrange(num_passes):
+        for i_pass in range(num_passes):
             new_refs = self.folder.fold_one_pass(i_pass)
             self.postprocess_fold(new_refs)
             logger.debug('Finished folding pass {}'.format(i_pass))

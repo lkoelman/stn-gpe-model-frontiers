@@ -384,7 +384,7 @@ class StnModelEvaluator(object):
 
         mech_param_names = {}
         
-        for pre_pop, input_dict in self.model_data[model]['inputs'].iteritems():
+        for pre_pop, input_dict in self.model_data[model]['inputs'].items():
             
             for nc in input_dict['syn_NetCons']:
                 
@@ -469,7 +469,7 @@ class StnModelEvaluator(object):
         """
         pop_inputs = self.model_data[model]['inputs'].get(pre_pop, {})
 
-        for input_type, input_objs in kwargs.iteritems():
+        for input_type, input_objs in kwargs.items():
             if input_type in pop_inputs:
                 # Add to list (don't overwrite)
                 pop_inputs[input_type].extend(input_objs)
@@ -516,7 +516,7 @@ class StnModelEvaluator(object):
             if not pop in self.model_data[model]['inputs']:
                 logger.warning('No inputs found for pre-synaptic population {}'.format(pop))
                 continue
-            for input_type, inputs in self.model_data[model]['inputs'][pop].iteritems():
+            for input_type, inputs in self.model_data[model]['inputs'][pop].items():
                 extend_dictitem(merged, input_type, inputs, append=False)
         return merged
 
@@ -559,9 +559,9 @@ class StnModelEvaluator(object):
         inputs = self.model_data[model]['inputs']
 
         if 'NetCon' in syn.hname(): # dirty hack: cast to NetCon if named 'NetCon[xyz]'
-            gen_pop = (pop for (pop, conn_data) in inputs.iteritems() if syn in conn_data['syn_NetCons'])
+            gen_pop = (pop for (pop, conn_data) in inputs.items() if syn in conn_data['syn_NetCons'])
         else:
-            gen_pop = (pop for (pop, conn_data) in inputs.iteritems() if syn in conn_data['synapses'])
+            gen_pop = (pop for (pop, conn_data) in inputs.items() if syn in conn_data['synapses'])
         
         return next(gen_pop, None)
 
@@ -827,7 +827,7 @@ class StnModelEvaluator(object):
         """
         rec_segs = self.model_data[self.target_model]['rec_segs'][protocol]
         
-        for seclabel, seg in rec_segs.iteritems():
+        for seclabel, seg in rec_segs.items():
             if isinstance(seg, neuron.nrn.Segment):
                 traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 
@@ -880,7 +880,7 @@ class StnModelEvaluator(object):
         if stim_protocol == StimProtocol.SPONTANEOUS: # spontaneous firing (no inputs)
             
             # Trace specs for membrane voltages
-            for seclabel, seg in rec_segs.iteritems():
+            for seclabel, seg in rec_segs.items():
                 traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 
             # Trace specs for recording ionic currents, channel states
@@ -924,7 +924,7 @@ class StnModelEvaluator(object):
 
 
             # Specify which traces you want in these sections
-            for seclabel, seg in rec_segs.iteritems():
+            for seclabel, seg in rec_segs.items():
                 # Membrane voltages
                 traceSpecs['V_'+seclabel] = {'sec':seclabel, 'loc':seg.x, 'var':'v'}
 
@@ -949,7 +949,7 @@ class StnModelEvaluator(object):
 
         # Prepare dictionary (label -> Section)
         rec_secs = {}
-        for seclabel, hobj in rec_segs.iteritems():
+        for seclabel, hobj in rec_segs.items():
             if isinstance(hobj, neuron.nrn.Segment):
                 rec_secs[seclabel] = hobj.sec
             else:
@@ -982,7 +982,7 @@ class StnModelEvaluator(object):
 
         # convert h.Vector to numpy array
         trace_data = rec_data['trace_data']
-        for k,v in trace_data.iteritems():
+        for k,v in trace_data.items():
             trace_data[k] = v.as_numpy()
 
         # Write arrays to npz file
@@ -1282,7 +1282,7 @@ class StnModelEvaluator(object):
             self._iproto_data = kwargs_default
             self._iproto_data.update(self._proto_setup_kwargs_const)
 
-            for kwarg_name, kwarg_getter in self._proto_setup_kwargs_getters.iteritems():
+            for kwarg_name, kwarg_getter in self._proto_setup_kwargs_getters.items():
                 self._iproto_data[kwarg_name] = kwarg_getter(self._iproto_data)
             for kwarg_setter in self._proto_setup_kwargs_setters:
                 kwarg_setter(self._iproto_data)

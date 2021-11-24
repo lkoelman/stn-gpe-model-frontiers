@@ -296,7 +296,7 @@ def label_seg_electrotonic(noderef, thresholds, labelsuffix=''):
 
     # Cluster each segment
     noderef.cluster_labels = ['unassigned'] * noderef.sec.nseg
-    for i in xrange(noderef.sec.nseg):
+    for i in range(noderef.sec.nseg):
         pathL = noderef.pathL_elec[i] # electrotonic path length of segment i
         if pathL <= thresholds[0]:
             noderef.cluster_labels[i] = 'trunk' + labelsuffix

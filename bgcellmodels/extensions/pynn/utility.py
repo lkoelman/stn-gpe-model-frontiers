@@ -18,7 +18,7 @@ def connection_plot(projection, positive='O', zero='.', empty=' ', spacer=''):
     nan_mask = numpy.isnan(connection_array)
     connection_array[nan_mask] = -1.0
 
-    image = numpy.zeros_like(connection_array, dtype=unicode)
+    image = numpy.zeros_like(connection_array,dtype=str)
     # old_settings = numpy.seterr(invalid='ignore')  # ignore the complaint that x > 0 is invalid for NaN
     image[connection_array > 0] = positive
     image[connection_array == 0] = zero

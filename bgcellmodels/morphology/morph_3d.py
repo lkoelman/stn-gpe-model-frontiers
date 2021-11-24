@@ -42,14 +42,14 @@ def get_section_samples(section_lists, include_diam=True):
                      h.y3d(i, sec=sec),
                      h.z3d(i, sec=sec),
                      h.diam3d(i, sec=sec))
-                        for i in xrange(num_samples)
+                        for i in range(num_samples)
                 ]
             else:
                 sec_samples = [
                     (h.x3d(i, sec=sec),
                      h.y3d(i, sec=sec),
                      h.z3d(i, sec=sec))
-                        for i in xrange(num_samples)
+                        for i in range(num_samples)
                 ]
             all_samples.extend(sec_samples)
             sections_numsample.append(num_samples)
@@ -85,12 +85,12 @@ def get_segment_centers(section_lists, samples_as_rows=False):
             sections_numsample.append(nseg + 2)
 
             # Get 3D sample points for section
-            xx = h.Vector([h.x3d(i, sec=sec) for i in xrange(num_samples)])
-            yy = h.Vector([h.y3d(i, sec=sec) for i in xrange(num_samples)])
-            zz = h.Vector([h.z3d(i, sec=sec) for i in xrange(num_samples)])
+            xx = h.Vector([h.x3d(i, sec=sec) for i in range(num_samples)])
+            yy = h.Vector([h.y3d(i, sec=sec) for i in range(num_samples)])
+            zz = h.Vector([h.z3d(i, sec=sec) for i in range(num_samples)])
 
             # Length in micron from start of section to sample i
-            pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in xrange(num_samples)])
+            pt_locs = h.Vector([h.arc3d(i, sec=sec) for i in range(num_samples)])
             L = pt_locs.x[num_samples-1]
 
             # Normalized location of 3D sample points (0-1)
@@ -171,13 +171,13 @@ def transform_sections(secs, A):
         num_verts = int(h.n3d(sec=sec))
         src_verts = np.array([
             [h.x3d(i, sec=sec), h.y3d(i, sec=sec), h.z3d(i, sec=sec), 1.0]
-            for i in xrange(num_verts)])
+            for i in range(num_verts)])
 
         # Transform vertex matrix
         new_verts = np.dot(src_verts, A.T)
 
         # Update 3D info
-        for i in xrange(num_verts):
+        for i in range(num_verts):
             diam = h.diam3d(i, sec=sec)
             h.pt3dchange(i, new_verts[i, 0], new_verts[
                          i, 1], new_verts[i, 2], diam, sec=sec)

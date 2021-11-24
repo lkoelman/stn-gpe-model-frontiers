@@ -8,7 +8,7 @@ Optimization of Gunay et al. (2008) GPe neuron model.
 
 # Python standard library
 import os.path, re
-import cPickle as pickle
+import pickle
 from collections import OrderedDict
 
 # Third party libraries

@@ -217,18 +217,18 @@ class EphysModelWrapper(ephys.models.CellModel, cell_base.MorphModelBase):
             morph=getattr(self, '_ephys_morphology', None),
             mechs=getattr(self, '_ephys_mechanisms', None),
             params=ephys_param_defs)
-        ephys_param_names = self.params.keys() # ephys param dict
+        ephys_param_names = list(self.params.keys()) # ephys param dict
 
         # Don't pass ephys parameters to base class
         ephys_params_args = {
-            k : kwargs.pop(k) for k in kwargs.keys() if k in ephys_param_names
+            k : kwargs.pop(k) for k in list(kwargs.keys()) if k in ephys_param_names
         }
 
         # Call constructor of second base class
         cell_base.MorphModelBase.__init__(self, *args, **kwargs)
 
         # Handle post-instantiation parameters
-        for param_name, param_value in ephys_params_args.iteritems():
+        for param_name, param_value in ephys_params_args.items():
             if isinstance(param_value, ArrayParameter):
                 param_value = param_value.value
             if self.params[param_name].value != param_value:
@@ -236,7 +236,7 @@ class EphysModelWrapper(ephys.models.CellModel, cell_base.MorphModelBase):
 
         # # Parameters that are not dynamic must be set before instantiate
         # instantiated_params = set()
-        # for param_name, param_value in kwargs.iteritems():
+        # for param_name, param_value in kwargs.items():
         #     if (param_name not in ephys_param_names) and (not param_name.endswith('_scale')):
         #         setattr(self, param_name, param_value)
         #         instantiated_params.add(param_name)
@@ -246,7 +246,7 @@ class EphysModelWrapper(ephys.models.CellModel, cell_base.MorphModelBase):
         # self.instantiate(sim=self.sim)
 
         # # Parse parameters passed by cell type
-        # for param_name, param_value in kwargs.iteritems():
+        # for param_name, param_value in kwargs.items():
         #     if param_name in instantiated_params:
         #         continue
         #     elif (param_name in ephys_param_names) and \

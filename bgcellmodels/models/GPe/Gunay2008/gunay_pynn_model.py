@@ -7,7 +7,7 @@ PyNN compatible cell models for GPe cell model.
 
 """
 
-import cPickle as pickle
+import pickle
 import os.path
 
 from neuron import h
@@ -22,7 +22,7 @@ from bgcellmodels.extensions.pynn.ephys_locations import SomaDistanceRangeLocati
 from bgcellmodels.morphology import morph_3d
 from bgcellmodels.models.axon.foust2011 import AxonFoust2011
 
-import gunay_model
+from bgcellmodels.models.GPe.Gunay2008 import gunay_model
 
 # logutils.setLogLevel('quiet', [
 #     'bluepyopt.ephys.parameters',
@@ -98,7 +98,7 @@ class GPeCellModel(ephys_pynn.EphysModelWrapper):
         'CaHVA':    ['gmax'],
         # 'Calcium':  [''],
     }
-    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.iteritems() for p in params]
+    rangevar_names = [p+'_'+m for m,params in _mechs_params_dict.items() for p in params]
     gleak_name = 'g_pas'
 
     # map rangevar to cell region where it should be scaled, default is 'all'
@@ -122,8 +122,8 @@ class GPeCellModel(ephys_pynn.EphysModelWrapper):
 
     def __init__(self, *args, **kwargs):
         # Define parameter names before calling superclass constructor
-        self.parameter_names = GPeCellType.default_parameters.keys() + \
-                               GPeCellType.extra_parameters.keys()
+        self.parameter_names = list(GPeCellType.default_parameters.keys()) + \
+                               list(GPeCellType.extra_parameters.keys())
         for rangevar in self.rangevar_names:
             self.parameter_names.append(rangevar + '_scale')
         
@@ -237,8 +237,8 @@ class GpeCellReduced(GPeCellModel):
         
     def __init__(self, *args, **kwargs):
         # Define parameter names before calling superclass constructor
-        self.parameter_names = GpeReducedType.default_parameters.keys() + \
-                               GpeReducedType.extra_parameters.keys()
+        self.parameter_names = list(GpeReducedType.default_parameters.keys()) + \
+                               list(GpeReducedType.extra_parameters.keys())
         for rangevar in self.rangevar_names:
             self.parameter_names.append(rangevar + '_scale')
             
@@ -468,7 +468,7 @@ def test_record_gpe_model(export_locals=False):
     nrn.run(250.0)
 
     if export_locals:
-        print("Adding to global namespace: {}".format(locals().keys()))
+        print("Adding to global namespace: {}".format(list(locals().keys())))
         globals().update(locals())
 
 

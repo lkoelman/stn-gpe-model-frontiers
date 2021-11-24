@@ -52,13 +52,13 @@ def transform_sections(secs, TR_hom):
 
         # Construct matrix with vertices as rows
         num_verts = int(h.n3d())
-        src_verts = np.array([[h.x3d(i), h.y3d(i), h.z3d(i), 1.0] for i in xrange(num_verts)])
+        src_verts = np.array([[h.x3d(i), h.y3d(i), h.z3d(i), 1.0] for i in range(num_verts)])
 
         # Transform vertex matrix
         new_verts = np.dot(src_verts, TR_hom.T)
 
         # Update 3D info
-        for i in xrange(num_verts):
+        for i in range(num_verts):
             h.pt3dchange(i, new_verts[i,0], new_verts[i,1], new_verts[i,2], h.diam3d(i))
 
         h.pop_section()
@@ -114,7 +114,7 @@ def write_geometry_STEP(secs, filepath):
         # Copy points
         num_verts = int(h.n3d())
         pts = TColgp_Array1OfPnt(1, num_verts)
-        for i in xrange(num_verts):
+        for i in range(num_verts):
             pts.SetValue(i+1, gp_Pnt(h.x3d(i), h.y3d(i), h.z3d(i)))
 
         # Build curve
@@ -174,14 +174,14 @@ def run_example():
     V_raw = getattr(h, 'V_raw')
     stn_secrefs = getattr(h, 's') # objref s[] = SectionRef[total] (defined in initcell() in n17*.hoc)
     jj_cell = 1 # cell we wish to modify
-    for kk_sec in xrange(nsec_stn):
+    for kk_sec in range(nsec_stn):
         # Get centroid of section coordinates (all nseg=1)
         secref = stn_secrefs[kk_sec]
         secref.sec.push()
 
         # Get centroid of section coordinates (all nseg=1)
         num_verts = int(h.n3d())
-        sec_verts = np.array([[h.x3d(i), h.y3d(i), h.z3d(i)] for i in xrange(num_verts)])
+        sec_verts = np.array([[h.x3d(i), h.y3d(i), h.z3d(i)] for i in range(num_verts)])
         centroid = np.mean(sec_verts, axis=0)
 
         # Query voltage attenuation at this location

@@ -43,7 +43,7 @@ def test_map_synapses(export_locals=False):
 	for dend_ref in (dendL_refs + dendR_refs):
 		dend_sec = dend_ref.sec
 		# make synapses
-		for i in xrange(n_syn_sec):
+		for i in range(n_syn_sec):
 			syn_loc = rng.rand()
 			syn = h.ExpSyn(dend_sec(syn_loc))
 			syn.tau = rng.rand() * 20.
@@ -252,7 +252,7 @@ def map_run_multiple_inputs():
 		dend_sec = dend_refs[i_sec].sec
 
 		# make N synapses per Section
-		for i in xrange(n_syns_sec):
+		for i in range(n_syns_sec):
 
 			# Make synapse with random properties
 			syn_loc = rng.rand()

@@ -30,7 +30,7 @@ def make_features(proto_wrapper):
     eFEL_available_features = efel.getFeatureNames()
     custom_spiketrain_features = espk.getFeatureNames()
 
-    for feat_name, feat_params in proto_wrapper.characterizing_feats.iteritems():
+    for feat_name, feat_params in proto_wrapper.characterizing_feats.items():
 
         # Get interval of response trace from which feature is calculated
         response_interval   = feat_params.get('response_interval',
@@ -145,7 +145,7 @@ def calc_feature_targets(protos_feats, protos_responses, remove_problematic=True
         check_warn = logger.warning
 
     # Run each protocol and get its responses
-    for stim_proto, feat_dict in protos_feats.iteritems():
+    for stim_proto, feat_dict in protos_feats.items():
 
         # Get response traces
         responses = protos_responses[stim_proto.name]
@@ -154,7 +154,7 @@ def calc_feature_targets(protos_feats, protos_responses, remove_problematic=True
         problem_feat_names = []
 
         # Use response to calculate target value for each features
-        for feat_name, feat_data in feat_dict.iteritems():
+        for feat_name, feat_data in feat_dict.items():
 
             # Calculate feature value from full model response
             e_feature, weight = feat_data
